@@ -24,6 +24,13 @@ public:
     // Clears the whole current render target / depth buffer. color is A8R8G8B8.
     virtual void clear(uint32_t flags, uint32_t color, float depth, uint32_t stencil) = 0;
 
+    // Replaces the back buffer's pixels with CPU-written ones (X8R8G8B8, back buffer
+    // size, `pitch` bytes per row).
+    virtual void write_back_buffer(const void* pixels, uint32_t pitch) = 0;
+
+    // Saves the back buffer as a 24-bit BMP. Returns false (logged) on failure.
+    virtual bool save_back_buffer(const char* path) = 0;
+
     // Shows the back buffer.
     virtual void present() = 0;
 

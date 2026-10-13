@@ -29,6 +29,13 @@ struct XbAnsiString {  // ANSI_STRING
 };
 static_assert(sizeof(XbAnsiString) == 8);
 
+struct XbUnicodeString {  // UNICODE_STRING; lengths in bytes
+    uint16_t length;
+    uint16_t maximum_length;
+    XbPtr buffer;  // uint16_t*
+};
+static_assert(sizeof(XbUnicodeString) == 8);
+
 struct XbKrnlVersion {  // XBOX_KRNL_VERSION
     uint16_t major;
     uint16_t minor;

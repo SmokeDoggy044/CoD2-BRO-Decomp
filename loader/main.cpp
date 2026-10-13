@@ -11,6 +11,7 @@
 
 #include "crash.h"
 #include "d3d.h"
+#include "xinput.h"
 #include "dsound.h"
 #include "kernel.h"
 #include "kernel_thunks.h"
@@ -35,6 +36,8 @@ struct Options {
     bool trace_kernel = false;
     uint32_t memory_mb = 64;
     uint32_t scale = 2;
+    uint32_t screenshot_interval = 0;
+    std::optional<fs::path> screenshot_dir;
     bool silent = false;
 };
 
@@ -49,7 +52,8 @@ void print_usage(const char* program) {
         "  --trace          log every kernel call (implies --debug)\n"
         "  --silent         no sound output (audio still runs, into a silent device)\n"
         "  --memory MB      Xbox memory budget (default 64, like a retail Xbox; devkit: 128)\n"
-        "  --scale N        window size as a multiple of the game's resolution (default 2)\n",
+        "  --scale N        window size as a multiple of the game's resolution (default 2)\n"
+        "  --screenshots N DIR  save every Nth frame as DIR/frame_<n>.bmp (debugging)\n",
         program);
 }
 
@@ -82,6 +86,12 @@ std::optional<Options> parse_args(int argc, char** argv) {
                 std::fprintf(stderr, "--scale needs a number (1-8)\n");
                 return std::nullopt;
             }
+        } else if (arg == "--screenshots") {
+            if (i + 2 >= argc || (options.screenshot_interval = static_cast<uint32_t>(std::atoi(argv[++i]))) < 1) {
+                std::fprintf(stderr, "--screenshots needs a frame interval and a folder\n");
+                return std::nullopt;
+            }
+            options.screenshot_dir = fs::path(argv[++i]);
         } else if (arg == "--silent") {
             options.silent = true;
         } else if (arg == "--debug") {
@@ -164,10 +174,16 @@ int main(int argc, char** argv) {
     audio::configure({options->silent ? audio::OutputConfig::Device::Loopback : audio::OutputConfig::Device::Default});
     render::D3DConfig d3d_config;
     d3d_config.backend.window_scale = options->scale;
+    d3d_config.screenshot_interval = options->screenshot_interval;
+    if (options->screenshot_dir) {
+        fs::create_directories(*options->screenshot_dir);
+        d3d_config.screenshot_dir = options->screenshot_dir->string();
+    }
     d3d_config.device_pointer = loader::kTitleD3DDevicePointer;
     d3d_config.render_state = loader::kTitleD3DRenderState;
     d3d_config.texture_state = loader::kTitleD3DTextureState;
     render::configure(d3d_config);
+    input::configure({loader::kTitleGamepadType});
     if (!loader::install_sdk_replacements(image, symbols)) {
         LOG_ERROR("loader", "SDK replacements need the symbol file (%s)", symbol_path.string().c_str());
         return 1;

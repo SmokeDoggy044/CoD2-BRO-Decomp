@@ -9,6 +9,7 @@
 // Register) stay in title memory and are read from there.
 
 #include <span>
+#include <string>
 
 #include "backend.h"
 #include "kernel.h"
@@ -24,6 +25,9 @@ struct D3DConfig {
     xbox::XbPtr render_state = 0;
     // D3D_g_DeferredTextureState (uint32_t[4][32]), which inlined code writes.
     xbox::XbPtr texture_state = 0;
+    // Debugging: save every Nth frame as <screenshot_dir>/frame_<n>.bmp (0 = never).
+    uint32_t screenshot_interval = 0;
+    std::string screenshot_dir = ".";
 };
 
 // Call before the title creates its device.

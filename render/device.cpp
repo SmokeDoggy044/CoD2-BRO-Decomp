@@ -13,6 +13,7 @@
 #include <cstring>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -22,6 +23,7 @@
 #include "dispatcher.h"
 #include "float_env.h"
 #include "log.h"
+#include "memory.h"
 #include "nv2a.h"
 #include "xbox_d3d.h"
 
@@ -42,6 +44,7 @@ struct State {
     XbSurface* depth_stencil = nullptr;
     uint32_t fence = 0;
     uint32_t swap_count = 0;
+    std::atomic<bool> back_buffer_written{false};  // the CPU locked it since the last Swap
     XbVBlankData* vblank_data = nullptr;
     std::atomic<uint32_t> vblank_count{0};
     std::atomic<uint32_t> vblank_callback{0};
@@ -53,11 +56,15 @@ T& device_field(uint32_t offset) {
     return *reinterpret_cast<T*>(g.device + offset);
 }
 
-// A D3D-created surface (render target or depth buffer). Its pixels live in the
-// back end, so Data stays 0.
+// A D3D-created surface (render target or depth buffer). Like D3D's, it has memory of
+// its own: titles lock the back buffer to write into it (video playback does).
 XbSurface* create_surface(uint32_t format, uint32_t width, uint32_t height, uint32_t bytes_per_pixel) {
     auto* surface = new XbSurface{};
     surface->container.resource.common = kCommonTypeSurface | kCommonD3DCreated | 1;
+    const uint32_t bytes = ((width * bytes_per_pixel + 63) & ~63u) * height;
+    const XbPtr memory = xbox::allocate_contiguous(bytes, 0x1000);
+    if (!memory) LOG_ERROR("render", "no memory for a %ux%u frame buffer", width, height);
+    surface->container.resource.data = memory & 0x0FFFFFFF;
     surface->container.format = kFormatDmaChannelA | (2u << kFormatDimensionShift) |
                                 (format << kFormatFormatShift) | (1u << kFormatMipmapShift);
     const uint32_t pitch = (width * bytes_per_pixel + 63) & ~63u;
@@ -253,6 +260,15 @@ uint32_t XB_STDCALL D3DDevice_Clear(uint32_t rect_count, XbPtr /*rects*/, uint32
 
 uint32_t XB_STDCALL D3DDevice_Swap(uint32_t /*flags*/) {
     platform::HostFloatEnv float_env;
+    if (g.back_buffer_written.exchange(false)) {
+        const auto& pixels = g.back_buffer->container;
+        g.backend->write_back_buffer(xbox::from_xbox_ptr<void>(pixels.resource.data | 0x80000000),
+                                     ((pixels.size >> kSizePitchShift) + 1) * 64);
+    }
+    if (g.config.screenshot_interval && g.swap_count % g.config.screenshot_interval == 0) {
+        const std::string path = g.config.screenshot_dir + "/frame_" + std::to_string(g.swap_count) + ".bmp";
+        g.backend->save_back_buffer(path.c_str());
+    }
     g.backend->present();
     if (!g.backend->pump_events()) {
         LOG_INFO("render", "window closed");
@@ -344,7 +360,9 @@ void resource_destroyed(XbPtr /*resource*/) {}
 
 ViewState& view_state() { return g_view; }
 
-void texture_written(XbPtr /*resource*/) {}
+void texture_written(XbPtr resource) {
+    if (g.back_buffer && resource == to_xbox_ptr(g.back_buffer)) g.back_buffer_written = true;
+}
 
 void configure(const D3DConfig& config) {
     g.config = config;

@@ -4,6 +4,9 @@
 #include <SDL3/SDL.h>
 
 #include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <vector>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -33,9 +36,36 @@ HWND window_handle(SDL_Window* window) {
 #endif
 }
 
+// BGRX rows -> bottom-up 24-bit BMP.
+bool write_bmp(const char* path, const uint8_t* pixels, int32_t pitch, uint32_t width, uint32_t height) {
+    std::FILE* file = std::fopen(path, "wb");
+    if (!file) return false;
+    const uint32_t row = (width * 3 + 3) & ~3u;
+    const uint32_t image = row * height;
+    uint8_t header[54] = {'B', 'M'};
+    auto put32 = [&](int offset, uint32_t v) { std::memcpy(header + offset, &v, 4); };
+    put32(2, 54 + image);
+    put32(10, 54);
+    put32(14, 40);
+    put32(18, width);
+    put32(22, height);
+    header[26] = 1;
+    header[28] = 24;
+    put32(34, image);
+    std::fwrite(header, 1, sizeof(header), file);
+    std::vector<uint8_t> line(row, 0);
+    for (uint32_t y = height; y-- > 0;) {
+        const uint8_t* src = pixels + static_cast<int64_t>(y) * pitch;
+        for (uint32_t x = 0; x < width; ++x) std::memcpy(&line[x * 3], src + x * 4, 3);
+        std::fwrite(line.data(), 1, row, file);
+    }
+    return std::fclose(file) == 0;
+}
+
 class D3D9Backend final : public Backend {
 public:
     ~D3D9Backend() override {
+        release(staging_);
         release(device_);
         release(d3d_);
         if (window_) SDL_DestroyWindow(window_);
@@ -89,6 +119,8 @@ public:
             LOG_ERROR("render", "CreateDevice failed: %08x", static_cast<unsigned>(hr));
             return false;
         }
+        width_ = config.width;
+        height_ = config.height;
         LOG_INFO("render", "D3D9 device: %ux%u", config.width, config.height);
         return true;
     }
@@ -99,6 +131,43 @@ public:
         if (flags & kClearDepth) d3d_flags |= D3DCLEAR_ZBUFFER;
         if (flags & kClearStencil) d3d_flags |= D3DCLEAR_STENCIL;
         if (d3d_flags) device_->Clear(0, nullptr, d3d_flags, color, depth, stencil);
+    }
+
+    void write_back_buffer(const void* pixels, uint32_t pitch) override {
+        if (!staging_ &&
+            FAILED(device_->CreateOffscreenPlainSurface(width_, height_, D3DFMT_X8R8G8B8, D3DPOOL_SYSTEMMEM,
+                                                        &staging_, nullptr)))
+            return;
+        D3DLOCKED_RECT locked;
+        if (FAILED(staging_->LockRect(&locked, nullptr, 0))) return;
+        for (uint32_t y = 0; y < height_; ++y)
+            std::memcpy(static_cast<uint8_t*>(locked.pBits) + y * locked.Pitch,
+                        static_cast<const uint8_t*>(pixels) + y * pitch, width_ * 4);
+        staging_->UnlockRect();
+        IDirect3DSurface9* back_buffer = nullptr;
+        if (SUCCEEDED(device_->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &back_buffer))) {
+            device_->UpdateSurface(staging_, nullptr, back_buffer, nullptr);
+            back_buffer->Release();
+        }
+    }
+
+    bool save_back_buffer(const char* path) override {
+        IDirect3DSurface9* back_buffer = nullptr;
+        IDirect3DSurface9* copy = nullptr;
+        bool ok = SUCCEEDED(device_->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &back_buffer)) &&
+                  SUCCEEDED(device_->CreateOffscreenPlainSurface(width_, height_, D3DFMT_X8R8G8B8,
+                                                                 D3DPOOL_SYSTEMMEM, &copy, nullptr)) &&
+                  SUCCEEDED(device_->GetRenderTargetData(back_buffer, copy));
+        D3DLOCKED_RECT locked{};
+        if (ok) ok = SUCCEEDED(copy->LockRect(&locked, nullptr, D3DLOCK_READONLY));
+        if (ok) {
+            ok = write_bmp(path, static_cast<const uint8_t*>(locked.pBits), locked.Pitch, width_, height_);
+            copy->UnlockRect();
+        }
+        release(copy);
+        release(back_buffer);
+        if (!ok) LOG_WARN("render", "cannot save the back buffer to %s", path);
+        return ok;
     }
 
     void present() override { device_->Present(nullptr, nullptr, nullptr, nullptr); }
@@ -115,6 +184,8 @@ private:
     SDL_Window* window_ = nullptr;
     IDirect3D9* d3d_ = nullptr;
     IDirect3DDevice9* device_ = nullptr;
+    IDirect3DSurface9* staging_ = nullptr;  // CPU-written back buffer upload
+    uint32_t width_ = 0, height_ = 0;
 };
 
 }  // namespace

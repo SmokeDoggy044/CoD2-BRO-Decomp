@@ -489,8 +489,11 @@ uint32_t XB_STDCALL MmQueryAddressProtect(XbPtr address) {
 }
 
 void XB_STDCALL MmSetAddressProtect(XbPtr base_address, uint32_t number_of_bytes, uint32_t protect) {
-    Protection protection;
-    if (!to_protection(protect, protection)) {
+    // Only cache attributes (e.g. PAGE_WRITECOMBINE alone, as D3D titles pass for GPU
+    // buffers): the access stays as it is.
+    const bool modifiers_only = (protect & 0xFF) == 0 && (protect & kPageModifiers) != 0;
+    Protection protection = Protection::ReadWrite;
+    if (!modifiers_only && !to_protection(protect, protection)) {
         LOG_WARN("memory", "MmSetAddressProtect: invalid protection %x", protect);
         return;
     }
@@ -505,6 +508,10 @@ void XB_STDCALL MmSetAddressProtect(XbPtr base_address, uint32_t number_of_bytes
             slot = &g_memory.page_protect[page_index(page)];
         if (!slot) {
             LOG_WARN("memory", "MmSetAddressProtect(%08x): page not allocated", page);
+            continue;
+        }
+        if (modifiers_only) {
+            *slot = static_cast<uint16_t>((*slot & 0xFF) | protect);
             continue;
         }
         *slot = static_cast<uint16_t>(protect);
@@ -583,5 +590,11 @@ bool charge_image_pages(int32_t pages) {
 }
 
 std::span<const KernelImpl> memory_kernel_impls() { return kMemoryImpls; }
+
+XbPtr allocate_contiguous(uint32_t bytes, uint32_t alignment) {
+    return MmAllocateContiguousMemoryEx(bytes, 0, 0xFFFFFFFF, alignment, kPageReadWrite | 0x400);
+}
+
+void free_contiguous(XbPtr address) { MmFreeContiguousMemory(address); }
 
 }  // namespace xbox

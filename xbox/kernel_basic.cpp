@@ -157,15 +157,63 @@ void XB_STDCALL RtlInitAnsiString(XbAnsiString* destination, const char* source)
     KTRACE("RtlInitAnsiString(\"%s\")", source ? source : "(null)");
 }
 
+// Xbox ANSI strings are Latin-1: code points above 0xFF become '?'.
+constexpr uint32_t kStatusBufferOverflow = 0x80000005;
+constexpr uint32_t kStatusNotImplemented = 0xC0000002;
+
+uint32_t XB_STDCALL RtlUnicodeStringToAnsiString(XbAnsiString* destination, const XbUnicodeString* source,
+                                                 uint32_t allocate) {
+    if (allocate & 0xFF) {
+        LOG_WARN("kernel", "RtlUnicodeStringToAnsiString: allocating the result is not supported");
+        return kStatusNotImplemented;
+    }
+    const auto* in = from_xbox_ptr<uint16_t>(source->buffer);
+    auto* out = from_xbox_ptr<char>(destination->buffer);
+    const uint32_t chars = source->length / 2u;
+    uint32_t status = 0;
+    uint32_t count = chars;
+    if (count + 1 > destination->maximum_length) {
+        count = destination->maximum_length ? destination->maximum_length - 1u : 0;
+        status = kStatusBufferOverflow;
+    }
+    for (uint32_t i = 0; i < count; ++i) out[i] = in[i] > 0xFF ? '?' : static_cast<char>(in[i]);
+    if (count < destination->maximum_length) out[count] = 0;
+    destination->length = static_cast<uint16_t>(count);
+    return status;
+}
+
+uint32_t XB_STDCALL RtlAnsiStringToUnicodeString(XbUnicodeString* destination, const XbAnsiString* source,
+                                                 uint32_t allocate) {
+    if (allocate & 0xFF) {
+        LOG_WARN("kernel", "RtlAnsiStringToUnicodeString: allocating the result is not supported");
+        return kStatusNotImplemented;
+    }
+    const auto* in = from_xbox_ptr<uint8_t>(source->buffer);
+    auto* out = from_xbox_ptr<uint16_t>(destination->buffer);
+    uint32_t status = 0;
+    uint32_t count = source->length;
+    const uint32_t capacity = destination->maximum_length / 2u;
+    if (count + 1 > capacity) {
+        count = capacity ? capacity - 1 : 0;
+        status = kStatusBufferOverflow;
+    }
+    for (uint32_t i = 0; i < count; ++i) out[i] = in[i];
+    if (count < capacity) out[count] = 0;
+    destination->length = static_cast<uint16_t>(count * 2);
+    return status;
+}
+
 const KernelImpl kImpls[] = {
     KIMPL(DbgPrint),
     KIMPL(HalRegisterShutdownNotification),
     KIMPL(KeQueryPerformanceCounter),
     KIMPL(KeQueryPerformanceFrequency),
     KIMPL(KeQuerySystemTime),
+    KIMPL(RtlAnsiStringToUnicodeString),
     KIMPL(RtlEqualString),
     KIMPL(RtlInitAnsiString),
     KIMPL(RtlNtStatusToDosError),
+    KIMPL(RtlUnicodeStringToAnsiString),
     KIMPL_DATA(KeTickCount),
     KIMPL_DATA(LaunchDataPage),
     KIMPL_DATA(XboxKrnlVersion),

@@ -70,6 +70,8 @@ add_subdirectory(platform)
 add_subdirectory(xbox)
 add_subdirectory(audio)
 add_subdirectory(render)
+add_subdirectory(input)
+add_subdirectory(online)
 add_subdirectory(game)
 
 if(COD_BRO_BUILD_TESTS)

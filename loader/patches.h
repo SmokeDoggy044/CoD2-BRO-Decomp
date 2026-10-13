@@ -10,6 +10,8 @@ constexpr uint32_t kTitleD3DDevicePointer = 0x003f8318;
 constexpr uint32_t kTitleD3DRenderState = 0x003f8328;
 // Its D3D_g_DeferredTextureState array.
 constexpr uint32_t kTitleD3DTextureState = 0x003f5c68;
+// XPP's g_DeviceType_Gamepad (XDEVICE_TYPE_GAMEPAD).
+constexpr uint32_t kTitleGamepadType = 0x007a9f78;
 
 // Redirects the title's functions that cannot run on a PC (privileged instructions,
 // direct kernel/hardware access) to replacements. Call after the image is mapped.

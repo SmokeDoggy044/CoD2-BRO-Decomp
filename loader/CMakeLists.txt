@@ -9,6 +9,6 @@ add_executable(cod_bro_loader
     thread_env.cpp
     xbe.cpp
 )
-target_link_libraries(cod_bro_loader PRIVATE audio render xbox platform)
+target_link_libraries(cod_bro_loader PRIVATE audio input online render xbox platform)
 target_compile_definitions(cod_bro_loader PRIVATE
     COD_BRO_DEFAULT_SYMBOLS="${PROJECT_SOURCE_DIR}/tools/data/default_xbe_symbols.txt")

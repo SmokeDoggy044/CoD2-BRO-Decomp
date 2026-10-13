@@ -13,6 +13,8 @@
 #include "compiler.h"
 #include "crash.h"
 #include "d3d.h"
+#include "xinput.h"
+#include "xonline.h"
 #include "dsound.h"
 #include "filesystem.h"
 #include "hooks.h"
@@ -75,6 +77,13 @@ const SdkAlias kSdkAliases[] = {
 // SDK functions that are safe to run as they are (no hardware access), left untrapped.
 const uint32_t kSdkKeepOriginal[] = {
     0x003ebb20,  // D3D: returns 1 (called before D3D_SetPushBufferSize)
+    0x00396f5f,  // XONLINE: a static initializer (_cinit)
+};
+
+// The same, by SDK name (any title): thin wrappers around XAPI.
+const char* const kSdkKeepOriginalNames[] = {
+    "D3D_AllocContiguousMemory",  // XMemAlloc with D3D's attributes
+    "D3D_FreeContiguousMemory",   // XMemFree
 };
 
 const SymbolTable* g_symbols = nullptr;
@@ -107,6 +116,9 @@ bool install_sdk_replacements(const XbeImage& image, const SymbolTable& symbols)
     const SdkLibrary libraries[] = {
         {"DirectSound", "DSOUND", audio::dsound_functions()},
         {"Direct3D", "D3D", render::d3d_functions()},
+        {"Input", "XPP", input::xpp_functions()},
+        {"Xbox Live", "XONLINE", online::xonline_functions()},
+        {"Network", "XNET", {}},
     };
     bool ok = true;
     for (const SdkLibrary& library : libraries) {
@@ -119,10 +131,11 @@ bool install_sdk_replacements(const XbeImage& image, const SymbolTable& symbols)
         // shorter than a CALL are left alone (they would clobber their neighbour).
         const std::vector<uint32_t> entries =
             symbols.in_range(section->virtual_addr, section->virtual_addr + section->virtual_size);
+        std::vector<uint32_t> keep(std::begin(kSdkKeepOriginal), std::end(kSdkKeepOriginal));
+        for (const char* name : kSdkKeepOriginalNames)
+            for (uint32_t address : symbols.find(name)) keep.push_back(address);
         for (size_t i = 0; i < entries.size(); ++i) {
-            if (std::find(std::begin(kSdkKeepOriginal), std::end(kSdkKeepOriginal), entries[i]) !=
-                std::end(kSdkKeepOriginal))
-                continue;
+            if (std::find(keep.begin(), keep.end(), entries[i]) != keep.end()) continue;
             const uint32_t next = i + 1 < entries.size() ? entries[i + 1] : section->virtual_addr + section->virtual_size;
             if (next - entries[i] >= 5) install_call(entries[i], reinterpret_cast<const void*>(&sdk_trap));
         }
@@ -142,7 +155,7 @@ bool install_sdk_replacements(const XbeImage& image, const SymbolTable& symbols)
         }
         LOG_INFO("patches", "%s: %d functions replaced, %d not found, %zu others trapped", library.name, installed,
                  missing, entries.size() - installed);
-        if (installed == 0) ok = false;
+        if (installed == 0 && !library.functions.empty()) ok = false;
     }
     return ok;
 }
