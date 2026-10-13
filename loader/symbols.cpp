@@ -33,6 +33,13 @@ std::vector<uint32_t> SymbolTable::find(const std::string& name) const {
     return found;
 }
 
+std::vector<uint32_t> SymbolTable::in_range(uint32_t start, uint32_t end) const {
+    std::vector<uint32_t> found;
+    for (const Entry& entry : entries_)
+        if (entry.address >= start && entry.address < end) found.push_back(entry.address);
+    return found;
+}
+
 std::string SymbolTable::describe(uint32_t address) const {
     char buffer[32];
     std::snprintf(buffer, sizeof(buffer), "%08x", address);

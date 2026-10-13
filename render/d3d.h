@@ -1,0 +1,32 @@
+#pragma once
+
+// Xbox Direct3D 8 (D3D8 library, XDK 5849) replacement: the functions titles call, with
+// the same signatures, on top of a Backend (D3D9 for now).
+//
+// The device and the resources D3D creates (back buffer, depth buffer) are ours: structs
+// in title-addressable memory with the Xbox layout, because titles read their fields
+// directly (inlined header code). Resources the title creates itself (XGSet*Header +
+// Register) stay in title memory and are read from there.
+
+#include <span>
+
+#include "backend.h"
+#include "kernel.h"
+#include "types.h"
+
+namespace render {
+
+struct D3DConfig {
+    BackendConfig backend;
+    // The title's D3D__pDevice global (the device pointer that inlined code reads).
+    xbox::XbPtr device_pointer = 0;
+};
+
+// Call before the title creates its device.
+void configure(const D3DConfig& config);
+
+// The replacements, by SDK function name (as XbSymbolDatabase/Ghidra name them,
+// without the library prefix). The loader redirects each function it finds.
+std::span<const xbox::KernelImpl> d3d_functions();
+
+}  // namespace render

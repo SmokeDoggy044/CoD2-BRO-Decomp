@@ -6,10 +6,11 @@
 #include <cstring>
 #include <filesystem>
 #include <optional>
-#include <pthread.h>
+#include <unistd.h>
 #include <string>
 
 #include "crash.h"
+#include "d3d.h"
 #include "dsound.h"
 #include "kernel.h"
 #include "kernel_thunks.h"
@@ -33,6 +34,7 @@ struct Options {
     platform::LogLevel log_level = platform::LogLevel::Info;
     bool trace_kernel = false;
     uint32_t memory_mb = 64;
+    uint32_t scale = 2;
     bool silent = false;
 };
 
@@ -46,7 +48,8 @@ void print_usage(const char* program) {
         "  --debug          debug logging\n"
         "  --trace          log every kernel call (implies --debug)\n"
         "  --silent         no sound output (audio still runs, into a silent device)\n"
-        "  --memory MB      Xbox memory budget (default 64, like a retail Xbox; devkit: 128)\n",
+        "  --memory MB      Xbox memory budget (default 64, like a retail Xbox; devkit: 128)\n"
+        "  --scale N        window size as a multiple of the game's resolution (default 2)\n",
         program);
 }
 
@@ -71,6 +74,12 @@ std::optional<Options> parse_args(int argc, char** argv) {
             if (i + 1 >= argc || (options.memory_mb = static_cast<uint32_t>(std::atoi(argv[++i]))) < 16 ||
                 options.memory_mb > 1024) {
                 std::fprintf(stderr, "--memory needs a size in MB (16-1024)\n");
+                return std::nullopt;
+            }
+        } else if (arg == "--scale") {
+            if (i + 1 >= argc || (options.scale = static_cast<uint32_t>(std::atoi(argv[++i]))) < 1 ||
+                options.scale > 8) {
+                std::fprintf(stderr, "--scale needs a number (1-8)\n");
                 return std::nullopt;
             }
         } else if (arg == "--silent") {
@@ -153,7 +162,11 @@ int main(int argc, char** argv) {
     loader::install_kernel_thunks(image);
     loader::install_title_patches();
     audio::configure({options->silent ? audio::OutputConfig::Device::Loopback : audio::OutputConfig::Device::Default});
-    if (!loader::install_sdk_replacements(symbols)) {
+    render::D3DConfig d3d_config;
+    d3d_config.backend.window_scale = options->scale;
+    d3d_config.device_pointer = loader::kTitleD3DDevicePointer;
+    render::configure(d3d_config);
+    if (!loader::install_sdk_replacements(image, symbols)) {
         LOG_ERROR("loader", "SDK replacements need the symbol file (%s)", symbol_path.string().c_str());
         return 1;
     }
@@ -167,8 +180,10 @@ int main(int argc, char** argv) {
     // Four zero dwords stand in for arguments in case the entry point reads any.
     const uint32_t args[4] = {};
     loader::run_on_xbox_stack(image.entry_point(), *env, args);
-    // The entry point only starts the title's main thread and returns. End this
-    // thread alone; the process lives on until the title quits.
+    // The entry point only starts the title's main thread and returns. Park this
+    // thread; the process lives on until the title quits. It must not exit: once the
+    // initial thread is gone, Linux no longer resolves /proc/self/exe, which DXVK
+    // and SDL read.
     LOG_INFO("loader", "title entry point returned");
-    pthread_exit(nullptr);
+    for (;;) pause();
 }

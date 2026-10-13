@@ -21,6 +21,9 @@ public:
     // ("DirectSoundCreate" finds "DSOUND::DirectSoundCreate").
     std::vector<uint32_t> find(const std::string& name) const;
 
+    // Addresses of all functions in [start, end), ascending.
+    std::vector<uint32_t> in_range(uint32_t start, uint32_t end) const;
+
 private:
     struct Entry {
         uint32_t address;

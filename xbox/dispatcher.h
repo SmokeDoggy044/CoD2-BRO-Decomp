@@ -30,4 +30,10 @@ void set_event_handle(Handle event, int32_t state = 1);
 // during its next alertable user-mode wait, which then returns STATUS_USER_APC.
 void queue_user_apc(XbPtr thread, XbPtr routine, uint32_t argument1, uint32_t argument2, uint32_t argument3);
 
+// Raises the calling thread's IRQL (e.g. to kDispatchLevel, which excludes DPCs and
+// threads that raised theirs) and returns the old level, like KfRaiseIrql. For host
+// code calling title callbacks that the Xbox runs at DPC level (vertical blank).
+uint8_t raise_irql_to(uint8_t new_irql);
+void lower_irql_to(uint8_t old_irql);
+
 }  // namespace xbox

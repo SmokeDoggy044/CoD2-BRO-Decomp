@@ -512,4 +512,7 @@ void signal_object(XbDispatcherHeader& header, int32_t signal_state) {
 
 std::span<const KernelImpl> dispatcher_kernel_impls() { return kDispatcherImpls; }
 
+uint8_t raise_irql_to(uint8_t new_irql) { return raise_irql(new_irql); }
+void lower_irql_to(uint8_t old_irql) { lower_irql(old_irql); }
+
 }  // namespace xbox
