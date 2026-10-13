@@ -2,6 +2,11 @@
 
 #include "test_support.h"
 
+#include <chrono>
+#include <thread>
+
+#include "kernel.h"
+
 namespace {
 
 struct TimeFields {
@@ -46,6 +51,15 @@ int main() {
     int64_t untouched = 42;
     CHECK(to_time(&feb30, &untouched) == 0 && untouched == 42);
     CHECK(to_time(&month13, &untouched) == 0 && untouched == 42);
+
+    // The CPU time stamp counter runs at the Xbox's 733.33 MHz.
+    const auto host_start = std::chrono::steady_clock::now();
+    const int64_t cycles_start = xbox::cpu_time_stamp_counter();
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    const int64_t cycles = xbox::cpu_time_stamp_counter() - cycles_start;
+    const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - host_start).count();
+    const double rate = static_cast<double>(cycles) / seconds;
+    CHECK(rate > xbox::kCpuCycleFrequency * 0.99 && rate < xbox::kCpuCycleFrequency * 1.01, "%.0f Hz", rate);
 
     if (test::g_failures) return 1;
     std::printf("time_test passed\n");

@@ -336,4 +336,12 @@ bool kernel_init(const KernelConfig& config) {
     return memory_init(config.memory) && filesystem_init(config);
 }
 
+// 733.33 MHz = 11/15 cycles per nanosecond (integer only: title threads run with the
+// title's FPU modes).
+int64_t cpu_time_stamp_counter() {
+    const auto ns =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - g_start).count();
+    return ns / 15 * 11 + ns % 15 * 11 / 15;
+}
+
 }  // namespace xbox

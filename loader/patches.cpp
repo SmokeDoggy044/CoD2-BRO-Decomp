@@ -18,9 +18,12 @@
 #include "dsound.h"
 #include "filesystem.h"
 #include "hooks.h"
+#include "kernel.h"
 #include "log.h"
 #include "symbols.h"
 #include "xbe.h"
+
+#include <sys/mman.h>
 
 namespace loader {
 
@@ -50,6 +53,70 @@ const Patch kPatches[] = {
     {0x001ede5f, reinterpret_cast<const void*>(&restrict_code_selector), "XAPI code selector restriction"},
     {0x001e9b66, reinterpret_cast<const void*>(&mount_utility_drive), "XMountUtilityDrive: Z: = cache folder"},
 };
+
+// RDTSC sites in title code (Ghidra: every RDTSC outside the SDK sections) and how
+// many bytes from the RDTSC on are moved to the trampoline: RDTSC plus the stores
+// of its result after it, which use no relative addressing and are no branch target.
+// The title assumes the Xbox CPU's 733 MHz (FUN_002960a0 divides by 733333.3; XAPI
+// QueryPerformanceCounter is RDTSC with frequency 733333333); the host's counter
+// runs several times faster, and so would the game.
+struct RdtscSite {
+    uint32_t address;
+    uint8_t length;
+};
+const RdtscSite kRdtscSites[] = {
+    {0x000643ad, 6}, {0x0006441a, 6}, {0x00064584, 6}, {0x0006469e, 6}, {0x00064f2e, 6}, {0x00064f98, 6},
+    {0x00064fe8, 6}, {0x00065139, 6}, {0x000651ea, 6}, {0x00065329, 6},
+    {0x001ed6ce, 7},  // XAPI QueryPerformanceCounter: mov [ecx],eax; mov [ecx+4],edx
+    {0x001fda73, 6}, {0x0020d34a, 6}, {0x0020d37e, 6}, {0x002960ba, 6}, {0x002960e3, 6}, {0x00298185, 6},
+    {0x002981ae, 6}, {0x002b1caf, 6}, {0x002b1ce9, 6}, {0x0030ba24, 6}, {0x0030bc51, 6},
+    {0x0032d893, 5},  // mov [esp],eax
+    {0x0032ebca, 6}, {0x0032ec52, 6}, {0x00331fc5, 6}, {0x0033228a, 6},
+};
+
+int64_t XB_CDECL title_rdtsc() { return xbox::cpu_time_stamp_counter(); }
+
+void put_rel32(uint8_t* at, uint8_t opcode, const void* target) {
+    const uint32_t from = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(at)) + 5;
+    const uint32_t relative = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(target)) - from;
+    at[0] = opcode;
+    std::memcpy(at + 1, &relative, 4);
+}
+
+// Each site: JMP to a trampoline that does pushfd; push ecx; call title_rdtsc;
+// pop ecx; popfd; <the moved instructions>; jmp back.
+void install_rdtsc_patches() {
+    constexpr size_t kTrampolineSize = 32;
+    auto* pool = static_cast<uint8_t*>(mmap(nullptr, std::size(kRdtscSites) * kTrampolineSize,
+                                            PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
+    if (pool == MAP_FAILED) {
+        LOG_ERROR("patches", "no memory for the RDTSC trampolines; the title runs at the host's TSC rate");
+        return;
+    }
+    int installed = 0;
+    for (size_t i = 0; i < std::size(kRdtscSites); ++i) {
+        const RdtscSite& site = kRdtscSites[i];
+        auto* code = reinterpret_cast<uint8_t*>(uintptr_t{site.address});
+        if (code[0] != 0x0F || code[1] != 0x31) {
+            LOG_WARN("patches", "%08x: not RDTSC; left alone", site.address);
+            continue;
+        }
+        uint8_t* t = pool + i * kTrampolineSize;
+        *t++ = 0x9C;  // pushfd
+        *t++ = 0x51;  // push ecx
+        put_rel32(t, 0xE8, reinterpret_cast<const void*>(&title_rdtsc));
+        t += 5;
+        *t++ = 0x59;  // pop ecx
+        *t++ = 0x9D;  // popfd
+        std::memcpy(t, code + 2, site.length - 2u);
+        t += site.length - 2;
+        put_rel32(t, 0xE9, code + site.length);
+        put_rel32(code, 0xE9, pool + i * kTrampolineSize);
+        std::memset(code + 5, 0x90, site.length - 5u);  // NOP
+        ++installed;
+    }
+    LOG_INFO("patches", "RDTSC: %d sites run at the Xbox's 733 MHz", installed);
+}
 
 }  // namespace
 
@@ -166,6 +233,7 @@ void install_title_patches() {
         install_jump(patch.address, patch.replacement);
         LOG_DEBUG("patches", "%08x: %s", patch.address, patch.what);
     }
+    install_rdtsc_patches();
 }
 
 }  // namespace loader

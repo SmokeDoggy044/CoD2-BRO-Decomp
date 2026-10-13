@@ -143,6 +143,11 @@ export's calling convention and argument size come from the header.
   every 4 s from 36 to 76 (profile -> Single Player -> New Game -> difficulty ->
   briefing "Press A to start", whose load time varies; A only jumps in the level).
   The level shows at ~60-70 s; standing still, the player dies at ~90 s.
+- Timing: the title reads the CPU's time stamp counter (RDTSC, 27 sites incl. XAPI
+  QueryPerformanceCounter) and assumes the Xbox's 733 MHz; the loader routes each
+  site through a trampoline to `xbox::cpu_time_stamp_counter()` (loader/patches.cpp).
+  Without it the game ran ~5x fast on a 3.6 GHz TSC. Unverified against real
+  hardware: overall game speed (judged by eye).
 - SEH (`loader/seh.cpp`): RtlRaiseException/RtlUnwind call the title's handlers on
   its own stack; the script VM's coroutines throw C++ exceptions in normal play.
 - Audio plays (menus, music). Unverified: ADPCM's 65th sample (dropped); envelopes

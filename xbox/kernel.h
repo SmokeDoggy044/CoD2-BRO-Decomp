@@ -74,4 +74,9 @@ struct XbShutdownRegistration;
 // Whoever implements shutdown (HalReturnToFirmware) calls them.
 std::vector<XbShutdownRegistration*> shutdown_notifications();
 
+// The Xbox CPU's time stamp counter (RDTSC): 733.33 MHz, the rate XAPI's
+// QueryPerformanceFrequency reports and titles assume. The host's runs faster.
+constexpr int64_t kCpuCycleFrequency = 733333333;
+int64_t cpu_time_stamp_counter();
+
 }  // namespace xbox
