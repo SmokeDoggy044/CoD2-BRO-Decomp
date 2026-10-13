@@ -1,0 +1,84 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "linux-loader",
+      "displayName": "Linux 32-bit with the route-B loader",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/linux-loader",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/linux-i686.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "linux",
+      "displayName": "Linux native (portable code only)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/linux",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "windows",
+      "displayName": "Windows (portable code only)",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build/windows",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "linux-loader",
+      "configurePreset": "linux-loader"
+    },
+    {
+      "name": "linux",
+      "configurePreset": "linux"
+    },
+    {
+      "name": "windows",
+      "configurePreset": "windows",
+      "configuration": "Debug"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "linux-loader",
+      "configurePreset": "linux-loader",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "linux",
+      "configurePreset": "linux",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows",
+      "configurePreset": "windows",
+      "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

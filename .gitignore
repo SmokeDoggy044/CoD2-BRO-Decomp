@@ -1,0 +1,5 @@
+/build/
+
+# Game files are never part of the repository.
+/assets/*
+!/assets/README.md
