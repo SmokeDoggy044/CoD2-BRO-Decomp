@@ -402,6 +402,7 @@ std::span<const xbox::KernelImpl> d3d_functions() {
         v.insert(v.end(), kStateFunctions, kStateFunctions + kStateFunctionCount);
         v.insert(v.end(), kShaderFunctions, kShaderFunctions + kShaderFunctionCount);
         v.insert(v.end(), kTextureFunctions, kTextureFunctions + kTextureFunctionCount);
+        v.insert(v.end(), kDrawFunctions, kDrawFunctions + kDrawFunctionCount);
         return v;
     }();
     return all;

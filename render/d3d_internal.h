@@ -26,6 +26,8 @@ extern const xbox::KernelImpl kShaderFunctions[];
 extern const size_t kShaderFunctionCount;
 extern const xbox::KernelImpl kTextureFunctions[];
 extern const size_t kTextureFunctionCount;
+extern const xbox::KernelImpl kDrawFunctions[];
+extern const size_t kDrawFunctionCount;
 
 // D3DRESOURCETYPE of a resource (D3DResource_GetType).
 uint32_t d3d_resource_type(XbPtr resource);

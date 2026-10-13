@@ -129,12 +129,19 @@ export's calling convention and argument size come from the header.
   `texture_decode.cpp` (unswizzle, DXT, P8) and cached by address + content hash,
   raster state from the NV2A registers. The pixel shader is read from the NV2A
   combiner registers (SetPixelShader writes them, like D3D).
-- **Resume here:** play into a level and implement what it needs:
-  `DrawVertices`/`DrawIndexedVertices`/`DrawVerticesUP` (front end ready in
-  `draw.cpp`; check their LTCG conventions), `RunPushBuffer`, render targets other
-  than the back buffer, cube/volume textures, fog, fixed-function vertex (FVF) and
+- **Resume here (2026-10-13): in-level shading.** The first level loads and plays:
+  HUD, hints, checkpoints and the pause menu render; the 3D world draws with correct
+  geometry and depth but black on a grey background. Missing, per the log: fog (the
+  combiners' FOG register and the fog unit), texture modes besides 2D/passthrough,
+  render targets other than the back buffer, cube/volume textures, unsupported
+  texture formats. Also not yet: `RunPushBuffer`, fixed-function vertex (FVF) and
   texture stages (approximated as texture0 * diffuse). Unverified: half-pixel
   offset, viewport-as-scissor, EXP/LOG precision.
+- Unattended level run: copy the save folder and use `--data COPY --press
+  "a@4,start@5.5,a@7,start@8.5,a@10,start@11.5,a@15,a@18,a@21,a@24,a@27,a@36,a@40,a@44"`
+  (profile -> Single Player -> New Game -> difficulty -> briefing; level at ~65 s).
+- SEH (`loader/seh.cpp`): RtlRaiseException/RtlUnwind call the title's handlers on
+  its own stack; the script VM's coroutines throw C++ exceptions in normal play.
 - Audio plays (menus, music). Unverified: ADPCM's 65th sample (dropped); envelopes
   and doppler are ignored. File media objects do not close the title's handle (the
   game streams every sound from one handle to sp/global.cod).

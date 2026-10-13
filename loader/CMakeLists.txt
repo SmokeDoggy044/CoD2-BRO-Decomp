@@ -5,6 +5,7 @@ add_executable(cod_bro_loader
     kernel_thunks.cpp
     main.cpp
     patches.cpp
+    seh.cpp
     symbols.cpp
     thread_env.cpp
     xbe.cpp

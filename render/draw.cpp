@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "backend.h"
+#include "compiler.h"
 #include "d3d_internal.h"
 #include "float_env.h"
 #include "log.h"
@@ -256,6 +257,34 @@ void draw_user_pointer(uint32_t primitive, uint32_t vertex_count, const void* da
             fetch_attribute(layout.format[a], bytes + static_cast<size_t>(v) * stride + layout.offset[a], out);
     submit(primitive, layout, vertex_count, nullptr, 0);
 }
+
+namespace {
+
+// --- The D3D draw functions -------------------------------------------------------------------
+
+// Vertices start_vertex.. from the vertex streams.
+void XB_STDCALL D3DDevice_DrawVertices(uint32_t primitive, uint32_t start_vertex, uint32_t vertex_count) {
+    draw_streams(primitive, start_vertex, vertex_count, nullptr);
+}
+
+// 16-bit indices into the vertex streams.
+void XB_STDCALL D3DDevice_DrawIndexedVertices(uint32_t primitive, uint32_t index_count, XbPtr indices) {
+    draw_streams(primitive, 0, index_count, from_xbox_ptr<uint16_t>(indices));
+}
+
+// Stream 0 data from title memory.
+void XB_STDCALL D3DDevice_DrawVerticesUP(uint32_t primitive, uint32_t vertex_count, XbPtr data, uint32_t stride) {
+    draw_user_pointer(primitive, vertex_count, from_xbox_ptr<void>(data), stride);
+}
+
+}  // namespace
+
+const xbox::KernelImpl kDrawFunctions[] = {
+    D3D_IMPL(D3DDevice_DrawIndexedVertices),
+    D3D_IMPL(D3DDevice_DrawVertices),
+    D3D_IMPL(D3DDevice_DrawVerticesUP),
+};
+const size_t kDrawFunctionCount = std::size(kDrawFunctions);
 
 void reset_draw_state(bool depth_buffer) {
     // NV2A values are OpenGL enums.

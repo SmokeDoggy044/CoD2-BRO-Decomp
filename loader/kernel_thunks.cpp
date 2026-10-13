@@ -1,4 +1,5 @@
 #include "kernel_thunks.h"
+#include "seh.h"
 
 #include <array>
 #include <atomic>
@@ -172,7 +173,8 @@ constexpr auto make_stubs(std::index_sequence<Ordinals...>) {
 const auto kStubs = make_stubs(std::make_index_sequence<xbox::kMaxKernelOrdinal + 1>{});
 
 void* find_impl(const char* name) {
-    for (std::span<const xbox::KernelImpl> impls : {std::span<const xbox::KernelImpl>(kLoaderImpls), xbox::kernel_impls()})
+    for (std::span<const xbox::KernelImpl> impls :
+         {std::span<const xbox::KernelImpl>(kLoaderImpls), seh_impls(), xbox::kernel_impls()})
         for (const auto& impl : impls)
             if (std::strcmp(impl.name, name) == 0) return impl.address;
     return nullptr;
