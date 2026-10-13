@@ -104,12 +104,21 @@ export's calling convention and argument size come from the header.
   (`FUN_00043fb0` allocates fixed 35.2 MB + 3.7 MB arenas) for bigger assets/mods.
 - Threads run truly in parallel and ignore priorities (the Xbox is single-core with
   a priority scheduler) - watch for races that the original never had.
-- Keep going: run, implement the export it stops at, repeat. Graphics/audio
-  SDK functions get stubbed/redirected rather than run (see `render/`).
-- Before graphics work: test whether dxvk-native builds and runs as 32-bit (i686
-  toolchain, clear the screen). Works -> D3D9 via DXVK first; fails -> direct Vulkan
-  (or SDL3 GPU). Either way split `render/` into an Xbox D3D8 front end (state,
-  shaders, textures) and a replaceable back end.
+- **Resume here (2026-10-13): replace D3D (graphics)**, same procedure as DirectSound
+  (skill: "Replacing an SDK library"). Agreed, not started:
+  1. Inventory: `SdkCallUsage.java D3D,D3DX,XGRPH` (earlier count: 204 functions,
+     84 unnamed) and read the game's callers.
+  2. Conventions: `SdkConventions.java D3D,...` - D3D is LTCG, so expect register
+     arguments and custom conventions; hooks may need per-function thunks.
+  3. Test whether dxvk-native builds and runs as 32-bit (i686 toolchain, clear the
+     screen). Works -> D3D9 via DXVK first; fails -> direct Vulkan (or SDL3 GPU).
+     Either way `render/` = Xbox D3D8 front end (state, shaders, textures) + a
+     replaceable back end.
+  4. Propose the design to the user before implementing; then tests + commit.
+- Audio, unverified until something audible runs: real in-game sound, ADPCM's 65th
+  sample (dropped), media objects closing their file handle on release; envelopes and
+  doppler are ignored.
+- Keep going: run, implement the export it stops at, repeat.
 - Route B focus: replace graphics (D3D8 -> D3D9/DXVK), sound, input, kernel and
   saves. Game code stays original; decompile only what route B needs (raw GPU
   command sites `BeginPush`/`RunPushBuffer`, PC bugs/timing, wanted features).
