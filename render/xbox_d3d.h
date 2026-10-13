@@ -127,6 +127,13 @@ constexpr uint32_t kRsPointOffsetEnable = 79;
 constexpr uint32_t kRsWireframeOffsetEnable = 80;
 constexpr uint32_t kRsSolidOffsetEnable = 81;
 constexpr uint32_t kRsFirstDeferred = 92;  // D3DRS_FOGENABLE
+constexpr uint32_t kRsFogEnable = 92;
+constexpr uint32_t kRsFogTableMode = 93;  // D3DFOG_NONE 0, EXP 1, EXP2 2, LINEAR 3
+constexpr uint32_t kRsFogStart = 94;      // floats
+constexpr uint32_t kRsFogEnd = 95;
+constexpr uint32_t kRsFogDensity = 96;
+constexpr uint32_t kRsRangeFogEnable = 97;
+constexpr uint32_t kRsSpecularEnable = 103;
 constexpr uint32_t kRsPSTextureModes = 136;
 constexpr uint32_t kRsVertexBlend = 137;
 constexpr uint32_t kRsFogColor = 138;
@@ -207,6 +214,14 @@ constexpr uint32_t kNvStencilFuncMask = 0x36C;
 constexpr uint32_t kNvStencilOpZFail = 0x374;
 constexpr uint32_t kNvStencilOpZPass = 0x378;
 constexpr uint32_t kNvShadeMode = 0x37C;
+// Fog: mode (GL_LINEAR 0x2601, GL_EXP 0x800, GL_EXP2 0x801), generation, enable,
+// colour (A << 24 | B << 16 | G << 8 | R), params (bias, scale, 0 as floats).
+constexpr uint32_t kNvFogMode = 0x29C;
+constexpr uint32_t kNvFogGenMode = 0x2A0;
+constexpr uint32_t kNvFogEnable = 0x2A4;
+constexpr uint32_t kNvFogColor = 0x2A8;
+constexpr uint32_t kNvFogParams = 0x9C0;
+constexpr uint32_t kNvFogModeLinear = 0x2601, kNvFogModeExp = 0x800, kNvFogModeExp2 = 0x801;
 // Register combiners (the pixel shader), 8 stages each where an array.
 constexpr uint32_t kNvCombinerAlphaInputs = 0x260;
 constexpr uint32_t kNvCombinerFinal0 = 0x288;  // final combiner A B C D

@@ -162,6 +162,48 @@ DrawInput::Primitive convert_primitive(uint32_t primitive, const uint32_t* sourc
     }
 }
 
+// The deferred fog states -> NV2A fog registers, as D3D's lazy state update does
+// (FUN_003f0e00 in CoD BRO). With a vertex program the fog distance is oFog.x.
+void apply_fog_states() {
+    const uint32_t* rs = render_state();
+    if (!rs[kRsFogEnable]) {
+        nv2a::write(kNvFogEnable, 0);
+        return;
+    }
+    auto f = [rs](uint32_t index) {
+        float value;
+        std::memcpy(&value, &rs[index], 4);
+        return value;
+    };
+    uint32_t gen_mode = rs[kRsRangeFogEnable] ? 1 : 2;  // radial or planar
+    uint32_t mode;
+    float bias, scale;
+    switch (rs[kRsFogTableMode]) {
+        case 0:  // none: the vertex fog value is the factor
+            mode = kNvFogModeLinear, bias = 1.0f, scale = 1.0f, gen_mode = 0;
+            break;
+        case 3: {  // linear: (end - d) / (end - start)
+            const float start = f(kRsFogStart), end = f(kRsFogEnd);
+            const float inverse = end == start ? 8192.0f : 1.0f / (end - start);
+            mode = kNvFogModeLinear, bias = end * inverse + 1.0f, scale = -inverse;
+            break;
+        }
+        case 1:  // exp: e^(-density * d) = 2^(16 * scale * d)
+            mode = kNvFogModeExp, bias = 1.5f, scale = f(kRsFogDensity) * -0.090168074f;
+            break;
+        default:  // exp2: e^(-(density * d)^2) = 2^(-32 * (scale * d)^2)
+            mode = kNvFogModeExp2, bias = 1.5f, scale = f(kRsFogDensity) * -0.21233003f;
+            break;
+    }
+    uint32_t params[3] = {0, 0, 0};
+    std::memcpy(&params[0], &bias, 4);
+    std::memcpy(&params[1], &scale, 4);
+    nv2a::write(kNvFogGenMode, gen_mode);
+    nv2a::write(kNvFogEnable, 1);
+    nv2a::write(kNvFogMode, mode);
+    nv2a::write(kNvFogParams, params, 3);
+}
+
 void submit(uint32_t primitive, const VertexLayout& layout, uint32_t vertex_count, const uint32_t* source_indices,
             uint32_t index_count) {
     static std::once_flag prim_once;
@@ -186,6 +228,7 @@ void submit(uint32_t primitive, const VertexLayout& layout, uint32_t vertex_coun
     input.vertex_count = vertex_count;
     input.attribute_mask = layout.mask;
     input.depth_max = depth_buffer_max();
+    apply_fog_states();
     platform::HostFloatEnv float_env;
     backend()->draw(input);
 }

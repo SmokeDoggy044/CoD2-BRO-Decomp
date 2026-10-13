@@ -56,6 +56,12 @@ void XB_STDCALL D3DDevice_SetRenderState_ZBias(int32_t bias) {
     g_render_state[kRsZBias] = static_cast<uint32_t>(bias);
 }
 
+// ARGB -> the fog colour register's ABGR, as D3D sends it.
+void XB_STDCALL D3DDevice_SetRenderState_FogColor(uint32_t color) {
+    nv2a::write(kNvFogColor, (color >> 16 & 0xFF) | (color & 0xFF) << 16 | (color & 0xFF00FF00));
+    g_render_state[kRsFogColor] = color;
+}
+
 // --- Textures ------------------------------------------------------------------------
 
 void XB_STDCALL D3DDevice_SetTexture(uint32_t stage, XbPtr texture) {
@@ -113,6 +119,7 @@ void XB_STDCALL D3DDevice_SetTextureState_BumpEnv(uint32_t stage, uint32_t type,
 }  // namespace
 
 const xbox::KernelImpl kStateFunctions[] = {
+    D3D_IMPL(D3DDevice_SetRenderState_FogColor),
     D3D_IMPL(D3DDevice_SetRenderState_Simple),
     D3D_IMPL(D3DDevice_SetRenderState_ZBias),
     D3D_IMPL(D3DDevice_GetTexture2),
@@ -129,7 +136,6 @@ const xbox::KernelImpl kStateFunctions[] = {
     COMPLEX_STATE(Dxt1NoiseEnable, kRsDxt1NoiseEnable),
     COMPLEX_STATE(EdgeAntiAlias, kRsEdgeAntiAlias),
     COMPLEX_STATE(FillMode, kRsFillMode),
-    COMPLEX_STATE(FogColor, kRsFogColor),
     COMPLEX_STATE(FrontFace, kRsFrontFace),
     COMPLEX_STATE(LineWidth, kRsLineWidth),
     COMPLEX_STATE(LogicOp, kRsLogicOp),

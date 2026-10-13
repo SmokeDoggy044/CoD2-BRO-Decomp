@@ -6,6 +6,7 @@
 
 #include "d3d9_shader.h"
 
+#include <atomic>
 #include <cstring>
 #include <initializer_list>
 #include <mutex>
@@ -155,6 +156,7 @@ constexpr uint32_t kEpilogue = 30, kEpilogueW = 31;
 // Constants after the NV2A slots and kVsScreenToClip.
 constexpr uint32_t kVsDefaults = 200;  // (0, 0, 0, 1)
 constexpr uint32_t kVsRccLimits = 201;
+constexpr uint32_t kVsFogHelpers = 202;  // (16, -32, -1, -1.5)
 
 // The output registers.
 constexpr uint32_t kOPos = 0, kOD0 = 1, kOD1 = 2, kOT0 = 3, kOFog = 7;
@@ -303,7 +305,7 @@ void translate_instruction(Assembler& a, const Instruction& in, uint32_t attribu
 }  // namespace
 
 std::vector<uint32_t> translate_vertex_program(const uint32_t (*instructions)[4], uint32_t count,
-                                               uint32_t attribute_mask) {
+                                               uint32_t attribute_mask, FogMode fog) {
     Assembler a(kVs30);
     for (uint32_t v = 0; v < 16; ++v)
         if (attribute_mask & (1u << v)) a.dcl_usage(kUsageTexcoord, v, dst(kInput, v));
@@ -314,6 +316,7 @@ std::vector<uint32_t> translate_vertex_program(const uint32_t (*instructions)[4]
     a.dcl_usage(kUsageFog, 0, dst(kOutput, kOFog, kX));
     a.def(kVsDefaults, 0.0f, 0.0f, 0.0f, 1.0f);
     a.def(kVsRccLimits, 1.884467e19f, -1.884467e19f, 0.0f, 0.0f);
+    a.def(kVsFogHelpers, 16.0f, -32.0f, -1.0f, -1.5f);
 
     for (uint32_t t = 0; t <= 12; ++t) a.mov(r_(t), c(kVsDefaults).x());
     for (uint32_t t = kOutD0; t <= kOutB1; ++t) a.mov(r_(t), c(kVsDefaults));
@@ -333,7 +336,34 @@ std::vector<uint32_t> translate_vertex_program(const uint32_t (*instructions)[4]
     a.mov(dst(kOutput, kOD0), r(kOutD0));
     a.mov(dst(kOutput, kOD1), r(kOutD1));
     for (uint32_t t = 0; t < 4; ++t) a.mov(dst(kOutput, kOT0 + t), r(kOutT0 + t));
-    a.mov(dst(kOutput, kOFog, kX), r(kOutFog).x());
+    // Fog factor from the distance in oFog.x (xemu's formulas; D3D picks the params).
+    const Src distance = r(kOutFog).x(), bias = c(kVsFogParams).x(), scale = c(kVsFogParams).y();
+    const Src helpers = c(kVsFogHelpers);
+    const Dst factor = r_(kEpilogue, kX);
+    const Src f = r(kEpilogue).x();
+    switch (fog) {
+        case FogMode::Off: a.mov(factor, c(kVsDefaults).w()); break;
+        case FogMode::Linear:  // bias + d * scale - 1
+            a.mad(factor, distance, scale, bias);
+            a.add(factor, f, helpers.z());
+            break;
+        case FogMode::Exp:  // bias + 2^(16 * d * scale) - 1.5
+            a.mul(factor, distance, scale);
+            a.mul(factor, f, helpers.x());
+            a.op(kExp, factor, {f});
+            a.add(factor, f, bias);
+            a.add(factor, f, helpers.w());
+            break;
+        case FogMode::Exp2:  // bias + 2^(-32 * (d * scale)^2) - 1.5
+            a.mul(factor, distance, scale);
+            a.mul(factor, f, f);
+            a.mul(factor, f, helpers.y());
+            a.op(kExp, factor, {f});
+            a.add(factor, f, bias);
+            a.add(factor, f, helpers.w());
+            break;
+    }
+    a.mov(dst(kOutput, kOFog, kX), f);
     return a.finish();
 }
 
@@ -344,7 +374,8 @@ namespace {
 // Temporaries: r0 R0, r1 R1, r2..r5 T0..T3, r6 V0, r7 V1, r8.. scratch.
 constexpr uint32_t kR0 = 0, kR1 = 1, kT0 = 2, kV0 = 6, kV1 = 7;
 constexpr uint32_t kInA = 8, kInB = 9, kInC = 10, kInD = 11, kAb = 12, kCd = 13, kSum = 14, kMuxSel = 15;
-constexpr uint32_t kEfProd = 16, kV1R0Sum = 17, kFinal = 18, kFinalD = 19, kFinalG = 20;
+constexpr uint32_t kEfProd = 16, kV1R0Sum = 17, kFinal = 18, kFinalD = 19, kFinalG = 20, kFog = 21;
+constexpr uint32_t kFogInput = 6;  // v6: the fog factor
 constexpr uint32_t kPsHelpers = 22;   // (0, 1, 0.5, 2)
 constexpr uint32_t kPsHelpers2 = 23;  // (-1, 1/512, -0.5, -2)
 
@@ -361,12 +392,11 @@ struct CombinerContext {
 
 // A combiner register as a source (rgb, or alpha with its blue/alpha channel select).
 Src combiner_register(uint32_t reg, const CombinerContext& ctx) {
-    static std::once_flag fog_once;
     const bool final = ctx.stage >= 8;
     switch (reg) {
         case kRegC0: return c(final ? kPsFinalC0 : kPsStageC0 + (ctx.unique_c0 ? ctx.stage : 0));
         case kRegC1: return c(final ? kPsFinalC1 : kPsStageC1 + (ctx.unique_c1 ? ctx.stage : 0));
-        case kRegFog: warn_once(fog_once, "pixel shader reads FOG: not supported yet (zero)"); break;
+        case kRegFog: return r(kFog);
         case kRegV0: return r(kV0);
         case kRegV1: return r(kV1);
         case 8: case 9: case 10: case 11: return r(kT0 + (reg - 8));
@@ -471,7 +501,7 @@ void write_portion(Assembler& a, uint32_t outputs, bool alpha) {
 }  // namespace
 
 std::vector<uint32_t> translate_pixel_shader(const PixelShaderKey& key) {
-    static std::once_flag mode_once;
+    static std::atomic<uint32_t> warned_modes{0};
     const XbPixelShaderDef& def = key.def;
     Assembler a(kPs30);
     a.def(kPsHelpers, 0.0f, 1.0f, 0.5f, 2.0f);
@@ -488,7 +518,11 @@ std::vector<uint32_t> translate_pixel_shader(const PixelShaderKey& key) {
         }
     }
 
+    a.dcl_usage(kUsageFog, 0, dst(kInput, kFogInput, kX));
     a.mov(r_(kV0), src(kInput, 0));
+    // FOG: rgb = fog colour, alpha = the fog factor.
+    a.mov(r_(kFog, kXyz), c(kPsFogColor));
+    a.mov(sat(r_(kFog, kW)), src(kInput, kFogInput).x());
     a.mov(r_(kV1), src(kInput, 1));
     for (uint32_t stage = 0; stage < 4; ++stage) {
         const Src coord = src(kInput, 2 + stage);
@@ -503,7 +537,9 @@ std::vector<uint32_t> translate_pixel_shader(const PixelShaderKey& key) {
             case kModeProject3D: a.op(kTexld, t, {coord, src(kSampler, stage)}); break;
             case kModePassthru: a.mov(sat(t), coord); break;
             default:
-                warn_once(mode_once, "pixel shader texture mode not supported yet (reads zero)");
+                if (!(warned_modes.fetch_or(1u << texture_mode(def, stage)) & (1u << texture_mode(def, stage))))
+                    LOG_WARN("render", "pixel shader texture mode %u not supported yet (reads zero)",
+                             texture_mode(def, stage));
                 a.mov(t, c(kPsHelpers).x());
                 break;
         }

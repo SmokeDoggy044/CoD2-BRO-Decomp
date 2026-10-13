@@ -152,6 +152,15 @@ XbPixelShaderDef combiners_from_registers() {
     return d;
 }
 
+d3d9::FogMode fog_mode() {
+    if (!nv2a::reg(kNvFogEnable)) return d3d9::FogMode::Off;
+    switch (nv2a::reg(kNvFogMode)) {
+        case kNvFogModeExp: return d3d9::FogMode::Exp;
+        case kNvFogModeExp2: return d3d9::FogMode::Exp2;
+        default: return d3d9::FogMode::Linear;
+    }
+}
+
 bool stage_has_texture(uint32_t stage) { return nv2a::reg(kNvTextureFormat + stage * kNvTextureStride) != 0; }
 
 // No pixel shader: D3D's texture stages. Approximated as stage 0's default
@@ -171,6 +180,15 @@ XbPixelShaderDef fixed_function_combiners() {
     }
     d.rgb_outputs[0] = 0xC0;  // AB -> R0
     d.alpha_outputs[0] = 0xC0;
+    // The final combiner D3D sets: fog blends R0 (+ specular V1) towards the fog colour.
+    const bool specular = render_state()[kRsSpecularEnable] != 0;
+    if (nv2a::reg(kNvFogEnable)) {
+        d.final_inputs_abcd = specular ? 0x130E0300 : 0x130C0300;  // lerp(FOG.a, R0|V1+R0, FOG)
+        d.final_inputs_efg = 0x1C80;                                // G = R0.a, clamp V1+R0
+    } else {
+        d.final_inputs_abcd = specular ? 0x0E : 0x0C;
+        d.final_inputs_efg = 0x1C80;
+    }
     return d;
 }
 
@@ -340,11 +358,13 @@ void D3D9Draw::draw(const DrawInput& input) {
         ++count;
         if (nv.program[start + count - 1][3] & 1) break;
     }
-    const uint64_t vs_key = hash_bytes(nv.program[start].data(), count * 16, input.attribute_mask);
+    const d3d9::FogMode fog = fog_mode();
+    const uint64_t vs_key =
+        hash_bytes(nv.program[start].data(), count * 16, input.attribute_mask | static_cast<uint64_t>(fog) << 32);
     IDirect3DVertexShader9*& vs = caches.vertex_shaders[vs_key];
     if (!vs) {
         const auto tokens = d3d9::translate_vertex_program(
-            reinterpret_cast<const uint32_t(*)[4]>(nv.program[start].data()), count, input.attribute_mask);
+            reinterpret_cast<const uint32_t(*)[4]>(nv.program[start].data()), count, input.attribute_mask, fog);
         if (FAILED(device_->CreateVertexShader(reinterpret_cast<const DWORD*>(tokens.data()), &vs))) {
             log_tokens("CreateVertexShader", tokens);
             vs = nullptr;
@@ -380,9 +400,12 @@ void D3D9Draw::draw(const DrawInput& input) {
     const float screen_to_clip[8] = {2.0f / width_, -2.0f / height_, 1.0f / input.depth_max, 0.0f,
                                      -1.0f, 1.0f, 0.0f, 0.0f};
     device_->SetVertexShaderConstantF(d3d9::kVsScreenToClip, screen_to_clip, 2);
+    float fog_params[4] = {};
+    std::memcpy(fog_params, &nv2a::reg(kNvFogParams), 8);
+    device_->SetVertexShaderConstantF(d3d9::kVsFogParams, fog_params, 1);
 
     // Textures and samplers; linear textures scale their texel coordinates.
-    float ps_constants[(d3d9::kPsTexcoordScale + 4) * 4] = {};
+    float ps_constants[(d3d9::kPsFogColor + 1) * 4] = {};
     for (uint32_t stage = 0; stage < kTextureStages; ++stage) {
         float* scale = ps_constants + (d3d9::kPsTexcoordScale + stage) * 4;
         scale[0] = scale[1] = scale[2] = scale[3] = 1.0f;
@@ -420,7 +443,13 @@ void D3D9Draw::draw(const DrawInput& input) {
     }
     unpack_color(ps_input.def.final_constant0, ps_constants + d3d9::kPsFinalC0 * 4);
     unpack_color(ps_input.def.final_constant1, ps_constants + d3d9::kPsFinalC1 * 4);
-    device_->SetPixelShaderConstantF(0, ps_constants, d3d9::kPsTexcoordScale + 4);
+    const uint32_t fog_color = nv2a::reg(kNvFogColor);  // ABGR
+    float* fog_rgba = ps_constants + d3d9::kPsFogColor * 4;
+    fog_rgba[0] = (fog_color & 0xFF) / 255.0f;
+    fog_rgba[1] = ((fog_color >> 8) & 0xFF) / 255.0f;
+    fog_rgba[2] = ((fog_color >> 16) & 0xFF) / 255.0f;
+    fog_rgba[3] = (fog_color >> 24) / 255.0f;
+    device_->SetPixelShaderConstantF(0, ps_constants, d3d9::kPsFogColor + 1);
 
     // Raster state.
     const uint32_t* rs = render_state();
