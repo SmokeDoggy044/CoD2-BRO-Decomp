@@ -135,9 +135,11 @@ export's calling convention and argument size come from the header.
   than the back buffer, cube/volume textures, fog, fixed-function vertex (FVF) and
   texture stages (approximated as texture0 * diffuse). Unverified: half-pixel
   offset, viewport-as-scissor, EXP/LOG precision.
-- Audio, unverified until something audible runs: real in-game sound, ADPCM's 65th
-  sample (dropped), media objects closing their file handle on release; envelopes and
-  doppler are ignored.
+- Audio plays (menus, music). Unverified: ADPCM's 65th sample (dropped); envelopes
+  and doppler are ignored. File media objects do not close the title's handle (the
+  game streams every sound from one handle to sp/global.cod).
+- Saves: XAPI signs them with the kernel's SHA-1/HMAC (`xbox/crypto.cpp`; the
+  signature key is the zero-filled data export, so saves only verify on this port).
 - Keep going: run, implement the export it stops at, repeat.
 - Route B focus: replace graphics (D3D8 -> D3D9/DXVK), sound, input, kernel and
   saves. Game code stays original; decompile only what route B needs (raw GPU

@@ -203,6 +203,73 @@ uint32_t XB_STDCALL RtlAnsiStringToUnicodeString(XbUnicodeString* destination, c
     return status;
 }
 
+// --- Time conversion --------------------------------------------------------------------
+//
+// NT time: 100 ns units since 1601-01-01 (a Monday). Dates use the proleptic Gregorian
+// calendar (H. Hinnant's days-from-civil algorithms, shifted to the 1601 epoch).
+
+struct XbTimeFields {  // TIME_FIELDS
+    int16_t year, month, day, hour, minute, second, millisecond, weekday;
+};
+static_assert(sizeof(XbTimeFields) == 16);
+
+constexpr int64_t kTicksPerMillisecond = 10'000;
+constexpr int64_t kTicksPerDay = 864'000'000'000;
+constexpr int64_t kDaysFrom1601To1970 = 134'774;
+
+// Days since 1970-01-01.
+int64_t days_from_civil(int64_t y, int64_t m, int64_t d) {
+    y -= m <= 2;
+    const int64_t era = (y >= 0 ? y : y - 399) / 400;
+    const int64_t yoe = y - era * 400;
+    const int64_t doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;
+    const int64_t doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    return era * 146097 + doe - 719468;
+}
+
+void civil_from_days(int64_t z, int64_t& y, int64_t& m, int64_t& d) {
+    z += 719468;
+    const int64_t era = (z >= 0 ? z : z - 146096) / 146097;
+    const int64_t doe = z - era * 146097;
+    const int64_t yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    const int64_t doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    const int64_t mp = (5 * doy + 2) / 153;
+    d = doy - (153 * mp + 2) / 5 + 1;
+    m = mp + (mp < 10 ? 3 : -9);
+    y = yoe + era * 400 + (m <= 2);
+}
+
+void XB_STDCALL RtlTimeToTimeFields(const int64_t* time, XbTimeFields* fields) {
+    const int64_t days = *time / kTicksPerDay;
+    int64_t rest = *time % kTicksPerDay;
+    int64_t y, m, d;
+    civil_from_days(days - kDaysFrom1601To1970, y, m, d);
+    fields->year = static_cast<int16_t>(y);
+    fields->month = static_cast<int16_t>(m);
+    fields->day = static_cast<int16_t>(d);
+    fields->weekday = static_cast<int16_t>((days + 1) % 7);  // 1601-01-01 was a Monday
+    fields->millisecond = static_cast<int16_t>(rest / kTicksPerMillisecond % 1000);
+    rest /= kTicksPerMillisecond * 1000;
+    fields->second = static_cast<int16_t>(rest % 60);
+    fields->minute = static_cast<int16_t>(rest / 60 % 60);
+    fields->hour = static_cast<int16_t>(rest / 3600);
+}
+
+// Returns FALSE (and leaves *time alone) for fields out of range; the weekday is ignored.
+uint32_t XB_STDCALL RtlTimeFieldsToTime(const XbTimeFields* f, int64_t* time) {
+    if (f->year < 1601 || f->month < 1 || f->month > 12 || f->day < 1 || f->hour < 0 || f->hour > 23 ||
+        f->minute < 0 || f->minute > 59 || f->second < 0 || f->second > 59 || f->millisecond < 0 ||
+        f->millisecond > 999)
+        return 0;
+    const int64_t days = days_from_civil(f->year, f->month, f->day) + kDaysFrom1601To1970;
+    int64_t y, m, d;  // reject days past the end of the month (Feb 30 -> Mar 2)
+    civil_from_days(days - kDaysFrom1601To1970, y, m, d);
+    if (m != f->month) return 0;
+    *time = days * kTicksPerDay +
+            ((f->hour * 3600 + f->minute * 60 + f->second) * 1000LL + f->millisecond) * kTicksPerMillisecond;
+    return 1;
+}
+
 const KernelImpl kImpls[] = {
     KIMPL(DbgPrint),
     KIMPL(HalRegisterShutdownNotification),
@@ -213,6 +280,8 @@ const KernelImpl kImpls[] = {
     KIMPL(RtlEqualString),
     KIMPL(RtlInitAnsiString),
     KIMPL(RtlNtStatusToDosError),
+    KIMPL(RtlTimeFieldsToTime),
+    KIMPL(RtlTimeToTimeFields),
     KIMPL(RtlUnicodeStringToAnsiString),
     KIMPL_DATA(KeTickCount),
     KIMPL_DATA(LaunchDataPage),
@@ -229,7 +298,7 @@ std::span<const KernelImpl> kernel_impls() {
         std::vector<KernelImpl> impls;
         for (std::span<const KernelImpl> part :
              {basic_kernel_impls(), object_kernel_impls(), sync_kernel_impls(), dispatcher_kernel_impls(),
-              settings_kernel_impls(), memory_kernel_impls(), filesystem_kernel_impls()})
+              settings_kernel_impls(), memory_kernel_impls(), filesystem_kernel_impls(), crypto_kernel_impls()})
             impls.insert(impls.end(), part.begin(), part.end());
         return impls;
     }();

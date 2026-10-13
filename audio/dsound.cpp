@@ -820,7 +820,6 @@ const Vtable& voice_vtable() {
 struct MediaImpl {
     GuestObject guest{};
     int refs = 1;
-    Handle handle = 0;
     std::shared_ptr<platform::File> file;
     uint64_t position = 0;
 };
@@ -839,8 +838,8 @@ uint32_t XB_STDCALL Media_Release(XbPtr self) {
     if (!m) return 0;
     const int refs = --m->refs;
     if (refs == 0) {
-        // The object owns the file handle it was created with (unverified).
-        xbox::close_handle(m->handle);
+        // The caller's file handle stays open: CoD2: BRO creates every stream from one
+        // handle to its sound archive. The object keeps its own reference to the file.
         m->guest.magic = 0;
         delete m;
     }
@@ -917,11 +916,13 @@ const Vtable& media_vtable() {
 uint32_t XB_STDCALL XFileCreateMediaObjectAsync(Handle file, uint32_t max_packets, XbPtr* media_object) {
     (void)max_packets;
     std::shared_ptr<platform::File> host = xbox::host_file(file);
-    if (!host) return kInvalidArg;
+    if (!host) {
+        LOG_WARN("audio", "XFileCreateMediaObjectAsync: handle %08x is not an open file", file);
+        return kInvalidArg;
+    }
     std::lock_guard lock(g.mutex);
     auto* m = new MediaImpl();
     m->guest = {to_xbox_ptr(media_vtable().data()), kMagicMedia, m};
-    m->handle = file;
     m->file = std::move(host);
     *media_object = to_xbox_ptr(&m->guest);
     return kOk;

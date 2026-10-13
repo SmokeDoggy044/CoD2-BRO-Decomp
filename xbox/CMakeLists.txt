@@ -1,4 +1,5 @@
 add_library(xbox STATIC
+    crypto.cpp
     dispatcher.cpp
     filesystem.cpp
     kernel_basic.cpp

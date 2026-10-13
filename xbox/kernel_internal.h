@@ -27,6 +27,7 @@ std::span<const KernelImpl> dispatcher_kernel_impls();
 std::span<const KernelImpl> settings_kernel_impls();
 std::span<const KernelImpl> memory_kernel_impls();
 std::span<const KernelImpl> filesystem_kernel_impls();
+std::span<const KernelImpl> crypto_kernel_impls();
 
 // Kernel state shared between threads is allocated once and never destroyed: title
 // and kernel threads keep using it while the process exits, and destroying a
