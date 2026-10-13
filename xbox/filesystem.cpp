@@ -541,6 +541,11 @@ uint32_t do_io(bool write, Handle file_handle, Handle event, XbPtr apc_routine, 
     signal_object(done_event, 1);
     set_event_handle(event, 1);
     if (apc_routine) queue_user_apc(current_kthread(), apc_routine, apc_context, to_xbox_ptr(io_status), 0);
+    // Asynchronous handles: the I/O is already complete (status block set, event
+    // signalled), but report it as pending like the Xbox's disk drivers do. Titles rely
+    // on it: CoD2: BRO's save reader treats a ReadFile that returns TRUE on an
+    // overlapped handle as the end of the file.
+    if (!object->synchronous && status == kStatusSuccess) return kStatusPending;
     return status;
 }
 
@@ -548,7 +553,8 @@ uint32_t XB_STDCALL NtReadFile(Handle file_handle, Handle event, XbPtr apc_routi
                                XbIoStatusBlock* io_status, void* buffer, uint32_t length, int64_t* byte_offset) {
     const uint32_t status =
         do_io(false, file_handle, event, apc_routine, apc_context, io_status, buffer, length, byte_offset);
-    KTRACE("NtReadFile(%x, %u bytes) -> %08x, %u", file_handle, length, status, io_status ? io_status->information : 0);
+    KTRACE("NtReadFile(%x, %u bytes at %lld) -> %08x, %u", file_handle, length,
+           byte_offset ? static_cast<long long>(*byte_offset) : -1LL, status, io_status ? io_status->information : 0);
     return status;
 }
 
@@ -557,7 +563,8 @@ uint32_t XB_STDCALL NtWriteFile(Handle file_handle, Handle event, XbPtr apc_rout
                                 int64_t* byte_offset) {
     const uint32_t status = do_io(true, file_handle, event, apc_routine, apc_context, io_status,
                                   const_cast<void*>(buffer), length, byte_offset);
-    KTRACE("NtWriteFile(%x, %u bytes) -> %08x", file_handle, length, status);
+    KTRACE("NtWriteFile(%x, %u bytes at %lld) -> %08x", file_handle, length,
+           byte_offset ? static_cast<long long>(*byte_offset) : -1LL, status);
     return status;
 }
 

@@ -271,13 +271,15 @@ int main() {
         NtClose(link);
     }
 
-    // ReadFileEx: the read completes at once, and its APC runs at the next alertable
+    // ReadFileEx: the read completes at once (the status block is final) but reports
+    // STATUS_PENDING, as the Xbox's disk drivers do; its APC runs at the next alertable
     // wait. Asynchronous handles need an explicit offset.
     CHECK(create(file, "\\??\\D:\\media\\foo.ff", kGenericRead, kFileOpen, kNonDirectoryFile) == 0);
     XbIoStatusBlock overlapped{};
     int64_t two = 2;
     CHECK(NtReadFile(file, 0, 0, 0, &overlapped, buffer, 4, nullptr) == 0xC000000D, "async read without offset");
-    CHECK(NtReadFile(file, 0, apc_id, 0x55, &overlapped, buffer, 4, &two) == 0 && overlapped.information == 4);
+    CHECK(NtReadFile(file, 0, apc_id, 0x55, &overlapped, buffer, 4, &two) == 0x103 && overlapped.status == 0 &&
+          overlapped.information == 4);
     CHECK(std::string(buffer, 4) == "2345" && g_apc_runs == 0, "APC waits for an alertable wait");
     int64_t sleep = -10000 * 10;
     CHECK(KeDelayExecutionThread(1, 1, &sleep) == 0xC0);
