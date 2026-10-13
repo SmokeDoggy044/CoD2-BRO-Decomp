@@ -72,6 +72,16 @@ struct ViewState {
 };
 ViewState& view_state();
 
+class Backend;
+Backend* backend();
+
+// Before each draw: puts CPU writes to the back buffer on screen first. False if the
+// draw cannot be shown (it targets a render target other than the back buffer).
+bool begin_draw();
+
+// The current depth buffer's largest value (24-bit or 16-bit).
+float depth_buffer_max();
+
 // A resource's last reference is gone: drop anything the back end made from it.
 void resource_destroyed(XbPtr resource);
 

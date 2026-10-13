@@ -1,12 +1,16 @@
 # Xbox Direct3D 8 on a D3D9 back end (portable).
 add_library(render STATIC
     backend_d3d9.cpp
+    d3d9_draw.cpp
+    d3d9_shader.cpp
     device.cpp
+    draw.cpp
     nv2a.cpp
     resource.cpp
     shader.cpp
     state.cpp
     texture.cpp
+    texture_decode.cpp
 )
 target_include_directories(render PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(render PUBLIC xbox platform)

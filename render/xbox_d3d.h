@@ -162,6 +162,17 @@ constexpr uint32_t kRsCount = 166;
 // D3D__TextureState / D3D_g_DeferredTextureState: [stage][32] (XDK 5849 indexes).
 constexpr uint32_t kTextureStages = 4;
 constexpr uint32_t kTssPerStage = 32;
+constexpr uint32_t kTssAddressU = 0;
+constexpr uint32_t kTssAddressV = 1;
+constexpr uint32_t kTssAddressW = 2;
+constexpr uint32_t kTssMagFilter = 3;
+constexpr uint32_t kTssMinFilter = 4;
+constexpr uint32_t kTssMipFilter = 5;
+constexpr uint32_t kTssMipMapLodBias = 6;
+constexpr uint32_t kTssMaxMipLevel = 7;
+constexpr uint32_t kTssMaxAnisotropy = 8;
+constexpr uint32_t kTssAlphaKill = 11;
+constexpr uint32_t kTssColorOp = 12;
 constexpr uint32_t kTssTexCoordIndex = 28;
 constexpr uint32_t kTssBorderColor = 29;
 constexpr uint32_t kTssColorKeyColor = 30;
@@ -175,7 +186,47 @@ constexpr uint32_t kNvPolygonOffsetFillEnable = 0x338;
 constexpr uint32_t kNvPolygonOffsetScaleFactor = 0x384;
 constexpr uint32_t kNvPolygonOffsetBias = 0x388;
 constexpr uint32_t kNvTextureOffset = 0x1B00;  // + stage * 0x40; then 0x1B04 format
+constexpr uint32_t kNvTextureFormat = 0x1B04;
 constexpr uint32_t kNvTextureStride = 0x40;
+// Raster state (values are OpenGL enums).
+constexpr uint32_t kNvAlphaTestEnable = 0x300;
+constexpr uint32_t kNvBlendEnable = 0x304;
+constexpr uint32_t kNvAlphaFunc = 0x33C;
+constexpr uint32_t kNvAlphaRef = 0x340;
+constexpr uint32_t kNvBlendSrc = 0x344;
+constexpr uint32_t kNvBlendDst = 0x348;
+constexpr uint32_t kNvBlendColor = 0x34C;
+constexpr uint32_t kNvBlendEquation = 0x350;
+constexpr uint32_t kNvDepthFunc = 0x354;
+constexpr uint32_t kNvColorMask = 0x358;  // A << 24 | R << 16 | G << 8 | B
+constexpr uint32_t kNvDepthMask = 0x35C;
+constexpr uint32_t kNvStencilMask = 0x360;  // write mask
+constexpr uint32_t kNvStencilFunc = 0x364;
+constexpr uint32_t kNvStencilFuncRef = 0x368;
+constexpr uint32_t kNvStencilFuncMask = 0x36C;
+constexpr uint32_t kNvStencilOpZFail = 0x374;
+constexpr uint32_t kNvStencilOpZPass = 0x378;
+constexpr uint32_t kNvShadeMode = 0x37C;
+// Register combiners (the pixel shader), 8 stages each where an array.
+constexpr uint32_t kNvCombinerAlphaInputs = 0x260;
+constexpr uint32_t kNvCombinerFinal0 = 0x288;  // final combiner A B C D
+constexpr uint32_t kNvCombinerFinal1 = 0x28C;  // E F G, flags
+constexpr uint32_t kNvCombinerFactor0 = 0xA60;
+constexpr uint32_t kNvCombinerFactor1 = 0xA80;
+constexpr uint32_t kNvCombinerAlphaOutputs = 0xAA0;
+constexpr uint32_t kNvCombinerColorInputs = 0xAC0;
+constexpr uint32_t kNvCombinerFinalFactor = 0x1E20;  // 2
+constexpr uint32_t kNvCombinerColorOutputs = 0x1E40;
+constexpr uint32_t kNvCombinerControl = 0x1E60;  // = PSCombinerCount
+constexpr uint32_t kNvShaderStageProgram = 0x1E70;  // = PSTextureModes
+constexpr uint32_t kNvDotRgbMapping = 0x1E74;
+constexpr uint32_t kNvShaderOtherStageInput = 0x1E78;
+constexpr uint32_t kNvProgramStart = 0x1EA0;
+
+// D3D render state values (Xbox D3D enums).
+constexpr uint32_t kCullNone = 0, kCullCw = 0x900, kCullCcw = 0x901;
+constexpr uint32_t kFrontFaceCw = 0x900, kFrontFaceCcw = 0x901;
+constexpr uint32_t kFillPoint = 0x1B00, kFillWireframe = 0x1B01, kFillSolid = 0x1B02;
 
 // The device object. Titles hold a pointer to it (D3D__pDevice) and inlined header
 // code reads a few fields directly; ours is a zeroed block that keeps those current.

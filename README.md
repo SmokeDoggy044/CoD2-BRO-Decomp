@@ -122,14 +122,19 @@ export's calling convention and argument size come from the header.
     with XGAssembleShader), pixel shaders are D3DPIXELSHADERDEF register combiners.
   - Back end (`backend.h`): D3D9; dxvk-native has no HLSL compiler, so shaders
     must be emitted as D3D9 bytecode.
-- **Resume here (2026-10-13): the draw path.** With input the game skips the intro
-  and reaches the main menu: only its background video shows. Draw calls
-  (`DrawVerticesUP`, `DrawVertices`, `DrawIndexedVertices`, `RunPushBuffer`, inline
-  primitives from BeginPush) still trap or do nothing. Next: translate state at draw
-  time - vertex streams from title memory, textures (unswizzle, DXT, P8 palettes)
-  cached by address, NV2A vertex microcode -> vs_3_0, combiners -> ps_3_0, raster
-  state from the NV2A registers. Test run: `--silent --press <a/start taps>
-  --screenshots 120 DIR` (the menu shows about 30 s in).
+- **Draw path (2026-10-13): the menus render.** Inline primitives (BeginPush) go
+  through `render/draw.cpp` (attributes -> float4, quads -> triangles) to
+  `render/d3d9_draw.cpp`: NV2A vertex microcode -> vs_3_0 and register combiners ->
+  ps_3_0 as hand-assembled bytecode (`d3d9_shader.cpp`), textures decoded by
+  `texture_decode.cpp` (unswizzle, DXT, P8) and cached by address + content hash,
+  raster state from the NV2A registers. The pixel shader is read from the NV2A
+  combiner registers (SetPixelShader writes them, like D3D).
+- **Resume here:** play into a level and implement what it needs:
+  `DrawVertices`/`DrawIndexedVertices`/`DrawVerticesUP` (front end ready in
+  `draw.cpp`; check their LTCG conventions), `RunPushBuffer`, render targets other
+  than the back buffer, cube/volume textures, fog, fixed-function vertex (FVF) and
+  texture stages (approximated as texture0 * diffuse). Unverified: half-pixel
+  offset, viewport-as-scissor, EXP/LOG precision.
 - Audio, unverified until something audible runs: real in-game sound, ADPCM's 65th
   sample (dropped), media objects closing their file handle on release; envelopes and
   doppler are ignored.

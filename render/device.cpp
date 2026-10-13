@@ -21,6 +21,7 @@
 #include "d3d.h"
 #include "d3d_internal.h"
 #include "dispatcher.h"
+#include "draw.h"
 #include "float_env.h"
 #include "log.h"
 #include "memory.h"
@@ -135,6 +136,7 @@ uint32_t XB_STDCALL Direct3D_CreateDevice(uint32_t /*adapter*/, uint32_t /*devic
     device_field<XbPtr>(kDeviceRenderTarget) = to_xbox_ptr(g.back_buffer);
     device_field<XbPtr>(kDeviceDepthStencil) = to_xbox_ptr(g.depth_stencil);
     g.vblank_data = new XbVBlankData{};
+    reset_draw_state(g.depth_stencil != nullptr);
 
     if (g.config.device_pointer) *from_xbox_ptr<XbPtr>(g.config.device_pointer) = to_xbox_ptr(g.device);
     *from_xbox_ptr<XbPtr>(out_device) = to_xbox_ptr(g.device);
@@ -258,13 +260,18 @@ uint32_t XB_STDCALL D3DDevice_Clear(uint32_t rect_count, XbPtr /*rects*/, uint32
     return kD3DOk;
 }
 
+// The CPU locked the back buffer since it was last uploaded (video playback writes
+// frames into it): upload before anything draws over it.
+void upload_back_buffer_writes() {
+    if (!g.back_buffer_written.exchange(false)) return;
+    const auto& pixels = g.back_buffer->container;
+    g.backend->write_back_buffer(xbox::from_xbox_ptr<void>(pixels.resource.data | 0x80000000),
+                                 ((pixels.size >> kSizePitchShift) + 1) * 64);
+}
+
 uint32_t XB_STDCALL D3DDevice_Swap(uint32_t /*flags*/) {
     platform::HostFloatEnv float_env;
-    if (g.back_buffer_written.exchange(false)) {
-        const auto& pixels = g.back_buffer->container;
-        g.backend->write_back_buffer(xbox::from_xbox_ptr<void>(pixels.resource.data | 0x80000000),
-                                     ((pixels.size >> kSizePitchShift) + 1) * 64);
-    }
+    upload_back_buffer_writes();
     if (g.config.screenshot_interval && g.swap_count % g.config.screenshot_interval == 0) {
         const std::string path = g.config.screenshot_dir + "/frame_" + std::to_string(g.swap_count) + ".bmp";
         g.backend->save_back_buffer(path.c_str());
@@ -358,6 +365,23 @@ const size_t kDeviceFunctionCount = std::size(kDeviceFunctions);
 
 void resource_destroyed(XbPtr /*resource*/) {}
 
+Backend* backend() { return g.backend.get(); }
+
+bool begin_draw() {
+    if (!g.backend) return false;
+    if (device_field<XbPtr>(kDeviceRenderTarget) != to_xbox_ptr(g.back_buffer)) return false;
+    platform::HostFloatEnv float_env;
+    upload_back_buffer_writes();
+    return true;
+}
+
+float depth_buffer_max() {
+    const auto* depth = from_xbox_ptr<XbSurface>(device_field<XbPtr>(kDeviceDepthStencil));
+    if (!depth) return 16777215.0f;
+    const uint32_t format = (depth->container.format & kFormatFormatMask) >> kFormatFormatShift;
+    return format == kFmtD16 || format == kFmtLinD16 ? 65535.0f : 16777215.0f;
+}
+
 ViewState& view_state() { return g_view; }
 
 void texture_written(XbPtr resource) {
@@ -368,6 +392,7 @@ void configure(const D3DConfig& config) {
     g.config = config;
     set_render_state_address(config.render_state);
     set_texture_state_address(config.texture_state);
+    install_draw_handlers();
 }
 
 std::span<const xbox::KernelImpl> d3d_functions() {

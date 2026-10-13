@@ -6,6 +6,7 @@
 // the same methods raw pushbuffer data uses. The vertex input layout and the pixel
 // shader (register combiner) program are kept here in their Xbox form.
 
+#include <algorithm>
 #include <cstring>
 #include <mutex>
 
@@ -14,6 +15,7 @@
 #include "log.h"
 #include "nv2a.h"
 #include "shader_state.h"
+#include "xbox_d3d.h"
 
 namespace render {
 
@@ -126,24 +128,65 @@ void XB_STDCALL D3DDevice_SetVertexShader(uint32_t handle) {
 void XB_STDCALL D3DDevice_GetVertexShader(XbPtr handle) { *from_xbox_ptr<uint32_t>(handle) = g_shaders.vertex_shader; }
 
 // --- Pixel shaders ----------------------------------------------------------------------
+//
+// Like D3D, setting a pixel shader writes its definition into the NV2A combiner
+// registers; the draw path reads the combiners from there, so render states that set
+// single combiner registers (D3DRS_PSRGBINPUTS0 & co) work too.
+
+void load_pixel_shader_def(const XbPixelShaderDef& d) {
+    nv2a::write(kNvCombinerAlphaInputs, d.alpha_inputs, 8);
+    nv2a::write(kNvCombinerFinal0, d.final_inputs_abcd);
+    nv2a::write(kNvCombinerFinal1, d.final_inputs_efg);
+    nv2a::write(kNvCombinerFactor0, d.constant0, 8);
+    nv2a::write(kNvCombinerFactor1, d.constant1, 8);
+    nv2a::write(kNvCombinerAlphaOutputs, d.alpha_outputs, 8);
+    nv2a::write(kNvCombinerColorInputs, d.rgb_inputs, 8);
+    nv2a::write(kNvCombinerFinalFactor, d.final_constant0);
+    nv2a::write(kNvCombinerFinalFactor + 4, d.final_constant1);
+    nv2a::write(kNvCombinerColorOutputs, d.rgb_outputs, 8);
+    nv2a::write(kNvCombinerControl, d.combiner_count);
+    nv2a::write(kNvShaderStageProgram, d.texture_modes);
+    nv2a::write(kNvDotRgbMapping, d.dot_mapping);
+    nv2a::write(kNvShaderOtherStageInput, d.input_texture);
+}
+
+// float4 -> D3DCOLOR (each component clamped to 0..1).
+uint32_t to_color(const float* v) {
+    auto byte = [](float f) { return static_cast<uint32_t>(std::clamp(f, 0.0f, 1.0f) * 255.0f + 0.5f); };
+    return byte(v[3]) << 24 | byte(v[0]) << 16 | byte(v[1]) << 8 | byte(v[2]);
+}
+
+// Sends constant `reg` to the combiner factors the current shader maps it to: one
+// nibble per stage for C0 and C1, and two for the final combiner.
+void apply_pixel_constant(uint32_t reg) {
+    const XbPixelShaderDef& d = g_shaders.pixel_shader_def;
+    const uint32_t color = to_color(g_shaders.pixel_constants[reg].data());
+    for (uint32_t stage = 0; stage < 8; ++stage) {
+        if (((d.c0_mapping >> (stage * 4)) & 0xF) == reg) nv2a::write(kNvCombinerFactor0 + stage * 4, color);
+        if (((d.c1_mapping >> (stage * 4)) & 0xF) == reg) nv2a::write(kNvCombinerFactor1 + stage * 4, color);
+    }
+    if ((d.final_constants_mapping & 0xF) == reg) nv2a::write(kNvCombinerFinalFactor, color);
+    if (((d.final_constants_mapping >> 4) & 0xF) == reg) nv2a::write(kNvCombinerFinalFactor + 4, color);
+}
+
+void set_pixel_shader_def(XbPtr definition) {
+    std::memcpy(&g_shaders.pixel_shader_def, from_xbox_ptr<void>(definition), sizeof(XbPixelShaderDef));
+    load_pixel_shader_def(g_shaders.pixel_shader_def);
+}
 
 // handle: a PixelShader object {refcount, D3D owned, D3DPIXELSHADERDEF*}, or 0 for the
 // fixed-function texture stages.
 void XB_STDCALL D3DDevice_SetPixelShader(XbPtr handle) {
     g_shaders.pixel_shader = handle;
     g_shaders.pixel_shader_set = handle != 0;
-    if (handle) {
-        const XbPtr definition = from_xbox_ptr<uint32_t>(handle)[2];
-        std::memcpy(&g_shaders.pixel_shader_def, from_xbox_ptr<void>(definition), sizeof(XbPixelShaderDef));
-    }
+    if (handle) set_pixel_shader_def(from_xbox_ptr<uint32_t>(handle)[2]);
 }
 
 // A D3DPIXELSHADERDEF without a shader object (D3D uses one inside the device).
 void XB_STDCALL D3DDevice_SetPixelShaderProgram(XbPtr definition) {
     g_shaders.pixel_shader = 0;
     g_shaders.pixel_shader_set = definition != 0;
-    if (definition)
-        std::memcpy(&g_shaders.pixel_shader_def, from_xbox_ptr<void>(definition), sizeof(XbPixelShaderDef));
+    if (definition) set_pixel_shader_def(definition);
 }
 
 void XB_STDCALL D3DDevice_GetPixelShader(XbPtr handle) { *from_xbox_ptr<uint32_t>(handle) = g_shaders.pixel_shader; }
@@ -151,8 +194,10 @@ void XB_STDCALL D3DDevice_GetPixelShader(XbPtr handle) { *from_xbox_ptr<uint32_t
 // Constants as float4 (D3D clamps them to 0..1 for the combiners).
 void XB_STDCALL D3DDevice_SetPixelShaderConstant(uint32_t reg, XbPtr data, uint32_t count) {
     const auto* values = from_xbox_ptr<float>(data);
-    for (uint32_t i = 0; i < count && reg + i < kPixelShaderConstants; ++i)
+    for (uint32_t i = 0; i < count && reg + i < kPixelShaderConstants; ++i) {
         std::memcpy(g_shaders.pixel_constants[reg + i].data(), values + i * 4, 16);
+        apply_pixel_constant(reg + i);
+    }
 }
 
 }  // namespace

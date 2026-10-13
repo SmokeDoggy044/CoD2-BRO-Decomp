@@ -8,13 +8,11 @@
 #include <cstring>
 #include <vector>
 
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-#include <d3d9.h>
+#include <memory>
 
 #include "backend.h"
+#include "d3d9_api.h"
+#include "d3d9_draw.h"
 #include "log.h"
 
 namespace render {
@@ -65,6 +63,7 @@ bool write_bmp(const char* path, const uint8_t* pixels, int32_t pitch, uint32_t 
 class D3D9Backend final : public Backend {
 public:
     ~D3D9Backend() override {
+        draw_.reset();
         release(staging_);
         release(device_);
         release(d3d_);
@@ -121,6 +120,7 @@ public:
         }
         width_ = config.width;
         height_ = config.height;
+        draw_ = std::make_unique<D3D9Draw>(device_, width_, height_);
         LOG_INFO("render", "D3D9 device: %ux%u", config.width, config.height);
         return true;
     }
@@ -170,7 +170,16 @@ public:
         return ok;
     }
 
-    void present() override { device_->Present(nullptr, nullptr, nullptr, nullptr); }
+    void present() override {
+        device_->Present(nullptr, nullptr, nullptr, nullptr);
+        draw_->end_frame();
+    }
+
+    void draw(const DrawInput& input) override {
+        device_->BeginScene();
+        draw_->draw(input);
+        device_->EndScene();
+    }
 
     bool pump_events() override {
         SDL_Event event;
@@ -185,6 +194,7 @@ private:
     IDirect3D9* d3d_ = nullptr;
     IDirect3DDevice9* device_ = nullptr;
     IDirect3DSurface9* staging_ = nullptr;  // CPU-written back buffer upload
+    std::unique_ptr<D3D9Draw> draw_;
     uint32_t width_ = 0, height_ = 0;
 };
 

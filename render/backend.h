@@ -16,6 +16,20 @@ struct BackendConfig {
     bool vsync = true;
 };
 
+// One draw: float4 attributes and a primitive. The back end reads everything else
+// (shaders, textures, render states) from the Xbox-side state (nv2a.h,
+// shader_state.h, d3d_internal.h) and translates it.
+struct DrawInput {
+    enum class Primitive { Invalid, Points, Lines, LineStrip, Triangles, TriangleStrip, TriangleFan };
+    Primitive primitive = Primitive::Invalid;
+    const float* vertices = nullptr;  // per vertex: one float4 per attribute in attribute_mask, in order
+    uint32_t vertex_count = 0;
+    uint32_t attribute_mask = 0;        // vertex shader inputs v0..v15 present
+    const uint32_t* indices = nullptr;  // null: vertices in order
+    uint32_t index_count = 0;
+    float depth_max = 16777215.0f;  // the depth buffer's largest value (screen-space z range)
+};
+
 class Backend {
 public:
     virtual ~Backend() = default;
@@ -33,6 +47,9 @@ public:
 
     // Shows the back buffer.
     virtual void present() = 0;
+
+    // Draws to the back buffer with the current Xbox state.
+    virtual void draw(const DrawInput& input) = 0;
 
     // Handles window events. Returns false once the user closed the window.
     virtual bool pump_events() = 0;
