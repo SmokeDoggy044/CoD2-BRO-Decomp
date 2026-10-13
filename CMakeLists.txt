@@ -68,6 +68,7 @@ option(COD_BRO_BUILD_TESTS "Build the tests" ON)
 
 add_subdirectory(platform)
 add_subdirectory(xbox)
+add_subdirectory(audio)
 add_subdirectory(game)
 
 if(COD_BRO_BUILD_TESTS)

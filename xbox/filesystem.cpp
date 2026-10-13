@@ -191,7 +191,7 @@ public:
     bool synchronous = false;
     bool delete_on_close = false;
     uint64_t position = 0;
-    std::unique_ptr<platform::File> file;
+    std::shared_ptr<platform::File> file;  // shared with media objects (host_file)
     // NtQueryDirectoryFile state.
     bool listing_started = false;
     std::vector<fs::directory_entry> listing;
@@ -324,11 +324,6 @@ void complete(XbIoStatusBlock* io_status, uint32_t status, uint32_t information)
     io_status->information = information;
 }
 
-void set_event_handle(Handle event, int32_t state) {
-    if (!event) return;
-    const std::shared_ptr<Object> object = lookup_handle(event);
-    if (object && object->body()) signal_object(*from_xbox_ptr<XbDispatcherHeader>(object->body()), state);
-}
 
 uint32_t attributes_of(const Device& device, bool directory) {
     uint32_t attributes = directory ? kAttributeDirectory : 0;
@@ -908,6 +903,11 @@ uint32_t create_symbolic_link(std::string_view link_name, std::string_view targe
     KTRACE("IoCreateSymbolicLink(%.*s -> %.*s)%s", int(link_name.size()), link_name.data(), int(target.size()),
            target.data(), inserted ? "" : " -> exists");
     return inserted ? kStatusSuccess : kStatusObjectNameCollision;
+}
+
+std::shared_ptr<platform::File> host_file(Handle handle) {
+    const auto object = lookup_handle_as<FileObject>(handle);
+    return object ? object->file : nullptr;
 }
 
 uint32_t mount_utility_drive(bool format) {

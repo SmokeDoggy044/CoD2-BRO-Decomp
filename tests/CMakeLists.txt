@@ -10,9 +10,10 @@ endif()
 
 find_package(Threads REQUIRED)
 
-foreach(test critical_section_test dispatcher_test filesystem_test memory_test)
+foreach(test audio_test critical_section_test dispatcher_test filesystem_test memory_test)
     add_executable(${test} ${test}.cpp)
     target_link_libraries(${test} PRIVATE xbox Threads::Threads)
     add_test(NAME ${test} COMMAND ${test})
     set_tests_properties(${test} PROPERTIES TIMEOUT 60)
 endforeach()
+target_link_libraries(audio_test PRIVATE audio)

@@ -18,7 +18,6 @@ using namespace std::chrono;
 
 namespace {
 
-constexpr uint32_t kStatusTimeout = 0x102;
 constexpr int64_t kMs = -10000;  // relative 100ns units per millisecond
 
 using KeSetEventFn = int32_t(XB_STDCALL*)(XbKEvent*, int32_t, uint32_t);

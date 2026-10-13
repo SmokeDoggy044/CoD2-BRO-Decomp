@@ -492,6 +492,12 @@ const KernelImpl kDispatcherImpls[] = {
 
 }  // namespace
 
+void set_event_handle(Handle event, int32_t state) {
+    if (!event) return;
+    const std::shared_ptr<Object> object = lookup_handle(event);
+    if (object && object->body()) signal_object(*from_xbox_ptr<XbDispatcherHeader>(object->body()), state);
+}
+
 void queue_user_apc(XbPtr thread, XbPtr routine, uint32_t argument1, uint32_t argument2, uint32_t argument3) {
     std::lock_guard lock(g_lock);
     g_user_apcs[thread].push_back({routine, {argument1, argument2, argument3}});

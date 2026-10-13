@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <fstream>
 #include <sstream>
+#include <string_view>
 
 namespace loader {
 
@@ -19,6 +20,17 @@ bool SymbolTable::load(const std::filesystem::path& path) {
     }
     std::sort(entries_.begin(), entries_.end(), [](const Entry& a, const Entry& b) { return a.address < b.address; });
     return true;
+}
+
+std::vector<uint32_t> SymbolTable::find(const std::string& name) const {
+    std::vector<uint32_t> found;
+    for (const Entry& entry : entries_) {
+        const size_t colons = entry.name.rfind("::");
+        const std::string_view bare = colons == std::string::npos ? std::string_view(entry.name)
+                                                                  : std::string_view(entry.name).substr(colons + 2);
+        if (entry.name == name || bare == name) found.push_back(entry.address);
+    }
+    return found;
 }
 
 std::string SymbolTable::describe(uint32_t address) const {

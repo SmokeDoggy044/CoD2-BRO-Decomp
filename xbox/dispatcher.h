@@ -12,6 +12,7 @@
 // Here a kernel thread expires timers and runs DPCs while holding a global lock, and
 // raising to DISPATCH_LEVEL takes the same lock.
 
+#include "objects.h"
 #include "types.h"
 
 namespace xbox {
@@ -21,6 +22,9 @@ constexpr uint8_t kDispatchLevel = 2;
 
 // Sets SignalState and wakes waiters.
 void signal_object(XbDispatcherHeader& header, int32_t signal_state);
+
+// Sets (state 1) or resets (0) the event behind `handle`; ignores 0 and non-events.
+void set_event_handle(Handle event, int32_t state = 1);
 
 // Queues a user-mode APC to `thread` (a KTHREAD address). It runs on that thread
 // during its next alertable user-mode wait, which then returns STATUS_USER_APC.

@@ -6,9 +6,11 @@
 #include <cstdint>
 
 #include "compiler.h"
+#include "dsound.h"
 #include "filesystem.h"
 #include "hooks.h"
 #include "log.h"
+#include "symbols.h"
 
 namespace loader {
 
@@ -40,6 +42,22 @@ const Patch kPatches[] = {
 };
 
 }  // namespace
+
+bool install_sdk_replacements(const SymbolTable& symbols) {
+    int installed = 0, missing = 0;
+    for (const xbox::KernelImpl& function : audio::dsound_functions()) {
+        const std::vector<uint32_t> addresses = symbols.find(function.name);
+        if (addresses.empty()) {
+            LOG_WARN("patches", "DSOUND %s not found in the symbols; not replaced", function.name);
+            ++missing;
+            continue;
+        }
+        for (uint32_t address : addresses) install_jump(address, function.address);
+        ++installed;
+    }
+    LOG_INFO("patches", "DirectSound: %d functions replaced, %d not found", installed, missing);
+    return installed > 0;
+}
 
 void install_title_patches() {
     for (const Patch& patch : kPatches) {

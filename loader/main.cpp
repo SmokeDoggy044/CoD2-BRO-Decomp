@@ -10,6 +10,7 @@
 #include <string>
 
 #include "crash.h"
+#include "dsound.h"
 #include "kernel.h"
 #include "kernel_thunks.h"
 #include "log.h"
@@ -32,6 +33,7 @@ struct Options {
     platform::LogLevel log_level = platform::LogLevel::Info;
     bool trace_kernel = false;
     uint32_t memory_mb = 64;
+    bool silent = false;
 };
 
 void print_usage(const char* program) {
@@ -43,6 +45,7 @@ void print_usage(const char* program) {
         "  --data DIR       where saves and the cache drive go (default: the user data folder)\n"
         "  --debug          debug logging\n"
         "  --trace          log every kernel call (implies --debug)\n"
+        "  --silent         no sound output (audio still runs, into a silent device)\n"
         "  --memory MB      Xbox memory budget (default 64, like a retail Xbox; devkit: 128)\n",
         program);
 }
@@ -70,6 +73,8 @@ std::optional<Options> parse_args(int argc, char** argv) {
                 std::fprintf(stderr, "--memory needs a size in MB (16-1024)\n");
                 return std::nullopt;
             }
+        } else if (arg == "--silent") {
+            options.silent = true;
         } else if (arg == "--debug") {
             options.log_level = platform::LogLevel::Debug;
         } else if (arg == "--trace") {
@@ -147,6 +152,11 @@ int main(int argc, char** argv) {
     xbox::charge_image_pages(loader::initial_image_pages(image));
     loader::install_kernel_thunks(image);
     loader::install_title_patches();
+    audio::configure({options->silent ? audio::OutputConfig::Device::Loopback : audio::OutputConfig::Device::Default});
+    if (!loader::install_sdk_replacements(symbols)) {
+        LOG_ERROR("loader", "SDK replacements need the symbol file (%s)", symbol_path.string().c_str());
+        return 1;
+    }
 
     // The title's initial thread. Like the Xbox's, it has no TLS block (TlsData is
     // null); XAPI only creates TLS for the threads it starts itself.

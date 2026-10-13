@@ -43,6 +43,12 @@ Then:
 The `linux` and `windows` presets build only the portable code (`cod_bro`), to keep
 both platforms compiling from the start.
 
+## Dependencies
+
+- Linux: `openal-soft-devel` and, for the loader, `openal-soft-devel.i686`
+  (plus `glibc-devel.i686 libstdc++-devel.i686`).
+- Windows: OpenAL Soft is built from source (CMake FetchContent).
+
 ## Assets
 
 Builds use the release layout: executables in `build/<preset>/bin/`, next to an
@@ -85,8 +91,12 @@ export's calling convention and argument size come from the header.
   in the user data folder, case-insensitive paths. Patch: `XMountUtilityDrive`
   links Z: to the cache folder (no raw partition table / FATX format).
   XAPI init completes; the game allocates its pools and starts DirectSound.
-  Current stop: `ExAllocatePoolWithTag` inside DSOUND (`DirectSoundCreate` from
-  `FUN_000ce070`) - time to replace DirectSound instead of running it.
+  DirectSound is replaced (`audio/`, on OpenAL Soft): the loader redirects the 53
+  DSOUND functions the game calls, found by name in the Ghidra symbols. Buffers play
+  from title memory with play/loop regions, streams take packets through the
+  XMediaObject vtable, 3D uses the game's rolloff curve, HRTF on headphones.
+  `--silent` plays into a silent loopback device.
+  Current stop: D3D (`FUN_003eef95` reads NV2A register 0xFD001804) - graphics.
   User APCs (`ReadFileEx`/`WriteFileEx` completions) run at the thread's next
   alertable user-mode wait; file handles are FILE_OBJECTs that
   `ObReferenceObjectByHandle`/`IoQueryVolumeInformation` work on.
@@ -107,8 +117,9 @@ export's calling convention and argument size come from the header.
 ## Tests
 
 `ctest --preset linux-loader` runs the kernel-layer tests in `tests/` (critical
-sections, dispatcher, memory, file system; the file tests build a fake disc in a temp
-folder, so no game files are needed). They need a 32-bit build because `xbox/` stores the title's
+sections, dispatcher, memory, file system, audio; the file tests build a fake disc in a
+temp folder and the audio test mixes on an OpenAL loopback device, so neither needs
+game files or a sound card). They need a 32-bit build because `xbox/` stores the title's
 pointers as 32-bit `XbPtr`; making `xbox/` 64-bit-clean is part of route C.
 
 ## Planned: comparison harness
