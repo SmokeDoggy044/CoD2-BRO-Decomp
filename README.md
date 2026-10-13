@@ -96,7 +96,11 @@ export's calling convention and argument size come from the header.
   from title memory with play/loop regions, streams take packets through the
   XMediaObject vtable, 3D uses the game's rolloff curve, HRTF on headphones.
   `--silent` plays into a silent loopback device.
-  Current stop: D3D (`FUN_003eef95` reads NV2A register 0xFD001804) - graphics.
+  Direct3D (`render/`, D3D9 on DXVK, design below): device, frames, states,
+  shaders, textures captured; the intro movies play (the video player writes into
+  the back buffer). Input (`input/`) is a stub: one gamepad, never pressed. Xbox
+  Live (`online/`) is unavailable. Every SDK function in a replaced library's
+  section that we do not replace traps by name (`loader/patches.cpp`).
   User APCs (`ReadFileEx`/`WriteFileEx` completions) run at the thread's next
   alertable user-mode wait; file handles are FILE_OBJECTs that
   `ObReferenceObjectByHandle`/`IoQueryVolumeInformation` work on.
@@ -104,17 +108,26 @@ export's calling convention and argument size come from the header.
   (`FUN_00043fb0` allocates fixed 35.2 MB + 3.7 MB arenas) for bigger assets/mods.
 - Threads run truly in parallel and ignore priorities (the Xbox is single-core with
   a priority scheduler) - watch for races that the original never had.
-- **Resume here (2026-10-13): replace D3D (graphics)**, same procedure as DirectSound
-  (skill: "Replacing an SDK library"). Agreed, not started:
-  1. Inventory: `SdkCallUsage.java D3D,D3DX,XGRPH` (earlier count: 204 functions,
-     84 unnamed) and read the game's callers.
-  2. Conventions: `SdkConventions.java D3D,...` - D3D is LTCG, so expect register
-     arguments and custom conventions; hooks may need per-function thunks.
-  3. Test whether dxvk-native builds and runs as 32-bit (i686 toolchain, clear the
-     screen). Works -> D3D9 via DXVK first; fails -> direct Vulkan (or SDL3 GPU).
-     Either way `render/` = Xbox D3D8 front end (state, shaders, textures) + a
-     replaceable back end.
-  4. Propose the design to the user before implementing; then tests + commit.
+- **D3D design** (agreed 2026-10-13: HLE to D3D9/DXVK). `render/` replaces the D3D8
+  functions; the title's own D3D data stays authoritative where inlined code uses it:
+  - Simple render states arrive as NV2A methods (`SetRenderState_Simple`), as do
+    shader constants/programs and BeginPush/RunPushBuffer data: all go through
+    `nv2a.cpp` (register file, 136 program slots, 192 constants, inline draws).
+  - Deferred/complex render states and texture stage states live in the title's
+    `D3D__RenderState` / `D3D_g_DeferredTextureState` arrays (XDK 5849 indexes in
+    `xbox_d3d.h`); texture offset/format per stage in NV2A registers 0x1B00+.
+  - Shaders: vertex programs are NV2A microcode (assembled at runtime by the game
+    with XGAssembleShader), pixel shaders are D3DPIXELSHADERDEF register combiners.
+  - Back end (`backend.h`): D3D9; dxvk-native has no HLSL compiler, so shaders
+    must be emitted as D3D9 bytecode.
+- **Resume here (2026-10-13): the draw path.** Draw calls (`DrawVerticesUP`,
+  `DrawVertices`, `DrawIndexedVertices`, `RunPushBuffer`, inline primitives from
+  BeginPush) still trap or do nothing. Next: translate state at draw time - vertex
+  streams from title memory, textures (unswizzle, DXT, P8 palettes) cached by
+  address, NV2A vertex microcode -> vs_3_0, combiners -> ps_3_0, raster state from
+  the NV2A registers. To reach the menu, either let the intro run out or give
+  `input/` real SDL3 gamepads/keyboard (skipping needs a button). `--screenshots N
+  DIR` saves frames to check results without watching.
 - Audio, unverified until something audible runs: real in-game sound, ADPCM's 65th
   sample (dropped), media objects closing their file handle on release; envelopes and
   doppler are ignored.
