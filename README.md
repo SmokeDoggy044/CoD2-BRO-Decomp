@@ -98,8 +98,10 @@ export's calling convention and argument size come from the header.
   `--silent` plays into a silent loopback device.
   Direct3D (`render/`, D3D9 on DXVK, design below): device, frames, states,
   shaders, textures captured; the intro movies play (the video player writes into
-  the back buffer). Input (`input/`) is a stub: one gamepad, never pressed. Xbox
-  Live (`online/`) is unavailable. Every SDK function in a replaced library's
+  the back buffer). Input (`input/`, SDL3): port 0 is always connected (keyboard and
+  mouse plus the first PC gamepad), more gamepads take ports 1-3 with hot-plug; the
+  keyboard layout is in `input/devices.h`. `--press start@20,a@25` scripts presses for
+  unattended runs. Xbox Live (`online/`) is unavailable: no network, no accounts. Every SDK function in a replaced library's
   section that we do not replace traps by name (`loader/patches.cpp`).
   User APCs (`ReadFileEx`/`WriteFileEx` completions) run at the thread's next
   alertable user-mode wait; file handles are FILE_OBJECTs that
@@ -120,14 +122,14 @@ export's calling convention and argument size come from the header.
     with XGAssembleShader), pixel shaders are D3DPIXELSHADERDEF register combiners.
   - Back end (`backend.h`): D3D9; dxvk-native has no HLSL compiler, so shaders
     must be emitted as D3D9 bytecode.
-- **Resume here (2026-10-13): the draw path.** Draw calls (`DrawVerticesUP`,
-  `DrawVertices`, `DrawIndexedVertices`, `RunPushBuffer`, inline primitives from
-  BeginPush) still trap or do nothing. Next: translate state at draw time - vertex
-  streams from title memory, textures (unswizzle, DXT, P8 palettes) cached by
-  address, NV2A vertex microcode -> vs_3_0, combiners -> ps_3_0, raster state from
-  the NV2A registers. To reach the menu, either let the intro run out or give
-  `input/` real SDL3 gamepads/keyboard (skipping needs a button). `--screenshots N
-  DIR` saves frames to check results without watching.
+- **Resume here (2026-10-13): the draw path.** With input the game skips the intro
+  and reaches the main menu: only its background video shows. Draw calls
+  (`DrawVerticesUP`, `DrawVertices`, `DrawIndexedVertices`, `RunPushBuffer`, inline
+  primitives from BeginPush) still trap or do nothing. Next: translate state at draw
+  time - vertex streams from title memory, textures (unswizzle, DXT, P8 palettes)
+  cached by address, NV2A vertex microcode -> vs_3_0, combiners -> ps_3_0, raster
+  state from the NV2A registers. Test run: `--silent --press <a/start taps>
+  --screenshots 120 DIR` (the menu shows about 30 s in).
 - Audio, unverified until something audible runs: real in-game sound, ADPCM's 65th
   sample (dropped), media objects closing their file handle on release; envelopes and
   doppler are ignored.

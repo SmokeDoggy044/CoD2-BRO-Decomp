@@ -19,6 +19,7 @@
 #include "memory.h"
 #include "patches.h"
 #include "paths.h"
+#include "script.h"
 #include "symbols.h"
 #include "thread_env.h"
 #include "xbe.h"
@@ -39,6 +40,7 @@ struct Options {
     uint32_t screenshot_interval = 0;
     std::optional<fs::path> screenshot_dir;
     bool silent = false;
+    std::string press_script;
 };
 
 void print_usage(const char* program) {
@@ -53,7 +55,9 @@ void print_usage(const char* program) {
         "  --silent         no sound output (audio still runs, into a silent device)\n"
         "  --memory MB      Xbox memory budget (default 64, like a retail Xbox; devkit: 128)\n"
         "  --scale N        window size as a multiple of the game's resolution (default 2)\n"
-        "  --screenshots N DIR  save every Nth frame as DIR/frame_<n>.bmp (debugging)\n",
+        "  --screenshots N DIR  save every Nth frame as DIR/frame_<n>.bmp (debugging)\n"
+        "  --press LIST     scripted presses on port 0, e.g. start@20,a@25.5 (seconds after start;\n"
+        "                   buttons: a b x y black white lt rt start back up down left right ls rs)\n",
         program);
 }
 
@@ -92,6 +96,12 @@ std::optional<Options> parse_args(int argc, char** argv) {
                 return std::nullopt;
             }
             options.screenshot_dir = fs::path(argv[++i]);
+        } else if (arg == "--press") {
+            if (i + 1 >= argc) {
+                std::fprintf(stderr, "--press needs a list of button@seconds\n");
+                return std::nullopt;
+            }
+            options.press_script = argv[++i];
         } else if (arg == "--silent") {
             options.silent = true;
         } else if (arg == "--debug") {
@@ -184,6 +194,7 @@ int main(int argc, char** argv) {
     d3d_config.texture_state = loader::kTitleD3DTextureState;
     render::configure(d3d_config);
     input::configure({loader::kTitleGamepadType});
+    if (!options->press_script.empty() && !input::set_script(options->press_script)) return 1;
     if (!loader::install_sdk_replacements(image, symbols)) {
         LOG_ERROR("loader", "SDK replacements need the symbol file (%s)", symbol_path.string().c_str());
         return 1;

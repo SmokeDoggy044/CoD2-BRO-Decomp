@@ -2,9 +2,8 @@
 
 // Xbox input (XPP library: XInputOpen & co, device enumeration) replacement.
 //
-// For now one gamepad is always connected on port 0 and reports neutral input, so
-// titles boot; SDL3 gamepads and the keyboard come later behind the same functions.
-// No memory units, no voice communicator.
+// Gamepads, keyboard and mouse come from SDL3 (devices.h); port 0 is always
+// connected. No memory units, no voice communicator.
 
 #include <span>
 

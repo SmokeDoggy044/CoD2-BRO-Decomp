@@ -66,6 +66,21 @@ endif()
 
 option(COD_BRO_BUILD_TESTS "Build the tests" ON)
 
+# SDL3 (window, gamepads, keyboard): fetched and linked statically on Windows, from
+# the system on Linux (Fedora: SDL3-devel, plus SDL3-devel.i686 for the loader).
+if(WIN32)
+    include(FetchContent)
+    set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+    set(SDL_STATIC ON CACHE BOOL "" FORCE)
+    set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(sdl3
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+        GIT_TAG release-3.2.10)
+    FetchContent_MakeAvailable(sdl3)
+else()
+    find_package(SDL3 REQUIRED CONFIG)
+endif()
+
 add_subdirectory(platform)
 add_subdirectory(xbox)
 add_subdirectory(audio)

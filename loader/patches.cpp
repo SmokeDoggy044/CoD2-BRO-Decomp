@@ -72,6 +72,7 @@ const SdkAlias kSdkAliases[] = {
     {0x003e5f20, "D3DDevice_GetTexture2"},
     {0x003e6200, "D3DDevice_BlockUntilIdle"},
     {0x003e6950, "D3DDevice_GetScreenSpaceOffset"},
+    {0x00379ebb, "XOnlineSilentLogon"},  // GetUsers, first account, Logon; 0x8015108x errors
 };
 
 // SDK functions that are safe to run as they are (no hardware access), left untrapped.
