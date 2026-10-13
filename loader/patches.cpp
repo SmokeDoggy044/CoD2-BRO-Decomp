@@ -66,6 +66,10 @@ struct SdkAlias {
 };
 const SdkAlias kSdkAliases[] = {
     {0x003e6210, "D3DDevice_BlockOnFence"},  // BlockOnTime(fence, 4)
+    {0x003e6ea0, "D3DDevice_LoadVertexShaderProgram"},
+    {0x003e5f20, "D3DDevice_GetTexture2"},
+    {0x003e6200, "D3DDevice_BlockUntilIdle"},
+    {0x003e6950, "D3DDevice_GetScreenSpaceOffset"},
 };
 
 // SDK functions that are safe to run as they are (no hardware access), left untrapped.

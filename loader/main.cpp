@@ -165,6 +165,8 @@ int main(int argc, char** argv) {
     render::D3DConfig d3d_config;
     d3d_config.backend.window_scale = options->scale;
     d3d_config.device_pointer = loader::kTitleD3DDevicePointer;
+    d3d_config.render_state = loader::kTitleD3DRenderState;
+    d3d_config.texture_state = loader::kTitleD3DTextureState;
     render::configure(d3d_config);
     if (!loader::install_sdk_replacements(image, symbols)) {
         LOG_ERROR("loader", "SDK replacements need the symbol file (%s)", symbol_path.string().c_str());

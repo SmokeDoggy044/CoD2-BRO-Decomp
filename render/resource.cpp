@@ -34,10 +34,12 @@ uint32_t XB_STDCALL D3DResource_Release(XbPtr resource_address) {
     if ((resource->common & kCommonRefcountMask) == 1) {
         if (XbPtr parent = surface_parent(resource)) D3DResource_Release(parent);
         if ((resource->common & kCommonInternalRefMask) == 0) {
-            // Destroyed. Title-created resources' memory belongs to the title; ours
-            // (back/depth buffers) are never released to zero by titles in practice.
+            // Destroyed. Title-created resources' memory belongs to the title; of
+            // ours, only texture level surfaces are freed (the back and depth
+            // buffers keep D3D's own reference).
             resource->common &= ~kCommonRefcountMask;
             resource_destroyed(resource_address);
+            delete_level_surface(resource_address);
             return 0;
         }
     }
@@ -46,7 +48,11 @@ uint32_t XB_STDCALL D3DResource_Release(XbPtr resource_address) {
 
 // D3DRESOURCETYPE: 1 surface, 2 volume, 3 texture, 4 volume texture, 5 cube texture,
 // 6 vertex buffer, 7 index buffer, 8 push buffer, 9 palette, 10 fixup.
-uint32_t XB_STDCALL D3DResource_GetType(XbPtr resource_address) {
+uint32_t XB_STDCALL D3DResource_GetType(XbPtr resource_address) { return d3d_resource_type(resource_address); }
+
+}  // namespace
+
+uint32_t d3d_resource_type(XbPtr resource_address) {
     const auto* resource = from_xbox_ptr<XbResource>(resource_address);
     const auto* pixels = from_xbox_ptr<XbPixelContainer>(resource_address);
     const bool volume = (pixels->format & 0xF0) > (2u << kFormatDimensionShift);
@@ -60,6 +66,8 @@ uint32_t XB_STDCALL D3DResource_GetType(XbPtr resource_address) {
     default: return 10;
     }
 }
+
+namespace {
 
 // Points the resource at its memory: Data += base, as a physical address (the low 28
 // bits) except for push buffers, which keep the CPU address.

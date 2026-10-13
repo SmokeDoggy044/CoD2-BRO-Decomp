@@ -20,6 +20,10 @@ struct D3DConfig {
     BackendConfig backend;
     // The title's D3D__pDevice global (the device pointer that inlined code reads).
     xbox::XbPtr device_pointer = 0;
+    // D3D__RenderState (uint32_t[kRsCount], XDK 5849 order), which inlined code writes.
+    xbox::XbPtr render_state = 0;
+    // D3D_g_DeferredTextureState (uint32_t[4][32]), which inlined code writes.
+    xbox::XbPtr texture_state = 0;
 };
 
 // Call before the title creates its device.

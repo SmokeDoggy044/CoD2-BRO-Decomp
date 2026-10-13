@@ -22,6 +22,7 @@
 #include "dispatcher.h"
 #include "float_env.h"
 #include "log.h"
+#include "nv2a.h"
 #include "xbox_d3d.h"
 
 namespace render {
@@ -134,6 +135,23 @@ uint32_t XB_STDCALL Direct3D_CreateDevice(uint32_t /*adapter*/, uint32_t /*devic
     return kD3DOk;
 }
 
+// Keeps the current frame on screen across a title launch; nothing to keep here.
+uint32_t XB_STDCALL D3DDevice_PersistDisplay() { return kD3DOk; }
+
+// Re-creates the frame buffers with new parameters. Same size: nothing to do.
+uint32_t XB_STDCALL D3DDevice_Reset(XbPtr parameters) {
+    const auto* pp = from_xbox_ptr<XbPresentParameters>(parameters);
+    const auto* back_buffer = g.back_buffer;
+    const uint32_t width = (back_buffer->container.size & kSizeWidthMask) + 1;
+    const uint32_t height = ((back_buffer->container.size & kSizeHeightMask) >> kSizeHeightShift) + 1;
+    if (pp->back_buffer_width != width || pp->back_buffer_height != height)
+        LOG_WARN("render", "Reset to %ux%u: resizing is not supported yet (staying %ux%u)", pp->back_buffer_width,
+                 pp->back_buffer_height, width, height);
+    device_field<XbPtr>(kDeviceRenderTarget) = to_xbox_ptr(g.back_buffer);
+    device_field<XbPtr>(kDeviceDepthStencil) = to_xbox_ptr(g.depth_stencil);
+    return kD3DOk;
+}
+
 void XB_STDCALL D3D_SetPushBufferSize(uint32_t /*size*/, uint32_t /*kickoff_size*/) {}
 
 void XB_STDCALL D3DDevice_GetDeviceCaps(XbPtr caps) {
@@ -169,6 +187,50 @@ uint32_t XB_STDCALL D3DDevice_SetRenderTarget(XbPtr target, XbPtr depth_stencil)
         std::call_once(once, [] { LOG_WARN("render", "render targets other than the back buffer: not yet drawn"); });
     }
     return kD3DOk;
+}
+
+uint32_t XB_STDCALL D3DDevice_SetRenderTargetFast(XbPtr target, XbPtr depth_stencil, uint32_t /*flags*/) {
+    return D3DDevice_SetRenderTarget(target, depth_stencil);
+}
+
+// --- Viewport and scissors ------------------------------------------------------------
+
+ViewState g_view;
+
+void XB_STDCALL D3DDevice_SetViewport(XbPtr viewport) {
+    if (viewport) {
+        g_view.viewport = *from_xbox_ptr<XbViewport>(viewport);
+    } else {  // null = the whole render target
+        const auto* target = from_xbox_ptr<XbSurface>(device_field<XbPtr>(kDeviceRenderTarget));
+        g_view.viewport = {0, 0, (target->container.size & kSizeWidthMask) + 1,
+                           ((target->container.size & kSizeHeightMask) >> kSizeHeightShift) + 1, 0.0f, 1.0f};
+    }
+}
+
+void XB_STDCALL D3DDevice_GetViewport(XbPtr viewport) { *from_xbox_ptr<XbViewport>(viewport) = g_view.viewport; }
+
+// Up to 8 rectangles; exclusive = draw outside them.
+void XB_STDCALL D3DDevice_SetScissors(uint32_t count, uint32_t exclusive, XbPtr rects) {
+    g_view.scissor_count = count < 8 ? count : 8;
+    g_view.scissor_exclusive = exclusive != 0;
+    if (rects) std::memcpy(g_view.scissors, from_xbox_ptr<void>(rects), g_view.scissor_count * sizeof(XbRect));
+}
+
+void XB_STDCALL D3DDevice_GetScissors(XbPtr count, XbPtr exclusive, XbPtr rects) {
+    if (count) *from_xbox_ptr<uint32_t>(count) = g_view.scissor_count;
+    if (exclusive) *from_xbox_ptr<uint32_t>(exclusive) = g_view.scissor_exclusive;
+    if (rects) std::memcpy(from_xbox_ptr<void>(rects), g_view.scissors, g_view.scissor_count * sizeof(XbRect));
+}
+
+// Offsets all screen coordinates (D3D stores x + 0.53125, y + 0.53125 for the hardware).
+void XB_STDCALL D3DDevice_SetScreenSpaceOffset(float x, float y) {
+    g_view.offset_x = x;
+    g_view.offset_y = y;
+}
+
+void XB_STDCALL D3DDevice_GetScreenSpaceOffset(XbPtr x, XbPtr y) {
+    *from_xbox_ptr<float>(x) = g_view.offset_x;
+    *from_xbox_ptr<float>(y) = g_view.offset_y;
 }
 
 // --- Frame ----------------------------------------------------------------------------
@@ -208,11 +270,34 @@ void XB_STDCALL D3DDevice_GetDisplayFieldStatus(XbPtr status) {
     s->vblank_count = g.vblank_count;
 }
 
+// --- Raw pushbuffer data ----------------------------------------------------------------
+
+// BeginPush(dwords) returns space for the title to write NV2A commands into; EndPush
+// gets the end of what it wrote, and we execute it.
+thread_local std::vector<uint32_t> t_push_buffer;
+
+XbPtr XB_STDCALL D3DDevice_BeginPush_4(uint32_t dwords) {
+    t_push_buffer.assign(dwords + 1, 0);
+    return to_xbox_ptr(t_push_buffer.data());
+}
+
+void XB_STDCALL D3DDevice_EndPush(XbPtr end) {
+    const auto* begin = t_push_buffer.data();
+    const size_t dwords = from_xbox_ptr<uint32_t>(end) - begin;
+    if (dwords > t_push_buffer.size()) {
+        LOG_ERROR("render", "EndPush past the space BeginPush gave (%zu > %zu dwords)", dwords, t_push_buffer.size());
+        return;
+    }
+    nv2a::run(begin, dwords);
+}
+
 // --- Synchronization --------------------------------------------------------------------
 
 uint32_t XB_STDCALL D3DDevice_InsertFence() { return ++g.fence; }
 
 void XB_STDCALL D3DDevice_BlockOnFence(uint32_t /*fence*/) {}
+
+void XB_STDCALL D3DDevice_BlockUntilIdle() {}
 
 // type 0 = read callback, 1 = write callback; either runs once the GPU gets there,
 // which for us is now. The callback is cdecl: void (DWORD context).
@@ -227,16 +312,28 @@ void XB_STDCALL D3DDevice_InsertCallback(uint32_t /*type*/, XbPtr callback, uint
 const xbox::KernelImpl kDeviceFunctions[] = {
     D3D_IMPL(D3D_SetPushBufferSize),
     D3D_IMPL(D3DDevice_BlockOnFence),
+    D3D_IMPL(D3DDevice_BeginPush_4),
+    D3D_IMPL(D3DDevice_BlockUntilIdle),
+    D3D_IMPL(D3DDevice_EndPush),
     D3D_IMPL(D3DDevice_Clear),
     D3D_IMPL(D3DDevice_GetBackBuffer2),
     D3D_IMPL(D3DDevice_GetDepthStencilSurface2),
     D3D_IMPL(D3DDevice_GetDeviceCaps),
     D3D_IMPL(D3DDevice_GetDisplayFieldStatus),
     D3D_IMPL(D3DDevice_GetRenderTarget2),
+    D3D_IMPL(D3DDevice_GetScissors),
+    D3D_IMPL(D3DDevice_GetScreenSpaceOffset),
+    D3D_IMPL(D3DDevice_GetViewport),
+    D3D_IMPL(D3DDevice_SetScissors),
+    D3D_IMPL(D3DDevice_SetScreenSpaceOffset),
+    D3D_IMPL(D3DDevice_SetViewport),
     D3D_IMPL(D3DDevice_InsertCallback),
     D3D_IMPL(D3DDevice_InsertFence),
+    D3D_IMPL(D3DDevice_PersistDisplay),
+    D3D_IMPL(D3DDevice_Reset),
     D3D_IMPL(D3DDevice_SetGammaRamp),
     D3D_IMPL(D3DDevice_SetRenderTarget),
+    D3D_IMPL(D3DDevice_SetRenderTargetFast),
     D3D_IMPL(D3DDevice_SetVerticalBlankCallback),
     D3D_IMPL(D3DDevice_Swap),
     D3D_IMPL(Direct3D_CreateDevice),
@@ -245,12 +342,23 @@ const size_t kDeviceFunctionCount = std::size(kDeviceFunctions);
 
 void resource_destroyed(XbPtr /*resource*/) {}
 
-void configure(const D3DConfig& config) { g.config = config; }
+ViewState& view_state() { return g_view; }
+
+void texture_written(XbPtr /*resource*/) {}
+
+void configure(const D3DConfig& config) {
+    g.config = config;
+    set_render_state_address(config.render_state);
+    set_texture_state_address(config.texture_state);
+}
 
 std::span<const xbox::KernelImpl> d3d_functions() {
     static const std::vector<xbox::KernelImpl> all = [] {
         std::vector<xbox::KernelImpl> v(kDeviceFunctions, kDeviceFunctions + kDeviceFunctionCount);
         v.insert(v.end(), kResourceFunctions, kResourceFunctions + kResourceFunctionCount);
+        v.insert(v.end(), kStateFunctions, kStateFunctions + kStateFunctionCount);
+        v.insert(v.end(), kShaderFunctions, kShaderFunctions + kShaderFunctionCount);
+        v.insert(v.end(), kTextureFunctions, kTextureFunctions + kTextureFunctionCount);
         return v;
     }();
     return all;

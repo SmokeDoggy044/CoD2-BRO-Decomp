@@ -2,7 +2,11 @@
 add_library(render STATIC
     backend_d3d9.cpp
     device.cpp
+    nv2a.cpp
     resource.cpp
+    shader.cpp
+    state.cpp
+    texture.cpp
 )
 target_include_directories(render PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(render PUBLIC xbox platform)

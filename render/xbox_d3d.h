@@ -118,6 +118,65 @@ struct XbFieldStatus {
 };
 static_assert(sizeof(XbFieldStatus) == 8);
 
+// D3D__RenderState indexes (XDK 5849). Simple states (0..91) reach the GPU as NV2A
+// methods through SetRenderState_Simple; deferred states (92..135) are written by
+// inlined code and applied at draw time; complex states (136..) have one function each.
+constexpr uint32_t kRsZSlopeScale = 77;  // D3DRS_POLYGONOFFSETZSLOPESCALE
+constexpr uint32_t kRsZOffset = 78;
+constexpr uint32_t kRsPointOffsetEnable = 79;
+constexpr uint32_t kRsWireframeOffsetEnable = 80;
+constexpr uint32_t kRsSolidOffsetEnable = 81;
+constexpr uint32_t kRsFirstDeferred = 92;  // D3DRS_FOGENABLE
+constexpr uint32_t kRsPSTextureModes = 136;
+constexpr uint32_t kRsVertexBlend = 137;
+constexpr uint32_t kRsFogColor = 138;
+constexpr uint32_t kRsFillMode = 139;
+constexpr uint32_t kRsBackFillMode = 140;
+constexpr uint32_t kRsTwoSidedLighting = 141;
+constexpr uint32_t kRsNormalizeNormals = 142;
+constexpr uint32_t kRsZEnable = 143;
+constexpr uint32_t kRsStencilEnable = 144;
+constexpr uint32_t kRsStencilFail = 145;
+constexpr uint32_t kRsFrontFace = 146;
+constexpr uint32_t kRsCullMode = 147;
+constexpr uint32_t kRsTextureFactor = 148;
+constexpr uint32_t kRsZBias = 149;
+constexpr uint32_t kRsLogicOp = 150;
+constexpr uint32_t kRsEdgeAntiAlias = 151;
+constexpr uint32_t kRsMultiSampleAntiAlias = 152;
+constexpr uint32_t kRsMultiSampleMask = 153;
+constexpr uint32_t kRsMultiSampleMode = 154;
+constexpr uint32_t kRsMultiSampleRenderTargetMode = 155;
+constexpr uint32_t kRsShadowFunc = 156;
+constexpr uint32_t kRsLineWidth = 157;
+constexpr uint32_t kRsSampleAlpha = 158;
+constexpr uint32_t kRsDxt1NoiseEnable = 159;
+constexpr uint32_t kRsYuvEnable = 160;
+constexpr uint32_t kRsOcclusionCullEnable = 161;
+constexpr uint32_t kRsStencilCullEnable = 162;
+constexpr uint32_t kRsRopZCmpAlwaysRead = 163;
+constexpr uint32_t kRsRopZRead = 164;
+constexpr uint32_t kRsDoNotCullUncompressed = 165;
+constexpr uint32_t kRsCount = 166;
+
+// D3D__TextureState / D3D_g_DeferredTextureState: [stage][32] (XDK 5849 indexes).
+constexpr uint32_t kTextureStages = 4;
+constexpr uint32_t kTssPerStage = 32;
+constexpr uint32_t kTssTexCoordIndex = 28;
+constexpr uint32_t kTssBorderColor = 29;
+constexpr uint32_t kTssColorKeyColor = 30;
+
+// NV2A (Kelvin, class 0x97) methods: pushbuffer command = method | count << 18.
+constexpr uint32_t kNvMethodMask = 0x1FFC;
+constexpr uint32_t kNvCountShift = 18;
+constexpr uint32_t kNvPolygonOffsetPointEnable = 0x330;
+constexpr uint32_t kNvPolygonOffsetLineEnable = 0x334;
+constexpr uint32_t kNvPolygonOffsetFillEnable = 0x338;
+constexpr uint32_t kNvPolygonOffsetScaleFactor = 0x384;
+constexpr uint32_t kNvPolygonOffsetBias = 0x388;
+constexpr uint32_t kNvTextureOffset = 0x1B00;  // + stage * 0x40; then 0x1B04 format
+constexpr uint32_t kNvTextureStride = 0x40;
+
 // The device object. Titles hold a pointer to it (D3D__pDevice) and inlined header
 // code reads a few fields directly; ours is a zeroed block that keeps those current.
 // Offsets are for XDK 5849 (CDevice).
