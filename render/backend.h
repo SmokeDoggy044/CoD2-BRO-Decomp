@@ -9,9 +9,19 @@
 
 namespace render {
 
+// A surface the title draws into (render target or depth buffer). Its memory address
+// identifies it: textures at the same address show what was drawn into it.
+struct SurfaceDesc {
+    uint32_t data = 0;  // physical address of its memory
+    uint32_t width = 0, height = 0;
+    uint32_t format = 0;  // Xbox D3DFORMAT
+};
+
 struct BackendConfig {
     uint32_t width = 640;  // the title's back buffer size
     uint32_t height = 480;
+    SurfaceDesc back_buffer;    // what present() shows
+    SurfaceDesc depth_stencil;  // the device's own depth buffer (data 0 = none)
     uint32_t window_scale = 1;
     bool vsync = true;
 };
@@ -35,6 +45,13 @@ public:
     virtual ~Backend() = default;
 
     enum ClearFlags : uint32_t { kClearColor = 1, kClearDepth = 2, kClearStencil = 4 };
+    // Where draws and clears go from now on; depth null = no depth buffer.
+    virtual void set_render_target(const SurfaceDesc& color, const SurfaceDesc* depth) = 0;
+
+    // The CPU writes the memory of a render target other than the back buffer: textures
+    // there read the memory again instead of what was drawn.
+    virtual void forget_render_target(uint32_t data) = 0;
+
     // Clears the whole current render target / depth buffer. color is A8R8G8B8.
     virtual void clear(uint32_t flags, uint32_t color, float depth, uint32_t stencil) = 0;
 
@@ -48,7 +65,7 @@ public:
     // Shows the back buffer.
     virtual void present() = 0;
 
-    // Draws to the back buffer with the current Xbox state.
+    // Draws to the current render target with the current Xbox state.
     virtual void draw(const DrawInput& input) = 0;
 
     // Handles window events. Returns false once the user closed the window.

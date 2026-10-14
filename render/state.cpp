@@ -62,6 +62,13 @@ void XB_STDCALL D3DDevice_SetRenderState_FogColor(uint32_t color) {
     g_render_state[kRsFogColor] = color;
 }
 
+// Overrides the current pixel shader's texture modes (D3D keeps one value that
+// SetPixelShader sets from the definition and this replaces).
+void XB_STDCALL D3DDevice_SetRenderState_PSTextureModes(uint32_t modes) {
+    nv2a::write(kNvShaderStageProgram, modes);
+    g_render_state[kRsPSTextureModes] = modes;
+}
+
 // --- Textures ------------------------------------------------------------------------
 
 void XB_STDCALL D3DDevice_SetTexture(uint32_t stage, XbPtr texture) {
@@ -120,6 +127,7 @@ void XB_STDCALL D3DDevice_SetTextureState_BumpEnv(uint32_t stage, uint32_t type,
 
 const xbox::KernelImpl kStateFunctions[] = {
     D3D_IMPL(D3DDevice_SetRenderState_FogColor),
+    D3D_IMPL(D3DDevice_SetRenderState_PSTextureModes),
     D3D_IMPL(D3DDevice_SetRenderState_Simple),
     D3D_IMPL(D3DDevice_SetRenderState_ZBias),
     D3D_IMPL(D3DDevice_GetTexture2),
@@ -145,7 +153,6 @@ const xbox::KernelImpl kStateFunctions[] = {
     COMPLEX_STATE(MultiSampleRenderTargetMode, kRsMultiSampleRenderTargetMode),
     COMPLEX_STATE(NormalizeNormals, kRsNormalizeNormals),
     COMPLEX_STATE(OcclusionCullEnable, kRsOcclusionCullEnable),
-    COMPLEX_STATE(PSTextureModes, kRsPSTextureModes),
     COMPLEX_STATE(RopZCmpAlwaysRead, kRsRopZCmpAlwaysRead),
     COMPLEX_STATE(RopZRead, kRsRopZRead),
     COMPLEX_STATE(SampleAlpha, kRsSampleAlpha),

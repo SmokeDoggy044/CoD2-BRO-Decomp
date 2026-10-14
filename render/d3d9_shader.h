@@ -39,7 +39,22 @@ std::vector<uint32_t> translate_vertex_program(const uint32_t (*instructions)[4]
 // PS_TEXTUREMODE values.
 enum TextureMode : uint32_t {
     kModeNone = 0, kModeProject2D = 1, kModeProject3D = 2, kModeCubemap = 3, kModePassthru = 4,
+    kModeDependentAR = 15, kModeDependentGB = 16,
 };
+
+// Modes that sample a 2D texture.
+inline bool samples_2d(uint32_t mode) {
+    return mode == kModeProject2D || mode == kModeDependentAR || mode == kModeDependentGB;
+}
+
+// The earlier stage a dependent stage reads its coordinates from (PS_INPUTTEXTURE).
+inline uint32_t input_stage(const XbPixelShaderDef& def, uint32_t stage) {
+    switch (stage) {
+        case 2: return (def.input_texture >> 16) & 1;
+        case 3: return (def.input_texture >> 20) & 3;
+        default: return 0;
+    }
+}
 
 struct PixelShaderKey {
     XbPixelShaderDef def;

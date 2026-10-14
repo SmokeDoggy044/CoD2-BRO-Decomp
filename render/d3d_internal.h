@@ -77,8 +77,8 @@ ViewState& view_state();
 class Backend;
 Backend* backend();
 
-// Before each draw: puts CPU writes to the back buffer on screen first. False if the
-// draw cannot be shown (it targets a render target other than the back buffer).
+// Before each draw: puts CPU writes to the back buffer on screen first. False without
+// a device.
 bool begin_draw();
 
 // The current depth buffer's largest value (24-bit or 16-bit).

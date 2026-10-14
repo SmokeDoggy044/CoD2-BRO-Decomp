@@ -74,6 +74,33 @@ XbSurface* create_surface(uint32_t format, uint32_t width, uint32_t height, uint
     return surface;
 }
 
+// What the back end needs to know of a surface the title draws into.
+SurfaceDesc surface_desc(const XbSurface* surface) {
+    SurfaceDesc desc;
+    if (!surface) return desc;
+    const XbPixelContainer& c = surface->container;
+    desc.data = c.resource.data;
+    desc.format = (c.format & kFormatFormatMask) >> kFormatFormatShift;
+    if (c.size) {
+        desc.width = (c.size & kSizeWidthMask) + 1;
+        desc.height = ((c.size & kSizeHeightMask) >> kSizeHeightShift) + 1;
+    } else {  // swizzled: log2 sizes
+        desc.width = 1u << ((c.format >> kFormatUSizeShift) & 0xF);
+        desc.height = 1u << ((c.format >> kFormatVSizeShift) & 0xF);
+    }
+    return desc;
+}
+
+// Points the back end at the device's current render target and depth buffer.
+void apply_render_target() {
+    const auto* target = from_xbox_ptr<XbSurface>(device_field<XbPtr>(kDeviceRenderTarget));
+    const auto* depth = from_xbox_ptr<XbSurface>(device_field<XbPtr>(kDeviceDepthStencil));
+    const SurfaceDesc color = surface_desc(target);
+    const SurfaceDesc depth_desc = surface_desc(depth);
+    platform::HostFloatEnv float_env;
+    g.backend->set_render_target(color, depth ? &depth_desc : nullptr);
+}
+
 XbSurface* add_ref(XbSurface* surface) {
     if (surface) ++surface->container.resource.common;  // the count is the low 16 bits
     return surface;
@@ -123,15 +150,17 @@ uint32_t XB_STDCALL Direct3D_CreateDevice(uint32_t /*adapter*/, uint32_t /*devic
     BackendConfig backend_config = g.config.backend;
     backend_config.width = pp->back_buffer_width ? pp->back_buffer_width : 640;
     backend_config.height = pp->back_buffer_height ? pp->back_buffer_height : 480;
+    g.back_buffer = create_surface(kFmtLinX8R8G8B8, backend_config.width, backend_config.height, 4);
+    if (pp->enable_auto_depth_stencil)
+        g.depth_stencil = create_surface(pp->auto_depth_stencil_format, backend_config.width, backend_config.height,
+                                         pp->auto_depth_stencil_format == kFmtD16 ? 2 : 4);
+    backend_config.back_buffer = surface_desc(g.back_buffer);
+    backend_config.depth_stencil = surface_desc(g.depth_stencil);
     platform::HostFloatEnv float_env;
     g.backend = create_d3d9_backend(backend_config);
     if (!g.backend) return kD3DErrInvalidCall;
 
     g.device = new uint8_t[kDeviceSize]{};
-    g.back_buffer = create_surface(kFmtLinX8R8G8B8, backend_config.width, backend_config.height, 4);
-    if (pp->enable_auto_depth_stencil)
-        g.depth_stencil = create_surface(pp->auto_depth_stencil_format, backend_config.width, backend_config.height,
-                                         pp->auto_depth_stencil_format == kFmtD16 ? 2 : 4);
     device_field<XbPtr>(kDeviceBackBuffer) = to_xbox_ptr(g.back_buffer);
     device_field<XbPtr>(kDeviceRenderTarget) = to_xbox_ptr(g.back_buffer);
     device_field<XbPtr>(kDeviceDepthStencil) = to_xbox_ptr(g.depth_stencil);
@@ -158,6 +187,7 @@ uint32_t XB_STDCALL D3DDevice_Reset(XbPtr parameters) {
                  pp->back_buffer_height, width, height);
     device_field<XbPtr>(kDeviceRenderTarget) = to_xbox_ptr(g.back_buffer);
     device_field<XbPtr>(kDeviceDepthStencil) = to_xbox_ptr(g.depth_stencil);
+    apply_render_target();
     return kD3DOk;
 }
 
@@ -190,11 +220,7 @@ uint32_t XB_STDCALL D3DDevice_SetRenderTarget(XbPtr target, XbPtr depth_stencil)
     // null target = keep the current one (XDK behavior).
     if (target) device_field<XbPtr>(kDeviceRenderTarget) = target;
     device_field<XbPtr>(kDeviceDepthStencil) = depth_stencil;
-    if ((target && target != to_xbox_ptr(g.back_buffer)) ||
-        (depth_stencil && depth_stencil != to_xbox_ptr(g.depth_stencil))) {
-        static std::once_flag once;
-        std::call_once(once, [] { LOG_WARN("render", "render targets other than the back buffer: not yet drawn"); });
-    }
+    apply_render_target();
     return kD3DOk;
 }
 
@@ -250,7 +276,6 @@ uint32_t XB_STDCALL D3DDevice_Clear(uint32_t rect_count, XbPtr /*rects*/, uint32
         static std::once_flag once;
         std::call_once(once, [] { LOG_WARN("render", "Clear with rectangles: clearing everything"); });
     }
-    if (device_field<XbPtr>(kDeviceRenderTarget) != to_xbox_ptr(g.back_buffer)) return kD3DOk;
     uint32_t backend_flags = 0;
     if (flags & kClearTargetMask) backend_flags |= Backend::kClearColor;
     if (flags & kClearZBuffer) backend_flags |= Backend::kClearDepth;
@@ -369,7 +394,6 @@ Backend* backend() { return g.backend.get(); }
 
 bool begin_draw() {
     if (!g.backend) return false;
-    if (device_field<XbPtr>(kDeviceRenderTarget) != to_xbox_ptr(g.back_buffer)) return false;
     platform::HostFloatEnv float_env;
     upload_back_buffer_writes();
     return true;
@@ -385,7 +409,12 @@ float depth_buffer_max() {
 ViewState& view_state() { return g_view; }
 
 void texture_written(XbPtr resource) {
-    if (g.back_buffer && resource == to_xbox_ptr(g.back_buffer)) g.back_buffer_written = true;
+    if (g.back_buffer && resource == to_xbox_ptr(g.back_buffer)) {
+        g.back_buffer_written = true;
+    } else if (g.backend) {
+        platform::HostFloatEnv float_env;
+        g.backend->forget_render_target(from_xbox_ptr<XbResource>(resource)->data);
+    }
 }
 
 void configure(const D3DConfig& config) {

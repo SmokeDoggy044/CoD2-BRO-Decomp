@@ -511,7 +511,9 @@ std::vector<uint32_t> translate_pixel_shader(const PixelShaderKey& key) {
     for (uint32_t t = 0; t < 4; ++t) a.dcl_usage(kUsageTexcoord, t, dst(kInput, 2 + t));
     for (uint32_t stage = 0; stage < 4; ++stage) {
         switch (texture_mode(def, stage)) {
-            case kModeProject2D: a.dcl_sampler(2, stage); break;
+            case kModeProject2D:
+            case kModeDependentAR:
+            case kModeDependentGB: a.dcl_sampler(2, stage); break;
             case kModeCubemap: a.dcl_sampler(3, stage); break;
             case kModeProject3D: a.dcl_sampler(4, stage); break;
             default: break;
@@ -536,6 +538,14 @@ std::vector<uint32_t> translate_pixel_shader(const PixelShaderKey& key) {
             case kModeCubemap:
             case kModeProject3D: a.op(kTexld, t, {coord, src(kSampler, stage)}); break;
             case kModePassthru: a.mov(sat(t), coord); break;
+            case kModeDependentAR:  // coordinates = an earlier stage's (alpha, red)
+            case kModeDependentGB: {  // or (green, blue)
+                const Src in = r(kT0 + input_stage(def, stage));
+                const uint8_t sw = texture_mode(def, stage) == kModeDependentAR ? swizzle(3, 0, 0, 0) : swizzle(1, 2, 2, 2);
+                a.mov(r_(kInA), in.swz(sw));
+                a.op(kTexld, t, {r(kInA), src(kSampler, stage)});
+                break;
+            }
             default:
                 if (!(warned_modes.fetch_or(1u << texture_mode(def, stage)) & (1u << texture_mode(def, stage))))
                     LOG_WARN("render", "pixel shader texture mode %u not supported yet (reads zero)",

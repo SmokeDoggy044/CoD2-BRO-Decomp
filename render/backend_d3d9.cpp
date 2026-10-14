@@ -120,16 +120,23 @@ public:
         }
         width_ = config.width;
         height_ = config.height;
-        draw_ = std::make_unique<D3D9Draw>(device_, width_, height_);
+        back_buffer_data_ = config.back_buffer.data;
+        draw_ = std::make_unique<D3D9Draw>(device_, config);
         LOG_INFO("render", "D3D9 device: %ux%u", config.width, config.height);
         return true;
     }
 
+    void set_render_target(const SurfaceDesc& color, const SurfaceDesc* depth) override {
+        draw_->set_render_target(color, depth);
+    }
+
+    void forget_render_target(uint32_t data) override { draw_->forget_render_target(data); }
+
     void clear(uint32_t flags, uint32_t color, float depth, uint32_t stencil) override {
         DWORD d3d_flags = 0;
         if (flags & kClearColor) d3d_flags |= D3DCLEAR_TARGET;
-        if (flags & kClearDepth) d3d_flags |= D3DCLEAR_ZBUFFER;
-        if (flags & kClearStencil) d3d_flags |= D3DCLEAR_STENCIL;
+        if ((flags & kClearDepth) && draw_->has_depth()) d3d_flags |= D3DCLEAR_ZBUFFER;
+        if ((flags & kClearStencil) && draw_->has_depth()) d3d_flags |= D3DCLEAR_STENCIL;
         if (d3d_flags) device_->Clear(0, nullptr, d3d_flags, color, depth, stencil);
     }
 
@@ -144,17 +151,14 @@ public:
             std::memcpy(static_cast<uint8_t*>(locked.pBits) + y * locked.Pitch,
                         static_cast<const uint8_t*>(pixels) + y * pitch, width_ * 4);
         staging_->UnlockRect();
-        IDirect3DSurface9* back_buffer = nullptr;
-        if (SUCCEEDED(device_->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &back_buffer))) {
+        if (IDirect3DSurface9* back_buffer = draw_->target_surface(back_buffer_data_))
             device_->UpdateSurface(staging_, nullptr, back_buffer, nullptr);
-            back_buffer->Release();
-        }
     }
 
     bool save_back_buffer(const char* path) override {
-        IDirect3DSurface9* back_buffer = nullptr;
+        IDirect3DSurface9* back_buffer = draw_->target_surface(back_buffer_data_);
         IDirect3DSurface9* copy = nullptr;
-        bool ok = SUCCEEDED(device_->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &back_buffer)) &&
+        bool ok = back_buffer &&
                   SUCCEEDED(device_->CreateOffscreenPlainSurface(width_, height_, D3DFMT_X8R8G8B8,
                                                                  D3DPOOL_SYSTEMMEM, &copy, nullptr)) &&
                   SUCCEEDED(device_->GetRenderTargetData(back_buffer, copy));
@@ -165,12 +169,19 @@ public:
             copy->UnlockRect();
         }
         release(copy);
-        release(back_buffer);
         if (!ok) LOG_WARN("render", "cannot save the back buffer to %s", path);
         return ok;
     }
 
+    // The title's back buffer is a render target texture like any other; it is
+    // copied to the swap chain to be shown.
     void present() override {
+        IDirect3DSurface9* swap_chain = nullptr;
+        IDirect3DSurface9* back_buffer = draw_->target_surface(back_buffer_data_);
+        if (back_buffer && SUCCEEDED(device_->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &swap_chain))) {
+            device_->StretchRect(back_buffer, nullptr, swap_chain, nullptr, D3DTEXF_NONE);
+            swap_chain->Release();
+        }
         device_->Present(nullptr, nullptr, nullptr, nullptr);
         draw_->end_frame();
     }
@@ -196,6 +207,7 @@ private:
     IDirect3DSurface9* staging_ = nullptr;  // CPU-written back buffer upload
     std::unique_ptr<D3D9Draw> draw_;
     uint32_t width_ = 0, height_ = 0;
+    uint32_t back_buffer_data_ = 0;
 };
 
 }  // namespace

@@ -3,6 +3,7 @@
 #include "d3d9_draw.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <bit>
 #include <cstring>
 #include <mutex>
@@ -147,6 +148,25 @@ XbPixelShaderDef combiners_from_registers() {
     d.final_constant1 = nv2a::reg(kNvCombinerFinalFactor + 4);
     d.combiner_count = nv2a::reg(kNvCombinerControl);
     d.texture_modes = nv2a::reg(kNvShaderStageProgram);
+    // PS_GLOBALFLAGS_TEXMODE_ADJUST: D3D fits each stage's mode to the texture bound
+    // there (FUN_003f0880 in CoD BRO).
+    if (shader_state().pixel_shader_def.final_constants_mapping & 0x100) {
+        uint32_t modes = 0;
+        for (uint32_t stage = 0; stage < 4; ++stage) {
+            uint32_t mode = (d.texture_modes >> (stage * 5)) & 0x1F;
+            const uint32_t format = nv2a::reg(kNvTextureFormat + stage * kNvTextureStride);
+            const bool cube = format & kFormatCubemap;
+            const bool volume = (format & 0x40000000) || (format & 0xF0) == 0x30;
+            if (!format && mode != 4 && mode != 5 && mode != 10 && mode != 17)
+                mode = 0;  // no texture: only modes that need none stay
+            else if (mode >= 1 && mode <= 3)
+                mode = cube ? 3 : volume ? 2 : 1;
+            else if (mode == 13 || mode == 14)
+                mode = cube ? 14 : 13;
+            modes |= mode << (stage * 5);
+        }
+        d.texture_modes = modes;
+    }
     d.dot_mapping = nv2a::reg(kNvDotRgbMapping);
     d.input_texture = nv2a::reg(kNvShaderOtherStageInput);
     return d;
@@ -224,14 +244,38 @@ struct D3D9Draw::CachedTexture {
     float scale[2] = {1.0f, 1.0f};  // texel -> normalized coordinates for linear formats
 };
 
+struct D3D9Draw::Target {
+    IDirect3DTexture9* texture = nullptr;
+    IDirect3DSurface9* surface = nullptr;  // level 0
+    IDirect3DTexture9* copy = nullptr;     // for sampling the target while drawing into it
+    uint32_t width = 0, height = 0;
+    D3DFORMAT format = D3DFMT_UNKNOWN;
+    CachedTexture sampled;
+};
+
+struct DepthBuffer {
+    IDirect3DSurface9* surface = nullptr;
+    uint32_t width = 0, height = 0;
+};
+
 struct D3D9Draw::Caches {
     std::unordered_map<uint32_t, IDirect3DVertexDeclaration9*> declarations;
     std::unordered_map<uint64_t, IDirect3DVertexShader9*> vertex_shaders;
     std::unordered_map<uint64_t, IDirect3DPixelShader9*> pixel_shaders;
     std::unordered_map<uint64_t, D3D9Draw::CachedTexture> textures;
     std::set<uint32_t> unsupported_formats;  // warned about once each
+    std::unordered_map<uint32_t, Target> targets;      // by Xbox address
+    std::unordered_map<uint32_t, DepthBuffer> depths;  // by Xbox address
+
+    void release_target(Target& t) {
+        release(t.surface);
+        release(t.texture);
+        release(t.copy);
+    }
 
     ~Caches() {
+        for (auto& [k, t] : targets) release_target(t);
+        for (auto& [k, d] : depths) release(d.surface);
         for (auto& [k, v] : declarations) release(v);
         for (auto& [k, v] : vertex_shaders) release(v);
         for (auto& [k, v] : pixel_shaders) release(v);
@@ -239,11 +283,99 @@ struct D3D9Draw::Caches {
     }
 };
 
-D3D9Draw::D3D9Draw(IDirect3DDevice9* device, uint32_t width, uint32_t height)
-    : device_(device), width_(width), height_(height), caches_(std::make_unique<Caches>()) {
+D3D9Draw::D3D9Draw(IDirect3DDevice9* device, const BackendConfig& config)
+    : device_(device), depth_data_(config.depth_stencil.data), caches_(std::make_unique<Caches>()) {
     device_->SetRenderState(D3DRS_LIGHTING, FALSE);
     device_->SetRenderState(D3DRS_FOGENABLE, FALSE);
     device_->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE);
+    if (const char* dump = std::getenv("XB_DUMP_FRAME")) dump_frame_ = static_cast<uint32_t>(std::atoi(dump));
+    if (const char* stop = std::getenv("XB_DUMP_STOP")) dump_stop_ = static_cast<uint32_t>(std::atoi(stop));
+    // The device's own depth buffer stands for the title's.
+    if (depth_data_) {
+        DepthBuffer& d = caches_->depths[depth_data_];
+        if (SUCCEEDED(device_->GetDepthStencilSurface(&d.surface))) {
+            d.width = config.width;
+            d.height = config.height;
+        }
+    }
+    set_render_target(config.back_buffer, depth_data_ ? &config.depth_stencil : nullptr);
+}
+
+namespace {
+
+D3DFORMAT target_format(uint32_t xbox_format) {
+    switch (xbox_format) {
+        case 0x07: case 0x1E: return D3DFMT_X8R8G8B8;
+        case 0x05: case 0x11: return D3DFMT_R5G6B5;
+        case 0x03: case 0x1C: return D3DFMT_X1R5G5B5;
+        case 0x02: case 0x10: return D3DFMT_A1R5G5B5;
+        case 0x04: case 0x1D: return D3DFMT_A4R4G4B4;
+        default: return D3DFMT_A8R8G8B8;  // A8R8G8B8 and anything else
+    }
+}
+
+}  // namespace
+
+bool D3D9Draw::set_render_target(const SurfaceDesc& color, const SurfaceDesc* depth) {
+    Caches& caches = *caches_;
+    Target& t = caches.targets[color.data];
+    const D3DFORMAT format = target_format(color.format);
+    if (t.texture && (t.width != color.width || t.height != color.height || t.format != format)) caches.release_target(t);
+    if (!t.texture) {
+        if (FAILED(device_->CreateTexture(color.width, color.height, 1, D3DUSAGE_RENDERTARGET, format, D3DPOOL_DEFAULT,
+                                          &t.texture, nullptr)) ||
+            FAILED(t.texture->GetSurfaceLevel(0, &t.surface))) {
+            LOG_ERROR("render", "render target %ux%u format %02x at %08x: cannot create", color.width, color.height,
+                      color.format, color.data);
+            caches.release_target(t);
+            caches.targets.erase(color.data);
+            target_ok_ = false;
+            return false;
+        }
+        t.width = color.width;
+        t.height = color.height;
+        t.format = format;
+        LOG_DEBUG("render", "render target %ux%u format %02x at %08x", color.width, color.height, color.format,
+                  color.data);
+        device_->ColorFill(t.surface, nullptr, 0);
+    }
+    device_->SetRenderTarget(0, t.surface);
+    target_data_ = color.data;
+    target_width_ = color.width;
+    target_height_ = color.height;
+    target_ok_ = true;
+
+    // Depth: by its Xbox address, at least as large as the target (D3D9 requires it).
+    has_depth_ = false;
+    IDirect3DSurface9* depth_surface = nullptr;
+    if (depth && depth->data) {
+        DepthBuffer& d = caches.depths[depth->data];
+        if (d.surface && (d.width < color.width || d.height < color.height)) release(d.surface);
+        if (!d.surface) {
+            d.width = std::max(depth->width, color.width);
+            d.height = std::max(depth->height, color.height);
+            const bool d16 = depth->format == kFmtD16 || depth->format == kFmtLinD16;
+            if (FAILED(device_->CreateDepthStencilSurface(d.width, d.height, d16 ? D3DFMT_D16 : D3DFMT_D24S8,
+                                                          D3DMULTISAMPLE_NONE, 0, FALSE, &d.surface, nullptr)))
+                LOG_ERROR("render", "depth buffer %ux%u at %08x: cannot create", d.width, d.height, depth->data);
+        }
+        depth_surface = d.surface;
+        has_depth_ = depth_surface != nullptr;
+    }
+    device_->SetDepthStencilSurface(depth_surface);
+    return true;
+}
+
+void D3D9Draw::forget_render_target(uint32_t data) {
+    auto it = caches_->targets.find(data);
+    if (it == caches_->targets.end() || data == target_data_) return;
+    caches_->release_target(it->second);
+    caches_->targets.erase(it);
+}
+
+IDirect3DSurface9* D3D9Draw::target_surface(uint32_t data) {
+    auto it = caches_->targets.find(data);
+    return it == caches_->targets.end() ? nullptr : it->second.surface;
 }
 
 D3D9Draw::~D3D9Draw() = default;
@@ -262,7 +394,30 @@ D3D9Draw::CachedTexture* D3D9Draw::texture_for_stage(uint32_t stage) {
         if (pixels->resource.data == data) size_field = pixels->size;
     }
     TextureLayout layout;
-    if (!describe_texture(format, size_field, layout)) {
+    const bool described = describe_texture(format, size_field, layout);
+
+    // Memory a render target uses: what was drawn there. Sampling the target being
+    // drawn into goes through a copy.
+    if (auto it = caches_->targets.find(data); it != caches_->targets.end()) {
+        Target& t = it->second;
+        t.sampled.texture = t.texture;
+        if (data == target_data_) {
+            if (!t.copy) device_->CreateTexture(t.width, t.height, 1, D3DUSAGE_RENDERTARGET, t.format, D3DPOOL_DEFAULT,
+                                                &t.copy, nullptr);
+            IDirect3DSurface9* copy_surface = nullptr;
+            if (t.copy && SUCCEEDED(t.copy->GetSurfaceLevel(0, &copy_surface))) {
+                device_->StretchRect(t.surface, nullptr, copy_surface, nullptr, D3DTEXF_NONE);
+                copy_surface->Release();
+                t.sampled.texture = t.copy;
+            }
+        }
+        const bool linear = described ? layout.linear : true;
+        t.sampled.scale[0] = linear ? 1.0f / t.width : 1.0f;
+        t.sampled.scale[1] = linear ? 1.0f / t.height : 1.0f;
+        return &t.sampled;
+    }
+
+    if (!described) {
         if (caches_->unsupported_formats.insert(format).second)
             LOG_WARN("render", "texture format register %08x not supported yet (stage %u)", format, stage);
         return nullptr;
@@ -344,11 +499,52 @@ void log_tokens(const char* what, const std::vector<uint32_t>& tokens) {
 
 }  // namespace
 
+// Debugging: XB_DUMP_FRAME=n logs every draw of frame n (the screenshot of frame n-1),
+// with each vertex program's microcode and c[-96..-77] once; XB_DUMP_STOP=k also drops
+// that frame's draws after the k-th, to find the draw that breaks a picture.
+void D3D9Draw::dump_draw(const DrawInput& input, const XbPixelShaderDef& def, uint64_t vs_key, uint32_t primitives) {
+    const float* v = input.vertices;
+    char textures[200] = "";
+    size_t used = 0;
+    for (uint32_t stage = 0; stage < 4; ++stage)
+        if (d3d9::texture_mode(def, stage))
+            used += std::snprintf(textures + used, sizeof(textures) - used, " t%u:mode %u fmt %08x @%08x", stage,
+                                  d3d9::texture_mode(def, stage), nv2a::reg(kNvTextureFormat + stage * kNvTextureStride),
+                                  nv2a::reg(kNvTextureOffset + stage * kNvTextureStride));
+    static std::set<uint64_t> programs_dumped;
+    if (programs_dumped.insert(vs_key).second) {
+        const nv2a::State& nv = nv2a::state();
+        const uint32_t start = std::min(nv2a::reg(kNvProgramStart), nv2a::kProgramSlots - 1);
+        for (uint32_t i = start; i < nv2a::kProgramSlots; ++i) {
+            LOG_INFO("dump", "vs %016llx %3u: %08x %08x %08x %08x", static_cast<unsigned long long>(vs_key), i - start,
+                     nv.program[i][0], nv.program[i][1], nv.program[i][2], nv.program[i][3]);
+            if (nv.program[i][3] & 1) break;
+        }
+        for (uint32_t c = 0; c < 20; ++c) {
+            float f[4];
+            std::memcpy(f, nv.constants[c].data(), 16);
+            LOG_INFO("dump", "vs %016llx c[%d] = %g %g %g %g", static_cast<unsigned long long>(vs_key),
+                     static_cast<int>(c) - 96, f[0], f[1], f[2], f[3]);
+        }
+    }
+    const uint32_t* rs = render_state();
+    LOG_INFO("dump",
+             "target %08x prim %d x%u verts %u attrs %04x vs %016llx | comb %u final %08x/%08x rgb0 %08x->%08x"
+             " | ztest %u zwrite %u zfunc %x atest %u aref %u afunc %x blend %u %x/%x cull %x fog %u | v0 (%g %g %g %g)%s",
+             target_data_, static_cast<int>(input.primitive), primitives, input.vertex_count, input.attribute_mask,
+             static_cast<unsigned long long>(vs_key), def.combiner_count & 0xFF, def.final_inputs_abcd,
+             def.final_inputs_efg, def.rgb_inputs[0], def.rgb_outputs[0], rs[kRsZEnable] && has_depth_,
+             nv2a::reg(kNvDepthMask), nv2a::reg(kNvDepthFunc), nv2a::reg(kNvAlphaTestEnable), nv2a::reg(kNvAlphaRef),
+             nv2a::reg(kNvAlphaFunc), nv2a::reg(kNvBlendEnable), nv2a::reg(kNvBlendSrc), nv2a::reg(kNvBlendDst),
+             rs[kRsCullMode], nv2a::reg(kNvFogEnable), v[0], v[1], v[2], v[3], textures);
+}
+
 void D3D9Draw::draw(const DrawInput& input) {
     Caches& caches = *caches_;
     const uint32_t vertex_count_or_indices = input.indices ? input.index_count : input.vertex_count;
     const uint32_t primitives = primitive_count(input.primitive, vertex_count_or_indices);
-    if (!primitives) return;
+    if (!primitives || !target_ok_) return;
+    const uint32_t width = target_width_, height = target_height_;
 
     // Vertex shader: the program from its start slot to the final instruction.
     const nv2a::State& nv = nv2a::state();
@@ -397,7 +593,7 @@ void D3D9Draw::draw(const DrawInput& input) {
 
     // Vertex constants: the NV2A slots, then screen space -> clip space.
     device_->SetVertexShaderConstantF(0, reinterpret_cast<const float*>(nv.constants.data()), nv2a::kConstantSlots);
-    const float screen_to_clip[8] = {2.0f / width_, -2.0f / height_, 1.0f / input.depth_max, 0.0f,
+    const float screen_to_clip[8] = {2.0f / width, -2.0f / height, 1.0f / input.depth_max, 0.0f,
                                      -1.0f, 1.0f, 0.0f, 0.0f};
     device_->SetVertexShaderConstantF(d3d9::kVsScreenToClip, screen_to_clip, 2);
     float fog_params[4] = {};
@@ -411,7 +607,7 @@ void D3D9Draw::draw(const DrawInput& input) {
         scale[0] = scale[1] = scale[2] = scale[3] = 1.0f;
         const uint32_t mode = d3d9::texture_mode(ps_input.def, stage);
         IDirect3DBaseTexture9* texture = nullptr;
-        if (mode == d3d9::kModeProject2D) {
+        if (d3d9::samples_2d(mode)) {
             if (CachedTexture* cached = texture_for_stage(stage)) {
                 texture = cached->texture;
                 scale[0] = cached->scale[0];
@@ -454,7 +650,7 @@ void D3D9Draw::draw(const DrawInput& input) {
     // Raster state.
     const uint32_t* rs = render_state();
     auto reg = [](uint32_t method) { return nv2a::reg(method); };
-    device_->SetRenderState(D3DRS_ZENABLE, rs[kRsZEnable] ? D3DZB_TRUE : D3DZB_FALSE);
+    device_->SetRenderState(D3DRS_ZENABLE, rs[kRsZEnable] && has_depth_ ? D3DZB_TRUE : D3DZB_FALSE);
     device_->SetRenderState(D3DRS_ZWRITEENABLE, reg(kNvDepthMask) != 0);
     device_->SetRenderState(D3DRS_ZFUNC, compare_func(reg(kNvDepthFunc)));
     device_->SetRenderState(D3DRS_ALPHATESTENABLE, reg(kNvAlphaTestEnable) != 0);
@@ -472,7 +668,7 @@ void D3D9Draw::draw(const DrawInput& input) {
                                                         (mask & 0x01000000 ? D3DCOLORWRITEENABLE_ALPHA : 0));
     device_->SetRenderState(D3DRS_CULLMODE, cull_mode(rs[kRsCullMode], rs[kRsFrontFace]));
     device_->SetRenderState(D3DRS_FILLMODE, fill_mode(rs[kRsFillMode]));
-    device_->SetRenderState(D3DRS_STENCILENABLE, rs[kRsStencilEnable] != 0);
+    device_->SetRenderState(D3DRS_STENCILENABLE, rs[kRsStencilEnable] != 0 && has_depth_);
     device_->SetRenderState(D3DRS_STENCILFAIL, stencil_op(rs[kRsStencilFail]));
     device_->SetRenderState(D3DRS_STENCILZFAIL, stencil_op(reg(kNvStencilOpZFail)));
     device_->SetRenderState(D3DRS_STENCILPASS, stencil_op(reg(kNvStencilOpZPass)));
@@ -484,12 +680,17 @@ void D3D9Draw::draw(const DrawInput& input) {
 
     // The whole target is the D3D9 viewport (the vertex program did the Xbox one);
     // the Xbox viewport rectangle clips.
-    D3DVIEWPORT9 viewport{0, 0, width_, height_, 0.0f, 1.0f};
+    D3DVIEWPORT9 viewport{0, 0, width, height, 0.0f, 1.0f};
     device_->SetViewport(&viewport);
     const XbViewport& v = view_state().viewport;
-    RECT clip{static_cast<LONG>(std::min(v.x, width_)), static_cast<LONG>(std::min(v.y, height_)),
-              static_cast<LONG>(std::min(v.x + v.width, width_)), static_cast<LONG>(std::min(v.y + v.height, height_))};
+    RECT clip{static_cast<LONG>(std::min(v.x, width)), static_cast<LONG>(std::min(v.y, height)),
+              static_cast<LONG>(std::min(v.x + v.width, width)), static_cast<LONG>(std::min(v.y + v.height, height))};
     device_->SetScissorRect(&clip);
+
+    if (dump_frame_ && frame_ == dump_frame_) {
+        dump_draw(input, ps_input.def, vs_key, primitives);
+        if (++dump_index_ > dump_stop_) return;  // bisecting which draw breaks the frame
+    }
 
     device_->SetVertexDeclaration(vertex_declaration(device_, caches.declarations, input.attribute_mask));
     device_->SetVertexShader(vs);

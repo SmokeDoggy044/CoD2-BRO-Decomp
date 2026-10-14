@@ -129,15 +129,23 @@ export's calling convention and argument size come from the header.
   `texture_decode.cpp` (unswizzle, DXT, P8) and cached by address + content hash,
   raster state from the NV2A registers. The pixel shader is read from the NV2A
   combiner registers (SetPixelShader writes them, like D3D).
-- **Resume here (2026-10-13): in-level shading.** The first level loads and plays:
-  HUD, hints, checkpoints and the pause menu render; the 3D world draws textured and
-  fogged (fog: the deferred fog states -> NV2A fog registers as D3D does, factor from
-  oFog.x in the vertex epilogue, FOG register in the combiners). Missing, per the log:
-  texture mode 15 (DPNDNT_AR) and other texture modes besides 2D/passthrough,
-  render targets other than the back buffer, cube/volume textures, unsupported
-  texture formats. Also not yet: `RunPushBuffer`, fixed-function vertex (FVF) and
-  texture stages (approximated as texture0 * diffuse). Unverified: half-pixel
-  offset, viewport-as-scissor, EXP/LOG precision.
+- **Resume here (2026-10-13): the first level renders.** Terrain, buildings, models,
+  sky, smoke, the glow pass and the HUD draw (checked on screenshots of the first
+  level only). Done: fog (deferred fog states -> NV2A fog registers as D3D does),
+  render targets (D3D9 render target textures keyed by the surface's memory address;
+  the back buffer is one, copied to the window at present; textures at that address
+  sample it), texture modes as D3D picks them (PSTextureModes state,
+  PS_GLOBALFLAGS_TEXMODE_ADJUST) and dependent reads (modes 15/16). Not yet: cube and
+  volume textures, other texture modes (bump env, dot products), `RunPushBuffer`,
+  fixed-function vertex (FVF) and texture stages (approximated as texture0 *
+  diffuse), CPU reads of render targets, Clear with rectangles. Unverified: half-pixel
+  offset, viewport-as-scissor, EXP/LOG precision. Next: play further in and fix what
+  looks wrong (the user tests by playing now).
+- Debugging a wrong picture: `XB_DUMP_FRAME=n` logs every draw of frame n (shader
+  keys, combiners, texture modes/formats, raster states, first vertex) plus each
+  vertex program's microcode (decode with `tools/nv2a_vsdis.py`); `XB_DUMP_STOP=k`
+  also drops that frame's draws after the k-th - with `--screenshots` on frame n-1,
+  bisect for the draw that breaks it.
 - Unattended level run: copy the save folder and use `--data COPY --press
   "a@4,start@5.5,a@7,start@8.5,a@10,start@11.5,a@15,a@18,a@21,a@24,a@27"` plus `a`
   every 4 s from 36 to 76 (profile -> Single Player -> New Game -> difficulty ->
