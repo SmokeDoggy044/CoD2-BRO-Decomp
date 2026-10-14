@@ -52,7 +52,10 @@ private:
     IDirect3DDevice9* device_;
     uint32_t depth_data_;  // the device's depth buffer's Xbox address
     uint32_t anisotropy_;  // BackendConfig::anisotropy, within the device's limit
+    float render_scale_;   // BackendConfig::render_scale
+    // The current target: its size as the title sees it and the D3D9 surface's.
     uint32_t target_data_ = 0, target_width_ = 0, target_height_ = 0;
+    uint32_t target_surface_width_ = 0, target_surface_height_ = 0;
     bool has_depth_ = false;
     bool target_ok_ = false;
     uint32_t frame_ = 1;

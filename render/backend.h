@@ -26,6 +26,9 @@ struct BackendConfig {
     SurfaceDesc back_buffer;    // what present() shows
     SurfaceDesc depth_stencil;  // the device's own depth buffer (data 0 = none)
     uint32_t window_scale = 1;
+    // Render targets are this many times the size the title asked for (the title still
+    // sees its own sizes). Above window_scale it supersamples.
+    float render_scale = 1;
     // Anisotropic filtering for mipmapped textures the title filters linearly (PC
     // option; the Xbox titles rarely used it). 1 = the title's own filters.
     uint32_t anisotropy = 1;

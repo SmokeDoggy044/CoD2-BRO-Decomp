@@ -45,6 +45,7 @@ struct Options {
     uint32_t memory_mb = 64;
     uint32_t scale = 2;
     uint32_t anisotropy = 16;
+    float render_scale = 0;  // 0: the window scale
     uint32_t screenshot_interval = 0;
     std::optional<fs::path> screenshot_dir;
     bool silent = false;
@@ -75,6 +76,8 @@ void print_usage(const char* program) {
         "  --silent         no sound output (audio still runs, into a silent device)\n"
         "  --memory MB      Xbox memory budget (default 64, like a retail Xbox; devkit: 128)\n"
         "  --scale N        window size as a multiple of the game's resolution (default 2)\n"
+        "  --render-scale X render resolution as a multiple of the game's 640x480 (default: the\n"
+        "                   window scale; above it = supersampling anti-aliasing, e.g. 4)\n"
         "  --anisotropy N   anisotropic filtering for mipmapped textures, 1-16 (default 16;\n"
         "                   1 = what the game asks for)\n"
         "  --screenshots N DIR  save every Nth frame as DIR/frame_<n>.bmp (debugging)\n"
@@ -122,6 +125,12 @@ std::optional<Options> parse_args(int argc, char** argv) {
             if (i + 1 >= argc || (options.scale = static_cast<uint32_t>(std::atoi(argv[++i]))) < 1 ||
                 options.scale > 8) {
                 std::fprintf(stderr, "--scale needs a number (1-8)\n");
+                return std::nullopt;
+            }
+        } else if (arg == "--render-scale") {
+            if (i + 1 >= argc || (options.render_scale = std::strtof(argv[++i], nullptr)) < 0.5f ||
+                options.render_scale > 8.0f) {
+                std::fprintf(stderr, "--render-scale needs a number (0.5-8)\n");
                 return std::nullopt;
             }
         } else if (arg == "--anisotropy") {
@@ -333,6 +342,8 @@ int main(int argc, char** argv) {
     render::D3DConfig d3d_config;
     d3d_config.backend.window_scale = options->scale;
     d3d_config.backend.anisotropy = options->anisotropy;
+    d3d_config.backend.render_scale =
+        options->render_scale > 0 ? options->render_scale : static_cast<float>(options->scale);
     d3d_config.screenshot_interval = options->screenshot_interval;
     if (options->diag_dir) {
         d3d_config.diag_dir = options->diag_dir->string();

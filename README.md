@@ -130,8 +130,17 @@ export's calling convention and argument size come from the header.
   errors, only the "tiled lock" warning at menu startup (the movie player's back-buffer
   lock; warning removed). Mission 5 (playtest 2026-10-14, 15 min) also clean: 30 fps
   throughout, but frames that miss a vblank (50 ms) cluster in heavy fights (the town
-  battle at the end, ~25 in 25 s); cause not known yet (candidates: DXVK pipeline
-  compiles, our per-draw translation cost, the title's own CPU load). Next: mission 6.
+  battle at the end, ~25 in 25 s). Likely cause, fixed: a vsync'd Present waited on
+  the display's clock on top of the title's wait for our vblank; Present is now
+  immediate + DXVK tearFree (mailbox) and the vblank runs at the display's rate
+  (not yet confirmed in that fight).
+- **PC improvements (2026-10-14):** `--render-scale X` renders every target at X times
+  its size (default: the window scale, 2 = 1280x960; above it supersamples, e.g. 4);
+  the title still sees 640x480 - D3D9Draw scales viewport, scissor and the clip
+  offset (pixel centres), depth buffers are its own, CPU back-buffer writes (movies)
+  are stretched up, screenshots are at the render size. `--anisotropy N` (default 16)
+  for mipmapped textures. Checked at 1x/2x/4x in missions 1-2 (HUD, glow, cutscenes):
+  same picture, sharper. Next: widescreen (FOV + HUD), then mission 6 playtest.
 - Later, once the game runs: raise the budget and enlarge the game's memory pools
   (`FUN_00043fb0` allocates fixed 35.2 MB + 3.7 MB arenas) for bigger assets/mods.
 - Threads run truly in parallel and ignore priorities (the Xbox is single-core with

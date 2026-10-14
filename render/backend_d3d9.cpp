@@ -69,6 +69,7 @@ public:
         overlay_.reset();
         draw_.reset();
         release(staging_);
+        release(upload_);
         release(device_);
         release(d3d_);
         if (window_) SDL_DestroyWindow(window_);
@@ -109,16 +110,17 @@ public:
         if (SUCCEEDED(d3d_->GetAdapterIdentifier(D3DADAPTER_DEFAULT, 0, &id)))
             LOG_INFO("render", "D3D9 adapter: %s", id.Description);
 
+        // The swap chain is the window's size; the title's back buffer (render scale)
+        // is stretched onto it. Depth buffers are D3D9Draw's.
         D3DPRESENT_PARAMETERS pp{};
-        pp.BackBufferWidth = config.width;
-        pp.BackBufferHeight = config.height;
+        pp.BackBufferWidth = config.width * scale;
+        pp.BackBufferHeight = config.height * scale;
         pp.BackBufferFormat = D3DFMT_X8R8G8B8;
         pp.BackBufferCount = 1;
         pp.SwapEffect = D3DSWAPEFFECT_DISCARD;
         pp.hDeviceWindow = window_handle(window_);
         pp.Windowed = TRUE;
-        pp.EnableAutoDepthStencil = TRUE;
-        pp.AutoDepthStencilFormat = D3DFMT_D24S8;
+        pp.EnableAutoDepthStencil = FALSE;
         pp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
         // The title calls D3D from more than one thread (its vertical blank callback
         // and loading screens), so let the runtime serialize.
@@ -135,7 +137,8 @@ public:
         back_buffer_data_ = config.back_buffer.data;
         draw_ = std::make_unique<D3D9Draw>(device_, config);
         overlay_ = std::make_unique<D3D9Overlay>(device_);
-        LOG_INFO("render", "D3D9 device: %ux%u", config.width, config.height);
+        LOG_INFO("render", "D3D9 device: %ux%u, rendering at %.2fx, window %ux%u", config.width, config.height,
+                 static_cast<double>(config.render_scale), pp.BackBufferWidth, pp.BackBufferHeight);
         return true;
     }
 
@@ -153,10 +156,16 @@ public:
         if (d3d_flags) device_->Clear(0, nullptr, d3d_flags, color, depth, stencil);
     }
 
+    // Through the title-sized staging_ (CPU) and upload_ (GPU) surfaces, then stretched
+    // onto the back buffer at the render scale.
     void write_back_buffer(const void* pixels, uint32_t pitch) override {
         if (!staging_ &&
             FAILED(device_->CreateOffscreenPlainSurface(width_, height_, D3DFMT_X8R8G8B8, D3DPOOL_SYSTEMMEM,
                                                         &staging_, nullptr)))
+            return;
+        if (!upload_ &&
+            FAILED(device_->CreateOffscreenPlainSurface(width_, height_, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, &upload_,
+                                                        nullptr)))
             return;
         D3DLOCKED_RECT locked;
         if (FAILED(staging_->LockRect(&locked, nullptr, 0))) return;
@@ -164,21 +173,25 @@ public:
             std::memcpy(static_cast<uint8_t*>(locked.pBits) + y * locked.Pitch,
                         static_cast<const uint8_t*>(pixels) + y * pitch, width_ * 4);
         staging_->UnlockRect();
-        if (IDirect3DSurface9* back_buffer = draw_->target_surface(back_buffer_data_))
-            device_->UpdateSurface(staging_, nullptr, back_buffer, nullptr);
+        if (IDirect3DSurface9* back_buffer = draw_->target_surface(back_buffer_data_)) {
+            device_->UpdateSurface(staging_, nullptr, upload_, nullptr);
+            device_->StretchRect(upload_, nullptr, back_buffer, nullptr, D3DTEXF_LINEAR);
+        }
     }
 
+    // At the render scale.
     bool save_back_buffer(const char* path) override {
         IDirect3DSurface9* back_buffer = draw_->target_surface(back_buffer_data_);
         IDirect3DSurface9* copy = nullptr;
-        bool ok = back_buffer &&
-                  SUCCEEDED(device_->CreateOffscreenPlainSurface(width_, height_, D3DFMT_X8R8G8B8,
+        D3DSURFACE_DESC desc{};
+        bool ok = back_buffer && SUCCEEDED(back_buffer->GetDesc(&desc)) &&
+                  SUCCEEDED(device_->CreateOffscreenPlainSurface(desc.Width, desc.Height, D3DFMT_X8R8G8B8,
                                                                  D3DPOOL_SYSTEMMEM, &copy, nullptr)) &&
                   SUCCEEDED(device_->GetRenderTargetData(back_buffer, copy));
         D3DLOCKED_RECT locked{};
         if (ok) ok = SUCCEEDED(copy->LockRect(&locked, nullptr, D3DLOCK_READONLY));
         if (ok) {
-            ok = write_bmp(path, static_cast<const uint8_t*>(locked.pBits), locked.Pitch, width_, height_);
+            ok = write_bmp(path, static_cast<const uint8_t*>(locked.pBits), locked.Pitch, desc.Width, desc.Height);
             copy->UnlockRect();
         }
         release(copy);
@@ -192,7 +205,7 @@ public:
         IDirect3DSurface9* swap_chain = nullptr;
         IDirect3DSurface9* back_buffer = draw_->target_surface(back_buffer_data_);
         if (back_buffer && SUCCEEDED(device_->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &swap_chain))) {
-            device_->StretchRect(back_buffer, nullptr, swap_chain, nullptr, D3DTEXF_NONE);
+            device_->StretchRect(back_buffer, nullptr, swap_chain, nullptr, D3DTEXF_LINEAR);
             overlay_->draw(swap_chain, overlay, 4, 4);
             swap_chain->Release();
         }
@@ -296,6 +309,7 @@ private:
     IDirect3D9* d3d_ = nullptr;
     IDirect3DDevice9* device_ = nullptr;
     IDirect3DSurface9* staging_ = nullptr;  // CPU-written back buffer upload
+    IDirect3DSurface9* upload_ = nullptr;
     std::unique_ptr<D3D9Draw> draw_;
     uint32_t width_ = 0, height_ = 0;
     uint32_t back_buffer_data_ = 0;

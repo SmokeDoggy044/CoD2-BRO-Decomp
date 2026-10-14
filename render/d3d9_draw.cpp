@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <bit>
+#include <cmath>
 #include <cstring>
 #include <mutex>
 #include <set>
@@ -248,14 +249,15 @@ struct D3D9Draw::Target {
     IDirect3DTexture9* texture = nullptr;
     IDirect3DSurface9* surface = nullptr;  // level 0
     IDirect3DTexture9* copy = nullptr;     // for sampling the target while drawing into it
-    uint32_t width = 0, height = 0;
+    uint32_t width = 0, height = 0;                  // as the title sees it
+    uint32_t surface_width = 0, surface_height = 0;  // times the render scale
     D3DFORMAT format = D3DFMT_UNKNOWN;
     CachedTexture sampled;
 };
 
 struct DepthBuffer {
     IDirect3DSurface9* surface = nullptr;
-    uint32_t width = 0, height = 0;
+    uint32_t width = 0, height = 0;  // the D3D9 surface's
 };
 
 struct D3D9Draw::Caches {
@@ -285,7 +287,7 @@ struct D3D9Draw::Caches {
 
 D3D9Draw::D3D9Draw(IDirect3DDevice9* device, const BackendConfig& config)
     : device_(device), depth_data_(config.depth_stencil.data), anisotropy_(config.anisotropy),
-      caches_(std::make_unique<Caches>()) {
+      render_scale_(config.render_scale > 0 ? config.render_scale : 1), caches_(std::make_unique<Caches>()) {
     D3DCAPS9 caps{};
     if (SUCCEEDED(device_->GetDeviceCaps(&caps))) anisotropy_ = std::min<uint32_t>(anisotropy_, caps.MaxAnisotropy);
     device_->SetRenderState(D3DRS_LIGHTING, FALSE);
@@ -293,14 +295,6 @@ D3D9Draw::D3D9Draw(IDirect3DDevice9* device, const BackendConfig& config)
     device_->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE);
     if (const char* dump = std::getenv("XB_DUMP_FRAME")) dump_frame_ = static_cast<uint32_t>(std::atoi(dump));
     if (const char* stop = std::getenv("XB_DUMP_STOP")) dump_stop_ = static_cast<uint32_t>(std::atoi(stop));
-    // The device's own depth buffer stands for the title's.
-    if (depth_data_) {
-        DepthBuffer& d = caches_->depths[depth_data_];
-        if (SUCCEEDED(device_->GetDepthStencilSurface(&d.surface))) {
-            d.width = config.width;
-            d.height = config.height;
-        }
-    }
     set_render_target(config.back_buffer, depth_data_ ? &config.depth_stencil : nullptr);
 }
 
@@ -325,8 +319,10 @@ bool D3D9Draw::set_render_target(const SurfaceDesc& color, const SurfaceDesc* de
     const D3DFORMAT format = target_format(color.format);
     if (t.texture && (t.width != color.width || t.height != color.height || t.format != format)) caches.release_target(t);
     if (!t.texture) {
-        if (FAILED(device_->CreateTexture(color.width, color.height, 1, D3DUSAGE_RENDERTARGET, format, D3DPOOL_DEFAULT,
-                                          &t.texture, nullptr)) ||
+        t.surface_width = std::max(1u, static_cast<uint32_t>(std::lround(color.width * render_scale_)));
+        t.surface_height = std::max(1u, static_cast<uint32_t>(std::lround(color.height * render_scale_)));
+        if (FAILED(device_->CreateTexture(t.surface_width, t.surface_height, 1, D3DUSAGE_RENDERTARGET, format,
+                                          D3DPOOL_DEFAULT, &t.texture, nullptr)) ||
             FAILED(t.texture->GetSurfaceLevel(0, &t.surface))) {
             LOG_ERROR("render", "render target %ux%u format %02x at %08x: cannot create", color.width, color.height,
                       color.format, color.data);
@@ -346,6 +342,8 @@ bool D3D9Draw::set_render_target(const SurfaceDesc& color, const SurfaceDesc* de
     target_data_ = color.data;
     target_width_ = color.width;
     target_height_ = color.height;
+    target_surface_width_ = t.surface_width;
+    target_surface_height_ = t.surface_height;
     target_ok_ = true;
 
     // Depth: by its Xbox address, at least as large as the target (D3D9 requires it).
@@ -353,10 +351,13 @@ bool D3D9Draw::set_render_target(const SurfaceDesc& color, const SurfaceDesc* de
     IDirect3DSurface9* depth_surface = nullptr;
     if (depth && depth->data) {
         DepthBuffer& d = caches.depths[depth->data];
-        if (d.surface && (d.width < color.width || d.height < color.height)) release(d.surface);
+        const uint32_t width = std::max(t.surface_width, static_cast<uint32_t>(std::lround(depth->width * render_scale_)));
+        const uint32_t height =
+            std::max(t.surface_height, static_cast<uint32_t>(std::lround(depth->height * render_scale_)));
+        if (d.surface && (d.width < width || d.height < height)) release(d.surface);
         if (!d.surface) {
-            d.width = std::max(depth->width, color.width);
-            d.height = std::max(depth->height, color.height);
+            d.width = width;
+            d.height = height;
             const bool d16 = depth->format == kFmtD16 || depth->format == kFmtLinD16;
             if (FAILED(device_->CreateDepthStencilSurface(d.width, d.height, d16 ? D3DFMT_D16 : D3DFMT_D24S8,
                                                           D3DMULTISAMPLE_NONE, 0, FALSE, &d.surface, nullptr)))
@@ -408,8 +409,9 @@ D3D9Draw::CachedTexture* D3D9Draw::texture_for_stage(uint32_t stage) {
         Target& t = it->second;
         t.sampled.texture = t.texture;
         if (data == target_data_) {
-            if (!t.copy) device_->CreateTexture(t.width, t.height, 1, D3DUSAGE_RENDERTARGET, t.format, D3DPOOL_DEFAULT,
-                                                &t.copy, nullptr);
+            if (!t.copy)
+                device_->CreateTexture(t.surface_width, t.surface_height, 1, D3DUSAGE_RENDERTARGET, t.format,
+                                       D3DPOOL_DEFAULT, &t.copy, nullptr);
             IDirect3DSurface9* copy_surface = nullptr;
             if (t.copy && SUCCEEDED(t.copy->GetSurfaceLevel(0, &copy_surface))) {
                 device_->StretchRect(t.surface, nullptr, copy_surface, nullptr, D3DTEXF_NONE);
@@ -610,10 +612,16 @@ void D3D9Draw::draw(const DrawInput& input) {
         }
     }
 
-    // Vertex constants: the NV2A slots, then screen space -> clip space.
+    // Vertex constants: the NV2A slots, then screen space -> clip space. Screen space is
+    // the title's size; on a larger surface (render scale s), D3D9 has its pixel centres
+    // on integers, so the title's pixel x is centred at x * s + (s - 1) / 2.
     device_->SetVertexShaderConstantF(0, reinterpret_cast<const float*>(nv.constants.data()), nv2a::kConstantSlots);
+    const float surface_width = static_cast<float>(target_surface_width_);
+    const float surface_height = static_cast<float>(target_surface_height_);
+    const float scale_x = surface_width / width, scale_y = surface_height / height;
     const float screen_to_clip[8] = {2.0f / width, -2.0f / height, 1.0f / input.depth_max, 0.0f,
-                                     -1.0f, 1.0f, 0.0f, 0.0f};
+                                     -1.0f + (scale_x - 1) / surface_width, 1.0f - (scale_y - 1) / surface_height,
+                                     0.0f, 0.0f};
     device_->SetVertexShaderConstantF(d3d9::kVsScreenToClip, screen_to_clip, 2);
     float fog_params[4] = {};
     std::memcpy(fog_params, &nv2a::reg(kNvFogParams), 8);
@@ -724,11 +732,14 @@ void D3D9Draw::draw(const DrawInput& input) {
 
     // The whole target is the D3D9 viewport (the vertex program did the Xbox one);
     // the Xbox viewport rectangle clips.
-    D3DVIEWPORT9 viewport{0, 0, width, height, 0.0f, 1.0f};
+    D3DVIEWPORT9 viewport{0, 0, target_surface_width_, target_surface_height_, 0.0f, 1.0f};
     device_->SetViewport(&viewport);
     const XbViewport& v = view_state().viewport;
-    RECT clip{static_cast<LONG>(std::min(v.x, width)), static_cast<LONG>(std::min(v.y, height)),
-              static_cast<LONG>(std::min(v.x + v.width, width)), static_cast<LONG>(std::min(v.y + v.height, height))};
+    auto to_surface = [](uint32_t value, uint32_t limit, float scale) {
+        return static_cast<LONG>(std::lround(std::min(value, limit) * scale));
+    };
+    RECT clip{to_surface(v.x, width, scale_x), to_surface(v.y, height, scale_y),
+              to_surface(v.x + v.width, width, scale_x), to_surface(v.y + v.height, height, scale_y)};
     device_->SetScissorRect(&clip);
 
     if (dump_frame_ && frame_ == dump_frame_) {
