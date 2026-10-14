@@ -123,7 +123,9 @@ export's calling convention and argument size come from the header.
   are up; `tools/feature_sweep.sh OUT [MISSIONS] [SECONDS]` runs each mission's
   start unattended and gathers every summary.txt into OUT/report.txt (mission 4's
   start: no new warnings; full sweep not run yet). Keyboard actions now follow the
-  profile's controller style. Next: the user plays mission 4 with --diag.
+  profile's controller style. Mission 4 played through clean with --diag and F11
+  (playtest 2026-10-14, 19 min, through the menus with the profile): no marks, no
+  errors, only the "tiled lock" warning at menu startup. Next: mission 5.
 - Later, once the game runs: raise the budget and enlarge the game's memory pools
   (`FUN_00043fb0` allocates fixed 35.2 MB + 3.7 MB arenas) for bigger assets/mods.
 - Threads run truly in parallel and ignore priorities (the Xbox is single-core with
