@@ -18,6 +18,10 @@ std::chrono::steady_clock::time_point session_start();
 // Only before other threads start.
 void set_session_start(std::chrono::steady_clock::time_point start);
 bool log_enabled(LogLevel level);
+// Called with every warning and error after it is written (diagnostics), on the
+// logging thread and outside the log's lock; it must not log. Null = none.
+using LogObserver = void (*)(LogLevel level, const char* category, const char* text);
+void log_set_observer(LogObserver observer);
 void logf(LogLevel level, const char* category, const char* fmt, ...) PLATFORM_PRINTF(3, 4);
 void vlogf(LogLevel level, const char* category, const char* fmt, va_list args);
 

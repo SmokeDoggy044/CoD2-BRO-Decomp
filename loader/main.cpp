@@ -16,6 +16,7 @@
 #include <unistd.h>
 
 #include "crash.h"
+#include "diag_summary.h"
 #include "d3d.h"
 #include "xinput.h"
 #include "dsound.h"
@@ -77,7 +78,9 @@ void print_usage(const char* program) {
         "                   buttons: a b x y black white lt rt start back up down left right ls rs)\n"
         "  --diag DIR [S]   diagnostics while playing: DIR/log.txt, a screenshot every S seconds\n"
         "                   (default 10); F12 marks a problem: screenshot, a note typed while the\n"
-        "                   game is paused (DIR/marks.txt), draw dump in the log\n"
+        "                   game is paused (DIR/marks.txt), draw dump in the log; new warnings\n"
+        "                   and errors are marked by themselves; F11 shows draws that need\n"
+        "                   missing features in magenta; DIR/summary.txt on exit\n"
         "  --mouse-sensitivity DEG  degrees the view turns per mouse count (default 0.11)\n",
         program);
 }
@@ -283,6 +286,9 @@ int main(int argc, char** argv) {
         }
         LOG_INFO("diag", "diagnostics in %s: a screenshot every %u s, F12 marks a problem",
                  options->diag_dir->string().c_str(), options->diag_seconds);
+        // summary.txt when the process ends (not on a reboot: the session goes on).
+        std::atexit([] { loader::write_diag_summary(*g_diag_dir); });
+        loader::set_fatal_exit_hook([] { loader::write_diag_summary(*g_diag_dir); });
     }
 
     const auto assets = platform::resolve_asset_root(options->assets);

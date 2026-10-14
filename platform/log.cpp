@@ -14,6 +14,7 @@ std::mutex g_mutex;
 // Set before any other thread starts (see set_session_start).
 std::chrono::steady_clock::time_point g_start = std::chrono::steady_clock::now();
 std::FILE* g_file = nullptr;
+std::atomic<LogObserver> g_observer{nullptr};
 
 const char* level_name(LogLevel level) {
     switch (level) {
@@ -42,6 +43,8 @@ bool log_set_file(const char* path) {
     return true;
 }
 
+void log_set_observer(LogObserver observer) { g_observer = observer; }
+
 bool log_enabled(LogLevel level) { return level >= g_level.load(std::memory_order_relaxed); }
 
 void vlogf(LogLevel level, const char* category, const char* fmt, va_list args) {
@@ -51,13 +54,17 @@ void vlogf(LogLevel level, const char* category, const char* fmt, va_list args) 
                         .count();
     char text[2048];
     std::vsnprintf(text, sizeof(text), fmt, args);
-    std::lock_guard<std::mutex> lock(g_mutex);
-    for (std::FILE* out : {stderr, g_file}) {
-        if (!out) continue;
-        std::fprintf(out, "[%8lld.%03lld] %-5s %-8s %s\n", static_cast<long long>(ms / 1000),
-                     static_cast<long long>(ms % 1000), level_name(level), category, text);
-        std::fflush(out);
+    {
+        std::lock_guard<std::mutex> lock(g_mutex);
+        for (std::FILE* out : {stderr, g_file}) {
+            if (!out) continue;
+            std::fprintf(out, "[%8lld.%03lld] %-5s %-8s %s\n", static_cast<long long>(ms / 1000),
+                         static_cast<long long>(ms % 1000), level_name(level), category, text);
+            std::fflush(out);
+        }
     }
+    if (level >= LogLevel::Warn)
+        if (LogObserver observer = g_observer.load()) observer(level, category, text);
 }
 
 void logf(LogLevel level, const char* category, const char* fmt, ...) {

@@ -622,4 +622,11 @@ std::vector<uint32_t> translate_pixel_shader(const PixelShaderKey& key) {
     return a.finish();
 }
 
+std::vector<uint32_t> solid_color_pixel_shader(float r, float g, float b, float a) {
+    Assembler as(kPs30);
+    as.def(kPsHelpers, r, g, b, a);
+    as.mov(dst(kColorOut, 0), c(kPsHelpers));
+    return as.finish();
+}
+
 }  // namespace render::d3d9

@@ -3,6 +3,7 @@
 #include "draw.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cstring>
 #include <mutex>
 #include <vector>
@@ -21,6 +22,8 @@ namespace render {
 namespace {
 
 using xbox::from_xbox_ptr;
+
+std::atomic<uint32_t> g_skipped_draws{0};  // see skipped_draws()
 
 void warn_once(std::once_flag& once, const char* message) {
     std::call_once(once, [message] { LOG_WARN("render", "%s", message); });
@@ -110,6 +113,7 @@ bool current_layout(VertexLayout& layout) {
     const ShaderState& shaders = shader_state();
     if (!shaders.programmable) {
         warn_once(ffp_once, "fixed-function vertex processing (FVF): not drawn yet");
+        ++g_skipped_draws;
         return false;
     }
     for (uint32_t i = 0; i < kMaxAttributes; ++i) {
@@ -215,6 +219,7 @@ void submit(uint32_t primitive, const VertexLayout& layout, uint32_t vertex_coun
                                         t_indices, indexed);
     if (input.primitive == DrawInput::Primitive::Invalid) {
         warn_once(prim_once, "unknown primitive type: not drawn");
+        ++g_skipped_draws;
         return;
     }
     if (indexed && !t_indices.empty()) {
@@ -252,6 +257,8 @@ void inline_draw(uint32_t primitive, const uint32_t* data, size_t dwords) {
 }
 
 }  // namespace
+
+uint32_t skipped_draws() { return g_skipped_draws.load(std::memory_order_relaxed); }
 
 void install_draw_handlers() { nv2a::set_inline_draw_handler(inline_draw); }
 

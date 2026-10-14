@@ -159,6 +159,13 @@ export's calling convention and argument size come from the header.
   (auto_<seconds>.bmp, default 10) and on F12 mark_<n>.bmp, then freezes the game
   (sound paused) for a one-line note (log + marks.txt), then logs the next frame's
   draw dump ("MARK n"). A corner overlay (not in screenshots) counts the marks.
+  Automatic marks: each new warning or error once frames are shown (minus known
+  harmless ones) gets automark_<n>.bmp, an "A<n>" line in marks.txt (once per
+  folder) and a draw dump. F11 draws whatever needs an untranslated feature (texture
+  mode, cube/volume texture, texture format) in magenta; the overlay counts those
+  draws and the ones not drawn at all (FVF) per frame. On exit (window closed, crash,
+  stop on an unimplemented function, Ctrl+C) DIR/summary.txt lists how the session
+  ended and every distinct warning/error with count, first time and screenshot.
   Section loads (XeLoadSection) are logged at info.
 - Debugging a wrong picture: `XB_DUMP_FRAME=n` logs every draw of frame n (shader
   keys, combiners, texture modes/formats, raster states, first vertex) plus each

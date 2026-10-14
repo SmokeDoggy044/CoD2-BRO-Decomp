@@ -82,6 +82,12 @@ public:
     virtual std::optional<std::string> prompt(const std::vector<std::string>& heading) = 0;
     // Diagnostics: true once after the user pressed the mark key (F12).
     virtual bool take_mark_request() = 0;
+    // Diagnostics: true once after the user pressed the highlight key (F11).
+    virtual bool take_highlight_toggle() = 0;
+    // Diagnostics: draw what needs untranslated features in solid magenta.
+    virtual void set_highlight(bool on) = 0;
+    // Draws in the current frame so far that need untranslated features.
+    virtual uint32_t unsupported_draws() = 0;
     // Logs every draw of the next frame (see D3D9Draw::dump_draw).
     virtual void dump_next_frame() = 0;
 };

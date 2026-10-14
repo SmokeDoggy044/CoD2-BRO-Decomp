@@ -21,6 +21,10 @@ void reset_draw_state(bool depth_buffer);
 constexpr uint32_t kPrimPoints = 1, kPrimLines = 2, kPrimLineLoop = 3, kPrimLineStrip = 4, kPrimTriangles = 5,
                    kPrimTriangleStrip = 6, kPrimTriangleFan = 7, kPrimQuads = 8, kPrimQuadStrip = 9, kPrimPolygon = 10;
 
+// Draws not drawn at all so far because they need something not translated yet
+// (fixed-function vertex processing, an unknown primitive type). Diagnostics.
+uint32_t skipped_draws();
+
 // Draws `vertex_count` vertices from the current vertex streams (DrawVertices).
 // `indices` (16-bit, may be null) select them (DrawIndexedVertices).
 void draw_streams(uint32_t primitive, uint32_t start_vertex, uint32_t vertex_count, const uint16_t* indices);

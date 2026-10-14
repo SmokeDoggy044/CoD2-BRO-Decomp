@@ -7,6 +7,7 @@
 //   the Xbox's DPC. Titles pace their frames with it (CoD2: BRO busy-waits on a flag
 //   that its callback clears), so it must keep running.
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstdio>
@@ -14,6 +15,7 @@
 #include <cstring>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <string>
 #include <thread>
 #include <vector>
@@ -295,25 +297,66 @@ void upload_back_buffer_writes() {
                                  ((pixels.size >> kSizePitchShift) + 1) * 64);
 }
 
-// --diag: timed screenshots, F12 marks with a note, and the corner overlay (see
-// D3DConfig).
+// --diag: automatic marks. Every warning and error logged once frames are on screen
+// (except known harmless ones) is marked by itself at the next Swap: a screenshot
+// (automark_<n>.bmp), its line in marks.txt ("A<n>"), and the next frame's draw dump.
+// Each message is marked once per diag folder.
+constexpr const char* kKnownHarmless[] = {"SetGammaRamp ignored", "vertex program EXP:", "vertex program LOG:"};
+constexpr uint32_t kMaxAutoMarks = 50;  // per run; later messages are only logged
+
+std::mutex g_auto_mutex;
+std::vector<std::string> g_auto_pending;  // "category: text", guarded by g_auto_mutex
+std::atomic<bool> g_frames_shown{false};
+
+void diag_observer(platform::LogLevel level, const char* category, const char* text) {
+    if (!g_frames_shown.load(std::memory_order_relaxed)) return;
+    if (!std::strcmp(category, "diag") || !std::strcmp(category, "dump")) return;
+    for (const char* known : kKnownHarmless)
+        if (!std::strncmp(text, known, std::strlen(known))) return;
+    std::lock_guard<std::mutex> lock(g_auto_mutex);
+    if (g_auto_pending.size() < 32)
+        g_auto_pending.push_back(std::string(level == platform::LogLevel::Error ? "error " : "") + category + ": " +
+                                 text);
+}
+
+// --diag: timed screenshots, F12 marks with a note, automatic marks, F11 highlighting
+// and the corner overlay (see D3DConfig).
 void diagnostics() {
     using Clock = std::chrono::steady_clock;
-    // Times and mark numbers continue across a title reboot (the loader relaunches).
+    const std::string marks_path = g.config.diag_dir + "/marks.txt";
+    // Times and mark numbers continue across a title reboot (the loader relaunches):
+    // marks.txt has a line per mark, "A<n>" lines for automatic ones.
     static const auto start = platform::session_start();
     static auto next_shot = Clock::now();
     static auto flash_until = next_shot;
-    static uint32_t marks = [] {
-        uint32_t lines = 0;
-        if (std::FILE* file = std::fopen((g.config.diag_dir + "/marks.txt").c_str(), "r")) {
-            for (int c; (c = std::fgetc(file)) != EOF;) lines += c == '\n';
+    static uint32_t marks = 0, auto_marks = 0, auto_marks_this_run = 0;
+    static std::set<std::string> auto_marked;  // messages already in marks.txt
+    static bool loaded = false;
+    if (!loaded) {
+        loaded = true;
+        if (std::FILE* file = std::fopen(marks_path.c_str(), "r")) {
+            char line[1024];
+            while (std::fgets(line, sizeof(line), file)) {
+                if (line[0] != 'A') {
+                    ++marks;
+                    continue;
+                }
+                auto_marks = std::max<uint32_t>(auto_marks, static_cast<uint32_t>(std::atoi(line + 1)));
+                // A<n> \t <s>s \t frame <f> \t message
+                const char* message = line;
+                for (int tabs = 0; tabs < 3 && message; ++tabs)
+                    if ((message = std::strchr(message, '\t'))) ++message;
+                if (message) auto_marked.insert(std::string(message, std::strcspn(message, "\n")));
+            }
             std::fclose(file);
         }
-        return lines;
-    }();
+    }
     static std::string flash;
+    static bool highlight = false;
+    static uint32_t skipped_before = skipped_draws();
     const auto now = Clock::now();
     const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
+    bool dump = false;
 
     if (g.backend->take_mark_request()) {
         ++marks;
@@ -327,15 +370,50 @@ void diagnostics() {
         if (g.config.pause_audio) g.config.pause_audio(false);
         const std::string text = note ? *note : "";
         LOG_INFO("diag", "MARK %u note: %s", marks, note ? text.c_str() : "(none)");
-        if (std::FILE* file = std::fopen((g.config.diag_dir + "/marks.txt").c_str(), "a")) {
+        if (std::FILE* file = std::fopen(marks_path.c_str(), "a")) {
             std::fprintf(file, "%u\t%llds\tframe %u\t%s\n", marks, static_cast<long long>(seconds), g.swap_count,
                          text.c_str());
             std::fclose(file);
         }
         LOG_INFO("diag", "MARK %u: draws of the next frame follow", marks);
-        g.backend->dump_next_frame();
+        dump = true;
         flash = "MARK " + std::to_string(marks) + (note ? " saved with note" : " saved");
         flash_until = Clock::now() + std::chrono::seconds(3);
+    }
+
+    std::vector<std::string> events;
+    {
+        std::lock_guard<std::mutex> lock(g_auto_mutex);
+        events.swap(g_auto_pending);
+    }
+    std::vector<std::string> fresh;
+    for (std::string& event : events)
+        if (auto_marked.insert(event).second) fresh.push_back(std::move(event));
+    if (!fresh.empty() && auto_marks_this_run < kMaxAutoMarks) {
+        ++auto_marks;
+        ++auto_marks_this_run;
+        const std::string name = "automark_" + std::to_string(auto_marks) + ".bmp";
+        g.backend->save_back_buffer((g.config.diag_dir + "/" + name).c_str());
+        if (std::FILE* file = std::fopen(marks_path.c_str(), "a")) {
+            for (const std::string& event : fresh)
+                std::fprintf(file, "A%u\t%llds\tframe %u\t%s\n", auto_marks, static_cast<long long>(seconds),
+                             g.swap_count, event.c_str());
+            std::fclose(file);
+        }
+        for (const std::string& event : fresh)
+            LOG_INFO("diag", "AUTO MARK %u at %llds, frame %u (%s): %s", auto_marks, static_cast<long long>(seconds),
+                     g.swap_count, name.c_str(), event.c_str());
+        LOG_INFO("diag", "AUTO MARK %u: draws of the next frame follow", auto_marks);
+        dump = true;
+        flash = "AUTO MARK " + std::to_string(auto_marks) + ": " + fresh.front().substr(0, 70);
+        flash_until = Clock::now() + std::chrono::seconds(4);
+    }
+    if (dump) g.backend->dump_next_frame();
+
+    if (g.backend->take_highlight_toggle()) {
+        highlight = !highlight;
+        g.backend->set_highlight(highlight);
+        LOG_INFO("diag", "highlighting untranslated draws %s", highlight ? "on" : "off");
     }
     if (now >= next_shot) {
         next_shot = now + std::chrono::seconds(g.config.diag_seconds);
@@ -343,7 +421,16 @@ void diagnostics() {
         std::snprintf(name, sizeof(name), "/auto_%05lld.bmp", static_cast<long long>(seconds));
         g.backend->save_back_buffer((g.config.diag_dir + name).c_str());
     }
-    std::vector<std::string> overlay = {"DIAG  marks: " + std::to_string(marks) + "   F12: mark a problem"};
+
+    std::vector<std::string> overlay = {"DIAG  marks: " + std::to_string(marks) + "  auto: " +
+                                        std::to_string(auto_marks) + "   F12: mark   F11: magenta " +
+                                        (highlight ? "ON" : "off")};
+    const uint32_t skipped_now = skipped_draws();
+    const uint32_t unsupported = g.backend->unsupported_draws(), skipped = skipped_now - skipped_before;
+    skipped_before = skipped_now;
+    if (unsupported || skipped)
+        overlay.push_back("this frame: " + std::to_string(unsupported) + " draws need missing features" +
+                          (highlight ? " (magenta)" : "") + ", " + std::to_string(skipped) + " not drawn");
     if (now < flash_until) overlay.push_back(flash);
     g.backend->set_overlay(std::move(overlay));
 }
@@ -352,6 +439,7 @@ uint32_t XB_STDCALL D3DDevice_Swap(uint32_t /*flags*/) {
     platform::HostFloatEnv float_env;
     upload_back_buffer_writes();
     if (!g.config.diag_dir.empty()) diagnostics();
+    g_frames_shown.store(true, std::memory_order_relaxed);
     if (g.config.screenshot_interval && g.swap_count % g.config.screenshot_interval == 0) {
         const std::string path = g.config.screenshot_dir + "/frame_" + std::to_string(g.swap_count) + ".bmp";
         g.backend->save_back_buffer(path.c_str());
@@ -474,6 +562,7 @@ void texture_written(XbPtr resource) {
 
 void configure(const D3DConfig& config) {
     g.config = config;
+    if (!config.diag_dir.empty()) platform::log_set_observer(diag_observer);
     set_render_state_address(config.render_state);
     set_texture_state_address(config.texture_state);
     install_draw_handlers();

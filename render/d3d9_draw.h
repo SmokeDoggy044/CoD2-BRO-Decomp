@@ -34,6 +34,11 @@ public:
         dump_frame_ = frame_ + 1;
         dump_index_ = 0;
     }
+    // Diagnostics: draws that need something not translated yet (a texture mode, cube
+    // or volume texture, texture format) are drawn solid magenta while this is on.
+    void set_highlight(bool on) { highlight_ = on; }
+    // Such draws in the current frame so far (counted with highlighting off too).
+    uint32_t unsupported_draws() const { return unsupported_draws_; }
 
 private:
     struct Caches;
@@ -41,6 +46,7 @@ private:
     struct Target;
     // The texture bound to a stage as a D3D9 texture (created or updated), or null.
     CachedTexture* texture_for_stage(uint32_t stage);
+    bool magenta_shader();  // creates magenta_ once; false if that failed
     void dump_draw(const DrawInput& input, const XbPixelShaderDef& def, uint64_t vs_key, uint32_t primitives);
 
     IDirect3DDevice9* device_;
@@ -52,6 +58,9 @@ private:
     uint32_t dump_frame_ = 0;  // XB_DUMP_FRAME / XB_DUMP_STOP, see dump_draw
     uint32_t dump_stop_ = UINT32_MAX;
     uint32_t dump_index_ = 0;
+    bool highlight_ = false;
+    uint32_t unsupported_draws_ = 0;
+    IDirect3DPixelShader9* magenta_ = nullptr;
     std::unique_ptr<Caches> caches_;
 };
 

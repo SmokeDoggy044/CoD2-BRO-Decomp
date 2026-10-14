@@ -378,9 +378,12 @@ IDirect3DSurface9* D3D9Draw::target_surface(uint32_t data) {
     return it == caches_->targets.end() ? nullptr : it->second.surface;
 }
 
-D3D9Draw::~D3D9Draw() = default;
+D3D9Draw::~D3D9Draw() { release(magenta_); }
 
-void D3D9Draw::end_frame() { ++frame_; }
+void D3D9Draw::end_frame() {
+    ++frame_;
+    unsupported_draws_ = 0;
+}
 
 D3D9Draw::CachedTexture* D3D9Draw::texture_for_stage(uint32_t stage) {
     const uint32_t data = nv2a::reg(kNvTextureOffset + stage * kNvTextureStride);
@@ -541,6 +544,17 @@ void D3D9Draw::dump_draw(const DrawInput& input, const XbPixelShaderDef& def, ui
              rs[kRsCullMode], nv2a::reg(kNvFogEnable), v[0], v[1], v[2], v[3], textures);
 }
 
+bool D3D9Draw::magenta_shader() {
+    if (magenta_) return true;
+    const auto tokens = d3d9::solid_color_pixel_shader(1.0f, 0.0f, 1.0f, 1.0f);
+    if (FAILED(device_->CreatePixelShader(reinterpret_cast<const DWORD*>(tokens.data()), &magenta_))) {
+        static std::once_flag once;
+        std::call_once(once, [&] { log_tokens("highlight CreatePixelShader", tokens); });
+        magenta_ = nullptr;
+    }
+    return magenta_ != nullptr;
+}
+
 void D3D9Draw::draw(const DrawInput& input) {
     Caches& caches = *caches_;
     const uint32_t vertex_count_or_indices = input.indices ? input.index_count : input.vertex_count;
@@ -604,6 +618,7 @@ void D3D9Draw::draw(const DrawInput& input) {
 
     // Textures and samplers; linear textures scale their texel coordinates.
     float ps_constants[(d3d9::kPsFogColor + 1) * 4] = {};
+    bool unsupported = false;  // something this draw needs is not translated yet
     for (uint32_t stage = 0; stage < kTextureStages; ++stage) {
         float* scale = ps_constants + (d3d9::kPsTexcoordScale + stage) * 4;
         scale[0] = scale[1] = scale[2] = scale[3] = 1.0f;
@@ -614,10 +629,15 @@ void D3D9Draw::draw(const DrawInput& input) {
                 texture = cached->texture;
                 scale[0] = cached->scale[0];
                 scale[1] = cached->scale[1];
+            } else if (nv2a::reg(kNvTextureFormat + stage * kNvTextureStride)) {
+                unsupported = true;  // a format we cannot decode
             }
         } else if (mode == d3d9::kModeCubemap || mode == d3d9::kModeProject3D) {
             static std::once_flag once;
             warn_once(once, "cube and volume textures: not supported yet");
+            unsupported = true;
+        } else if (mode != d3d9::kModeNone && mode != d3d9::kModePassthru) {
+            unsupported = true;  // the pixel shader reads zero for it (d3d9_shader.cpp)
         }
         device_->SetTexture(stage, texture);
         if (!texture) continue;
@@ -710,6 +730,13 @@ void D3D9Draw::draw(const DrawInput& input) {
     device_->SetVertexDeclaration(vertex_declaration(device_, caches.declarations, input.attribute_mask));
     device_->SetVertexShader(vs);
     device_->SetPixelShader(ps);
+    if (unsupported) ++unsupported_draws_;
+    if (unsupported && highlight_ && magenta_shader()) {
+        device_->SetPixelShader(magenta_);
+        device_->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+        device_->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+        device_->SetRenderState(D3DRS_COLORWRITEENABLE, 0xF);
+    }
     const UINT stride = static_cast<UINT>(std::popcount(input.attribute_mask)) * 16;
     if (input.indices)
         device_->DrawIndexedPrimitiveUP(primitive_type(input.primitive), 0, input.vertex_count, primitives,

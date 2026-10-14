@@ -63,6 +63,9 @@ struct PixelShaderKey {
 
 std::vector<uint32_t> translate_pixel_shader(const PixelShaderKey& key);
 
+// A pixel shader that outputs one colour (diagnostics: highlighting draws).
+std::vector<uint32_t> solid_color_pixel_shader(float r, float g, float b, float a);
+
 // Texture modes (PS_TEXTUREMODES) of stage `stage`.
 inline uint32_t texture_mode(const XbPixelShaderDef& def, uint32_t stage) {
     return (def.texture_modes >> (stage * 5)) & 0x1F;

@@ -261,11 +261,16 @@ public:
             if (event.type == SDL_EVENT_QUIT || event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) return false;
             if (event.type == SDL_EVENT_KEY_DOWN && event.key.scancode == SDL_SCANCODE_F12 && !event.key.repeat)
                 mark_requested_ = true;
+            if (event.type == SDL_EVENT_KEY_DOWN && event.key.scancode == SDL_SCANCODE_F11 && !event.key.repeat)
+                highlight_toggled_ = true;
         }
         return true;
     }
 
     bool take_mark_request() override { return std::exchange(mark_requested_, false); }
+    bool take_highlight_toggle() override { return std::exchange(highlight_toggled_, false); }
+    void set_highlight(bool on) override { draw_->set_highlight(on); }
+    uint32_t unsupported_draws() override { return draw_->unsupported_draws(); }
     void dump_next_frame() override { draw_->dump_next_frame(); }
 
 private:
@@ -278,6 +283,7 @@ private:
     uint32_t width_ = 0, height_ = 0;
     uint32_t back_buffer_data_ = 0;
     bool mark_requested_ = false;
+    bool highlight_toggled_ = false;
     bool closed_ = false;
     std::unique_ptr<D3D9Overlay> overlay_;
     std::vector<std::string> overlay_lines_;

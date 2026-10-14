@@ -1,6 +1,7 @@
 # Route-B only: deleted once the game no longer needs the original XBE.
 add_executable(cod_bro_loader
     crash.cpp
+    diag_summary.cpp
     hooks.cpp
     kernel_thunks.cpp
     main.cpp
