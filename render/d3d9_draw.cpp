@@ -530,11 +530,13 @@ void D3D9Draw::dump_draw(const DrawInput& input, const XbPixelShaderDef& def, ui
     const uint32_t* rs = render_state();
     LOG_INFO("dump",
              "target %08x prim %d x%u verts %u attrs %04x vs %016llx | comb %u final %08x/%08x rgb0 %08x->%08x"
-             " | ztest %u zwrite %u zfunc %x atest %u aref %u afunc %x blend %u %x/%x cull %x fog %u | v0 (%g %g %g %g)%s",
+             " | ztest %u zwrite %u zfunc %x zoffset %u %g/%g atest %u aref %u afunc %x blend %u %x/%x cull %x fog %u | v0 (%g %g %g %g)%s",
              target_data_, static_cast<int>(input.primitive), primitives, input.vertex_count, input.attribute_mask,
              static_cast<unsigned long long>(vs_key), def.combiner_count & 0xFF, def.final_inputs_abcd,
              def.final_inputs_efg, def.rgb_inputs[0], def.rgb_outputs[0], rs[kRsZEnable] && has_depth_,
-             nv2a::reg(kNvDepthMask), nv2a::reg(kNvDepthFunc), nv2a::reg(kNvAlphaTestEnable), nv2a::reg(kNvAlphaRef),
+             nv2a::reg(kNvDepthMask), nv2a::reg(kNvDepthFunc), nv2a::reg(kNvPolygonOffsetFillEnable),
+             std::bit_cast<float>(nv2a::reg(kNvPolygonOffsetScaleFactor)),
+             std::bit_cast<float>(nv2a::reg(kNvPolygonOffsetBias)), nv2a::reg(kNvAlphaTestEnable), nv2a::reg(kNvAlphaRef),
              nv2a::reg(kNvAlphaFunc), nv2a::reg(kNvBlendEnable), nv2a::reg(kNvBlendSrc), nv2a::reg(kNvBlendDst),
              rs[kRsCullMode], nv2a::reg(kNvFogEnable), v[0], v[1], v[2], v[3], textures);
 }
@@ -677,6 +679,19 @@ void D3D9Draw::draw(const DrawInput& input) {
     device_->SetRenderState(D3DRS_STENCILMASK, reg(kNvStencilFuncMask));
     device_->SetRenderState(D3DRS_STENCILWRITEMASK, reg(kNvStencilMask));
     device_->SetRenderState(D3DRS_SHADEMODE, reg(kNvShadeMode) == 0x1D00 ? D3DSHADE_FLAT : D3DSHADE_GOURAUD);
+    // Polygon offset (D3D's ZBias; decals): the NV2A adds scale * depth slope + bias in
+    // depth buffer units, D3D9 takes the bias as a fraction of the depth range.
+    float offset_scale = 0.0f, offset_bias = 0.0f;
+    if (reg(kNvPolygonOffsetFillEnable)) {
+        std::memcpy(&offset_scale, &nv2a::reg(kNvPolygonOffsetScaleFactor), 4);
+        std::memcpy(&offset_bias, &nv2a::reg(kNvPolygonOffsetBias), 4);
+        offset_bias /= input.depth_max;
+    }
+    DWORD offset_bits;
+    std::memcpy(&offset_bits, &offset_scale, 4);
+    device_->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS, offset_bits);
+    std::memcpy(&offset_bits, &offset_bias, 4);
+    device_->SetRenderState(D3DRS_DEPTHBIAS, offset_bits);
 
     // The whole target is the D3D9 viewport (the vertex program did the Xbox one);
     // the Xbox viewport rectangle clips.
