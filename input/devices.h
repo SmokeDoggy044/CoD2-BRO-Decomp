@@ -6,11 +6,18 @@
 // gamepad, so the title always has a controller. Further gamepads take ports 1-3 in
 // the order they are plugged in and keep their port until unplugged.
 //
-// Keyboard and mouse (until the port has real PC controls):
-//   WASD left stick         arrow keys D-pad         IJKL right stick
-//   Space A   Escape B   R X   F Y   Q white   E black
-//   Return start   Tab back   left shift left stick click   V right stick click
-//   right mouse button / Z left trigger      left mouse button / C right trigger
+// Keyboard and mouse, on the pad buttons of CoD BRO's default layout (config/
+// default.cfg); the action in brackets:
+//   WASD left stick (move)          IJKL right stick (look; the mouse looks directly,
+//                                   see take_mouse_motion)
+//   left mouse  right trigger (fire)     right mouse  left trigger (aim down sights)
+//   Space  Y (jump)    C / left Ctrl  B (crouch, prone)    R  X (reload)
+//   F  A (use)         G  white (grenade)    V / middle mouse  black (melee)
+//   left Shift  left stick click (sprint)    X  right stick click
+//   mouse wheel / 1  D-pad up (next weapon)  Q / E  D-pad left / right (lean)
+//   Escape  start (pause)    Tab  back (objectives)
+//   menus: arrow keys D-pad, Return A (select), Backspace B (back)
+// Clicking into the window captures the mouse; focus loss (Alt+Tab) or F10 frees it.
 // Gamepads use their Xbox-style layout; LB is white, RB is black.
 //
 // Every function may be called from any thread. SDL updates the devices while the
@@ -44,6 +51,10 @@ uint32_t connected_ports();
 
 // The current state of a port. False if nothing is connected there.
 bool read_port(uint32_t port, PadState& state);
+
+// Mouse motion (counts) since the last call while the mouse is captured; 0 otherwise.
+// Titles take it where they turn the view (a title-specific hook).
+void take_mouse_motion(float& dx, float& dy);
 
 // Sets a port's rumble motors (0-65535; left is the low-frequency one).
 void set_rumble(uint32_t port, uint16_t left, uint16_t right);

@@ -41,6 +41,7 @@ struct Options {
     std::optional<fs::path> screenshot_dir;
     bool silent = false;
     std::string press_script;
+    float mouse_sensitivity = 0.11f;
 };
 
 void print_usage(const char* program) {
@@ -57,7 +58,8 @@ void print_usage(const char* program) {
         "  --scale N        window size as a multiple of the game's resolution (default 2)\n"
         "  --screenshots N DIR  save every Nth frame as DIR/frame_<n>.bmp (debugging)\n"
         "  --press LIST     scripted presses on port 0, e.g. start@20,a@25.5 (seconds after start;\n"
-        "                   buttons: a b x y black white lt rt start back up down left right ls rs)\n",
+        "                   buttons: a b x y black white lt rt start back up down left right ls rs)\n"
+        "  --mouse-sensitivity DEG  degrees the view turns per mouse count (default 0.11)\n",
         program);
 }
 
@@ -102,6 +104,12 @@ std::optional<Options> parse_args(int argc, char** argv) {
                 return std::nullopt;
             }
             options.press_script = argv[++i];
+        } else if (arg == "--mouse-sensitivity") {
+            if (i + 1 >= argc || (options.mouse_sensitivity = std::strtof(argv[++i], nullptr)) <= 0.0f ||
+                options.mouse_sensitivity > 10.0f) {
+                std::fprintf(stderr, "--mouse-sensitivity needs degrees per count (0-10)\n");
+                return std::nullopt;
+            }
         } else if (arg == "--silent") {
             options.silent = true;
         } else if (arg == "--debug") {
@@ -180,7 +188,7 @@ int main(int argc, char** argv) {
     if (!xbox::kernel_init(kernel_config(*options, *assets))) return 1;
     xbox::charge_image_pages(loader::initial_image_pages(image));
     loader::install_kernel_thunks(image);
-    loader::install_title_patches();
+    loader::install_title_patches({options->mouse_sensitivity});
     audio::configure({options->silent ? audio::OutputConfig::Device::Loopback : audio::OutputConfig::Device::Default});
     render::D3DConfig d3d_config;
     d3d_config.backend.window_scale = options->scale;

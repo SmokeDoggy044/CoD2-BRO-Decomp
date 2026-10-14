@@ -15,8 +15,10 @@
 #include "d3d.h"
 #include "xinput.h"
 #include "xonline.h"
+#include "devices.h"
 #include "dsound.h"
 #include "filesystem.h"
+#include "float_env.h"
 #include "hooks.h"
 #include "kernel.h"
 #include "log.h"
@@ -116,6 +118,70 @@ void install_rdtsc_patches() {
         ++installed;
     }
     LOG_INFO("patches", "RDTSC: %d sites run at the Xbox's 733 MHz", installed);
+}
+
+// --- Mouse look ---------------------------------------------------------------------
+//
+// The Xbox build feeds its right stick through Quake 3's mouse path (in_joystick:
+// IN_JoyMove posts SE_MOUSE events, CL_MouseMove FUN_002b39e0 applies stick
+// acceleration and a 370 deg/s turn limit), so a real mouse cannot go through there.
+// Instead CL_CreateCmd's call to CL_MouseMove goes through a thunk that first adds
+// the mouse motion to cl.viewangles the way PC CoD does, under the same conditions
+// CL_MouseMove checks.
+
+constexpr uint32_t kCallMouseMove = 0x002c7ad7;  // in CL_CreateCmd FUN_002c7a90
+constexpr uint32_t kMouseMove = 0x002b39e0;
+
+template <typename T>
+T& title(uint32_t address) {
+    return *reinterpret_cast<T*>(uintptr_t{address});
+}
+// A cvar's float / integer value (cvar_t: value at +0x1C, integer at +0x20).
+float cvar_value(uint32_t cvar_pointer) { return title<float>(title<uint32_t>(cvar_pointer) + 0x1C); }
+int32_t cvar_integer(uint32_t cvar_pointer) { return title<int32_t>(title<uint32_t>(cvar_pointer) + 0x20); }
+
+float g_mouse_degrees_per_count = 0.11f;
+
+void XB_CDECL mouse_look() {
+    float dx, dy;
+    input::take_mouse_motion(dx, dy);
+    if (dx == 0.0f && dy == 0.0f) return;
+    // Player state: view locked (0x4000) unless one of 0x106000 allows looking.
+    if ((title<uint32_t>(0x009601ac) & 0x4000) && !(title<uint32_t>(0x00960240) & 0x106000)) return;
+    if (title<int32_t>(0x00933fb8) != 0) return;  // in a vehicle: its own controls
+    platform::HostFloatEnv float_env;
+    // cl.cgameSensitivity: cg.zoomSensitivity, set each frame by CG_DrawActiveFrame
+    // (FUN_0028b340); lower while aiming down sights, 0 before the first frame.
+    const float scale = g_mouse_degrees_per_count * title<float>(0x00961774);
+    title<float>(0x0096179c) -= dx * scale;  // cl.viewangles[YAW]
+    if (title<int32_t>(0x009341b0) != 0 || cvar_integer(0x0093f808) != 0) {  // cl_freelook
+        const float invert = cvar_value(0x00929c0c) < 0.0f ? -1.0f : 1.0f;  // m_pitch sign = invert Y
+        title<float>(0x00961798) += dy * scale * invert;  // cl.viewangles[PITCH]
+    }
+}
+
+// pushad; pushfd; call mouse_look; popfd; popad; jmp CL_MouseMove
+void install_mouse_look() {
+    auto* site = reinterpret_cast<uint8_t*>(uintptr_t{kCallMouseMove});
+    uint32_t relative;
+    std::memcpy(&relative, site + 1, 4);
+    if (site[0] != 0xE8 || kCallMouseMove + 5 + relative != kMouseMove) {
+        LOG_WARN("patches", "%08x: not the call to CL_MouseMove; no mouse look", kCallMouseMove);
+        return;
+    }
+    auto* thunk = static_cast<uint8_t*>(
+        mmap(nullptr, 64, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
+    if (thunk == MAP_FAILED) return;
+    uint8_t* t = thunk;
+    *t++ = 0x60;  // pushad
+    *t++ = 0x9C;  // pushfd
+    put_rel32(t, 0xE8, reinterpret_cast<const void*>(&mouse_look));
+    t += 5;
+    *t++ = 0x9D;  // popfd
+    *t++ = 0x61;  // popad
+    put_rel32(t, 0xE9, reinterpret_cast<const void*>(uintptr_t{kMouseMove}));
+    put_rel32(site, 0xE8, thunk);
+    LOG_INFO("patches", "mouse look: %.3f degrees per count", g_mouse_degrees_per_count);
 }
 
 }  // namespace
@@ -228,12 +294,14 @@ bool install_sdk_replacements(const XbeImage& image, const SymbolTable& symbols)
     return ok;
 }
 
-void install_title_patches() {
+void install_title_patches(const TitlePatchConfig& config) {
+    g_mouse_degrees_per_count = config.mouse_degrees_per_count;
     for (const Patch& patch : kPatches) {
         install_jump(patch.address, patch.replacement);
         LOG_DEBUG("patches", "%08x: %s", patch.address, patch.what);
     }
     install_rdtsc_patches();
+    install_mouse_look();
 }
 
 }  // namespace loader

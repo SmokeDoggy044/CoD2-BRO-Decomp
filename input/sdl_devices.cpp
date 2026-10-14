@@ -5,6 +5,8 @@
 #include <SDL3/SDL.h>
 
 #include <algorithm>
+#include <atomic>
+#include <chrono>
 #include <iterator>
 #include <utility>
 #include <mutex>
@@ -50,6 +52,54 @@ void refresh_ports() {
 }
 
 uint8_t analog(bool pressed) { return pressed ? 0xFF : 0; }
+
+// Mouse: relative motion while captured, and the wheel as a short D-pad-up press.
+std::mutex g_mouse_mutex;
+float g_mouse_dx = 0.0f, g_mouse_dy = 0.0f;
+std::atomic<int64_t> g_wheel_until_ms{0};
+constexpr int64_t kWheelPressMs = 80;  // long enough for the title's next poll
+
+int64_t now_ms() {
+    using namespace std::chrono;
+    return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+}
+
+void set_captured(SDL_Window* window, bool captured) {
+    if (window && SDL_GetWindowRelativeMouseMode(window) != captured) {
+        SDL_SetWindowRelativeMouseMode(window, captured);
+        LOG_INFO("input", "mouse %s", captured ? "captured (F10 frees it)" : "freed");
+    }
+}
+
+// Runs on the thread that pumps window events (the renderer's).
+bool SDLCALL watch_event(void*, SDL_Event* event) {
+    switch (event->type) {
+        case SDL_EVENT_MOUSE_MOTION:
+            if (SDL_Window* window = SDL_GetWindowFromID(event->motion.windowID);
+                window && SDL_GetWindowRelativeMouseMode(window)) {
+                std::lock_guard lock(g_mouse_mutex);
+                g_mouse_dx += event->motion.xrel;
+                g_mouse_dy += event->motion.yrel;
+            }
+            break;
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
+            set_captured(SDL_GetWindowFromID(event->button.windowID), true);
+            break;
+        case SDL_EVENT_MOUSE_WHEEL:
+            if (event->wheel.y != 0.0f) g_wheel_until_ms = now_ms() + kWheelPressMs;
+            break;
+        case SDL_EVENT_WINDOW_FOCUS_LOST:
+            set_captured(SDL_GetWindowFromID(event->window.windowID), false);
+            break;
+        case SDL_EVENT_KEY_DOWN:
+            if (event->key.scancode == SDL_SCANCODE_F10 && !event->key.repeat)
+                if (SDL_Window* window = SDL_GetWindowFromID(event->key.windowID))
+                    set_captured(window, !SDL_GetWindowRelativeMouseMode(window));
+            break;
+        default: break;
+    }
+    return true;
+}
 
 // Adds `value` to an axis, saturating.
 void add_axis(int16_t& axis, int value) {
@@ -98,22 +148,30 @@ void read_keyboard_mouse(PadState& state) {
     add_axis(state.thumb_rx, stick(SDL_SCANCODE_J, SDL_SCANCODE_L));
     add_axis(state.thumb_ry, stick(SDL_SCANCODE_K, SDL_SCANCODE_I));
 
-    const std::pair<SDL_Scancode, uint16_t> digital[] = {
-        {SDL_SCANCODE_UP, kDpadUp},         {SDL_SCANCODE_DOWN, kDpadDown},
-        {SDL_SCANCODE_LEFT, kDpadLeft},     {SDL_SCANCODE_RIGHT, kDpadRight},
-        {SDL_SCANCODE_RETURN, kStart},      {SDL_SCANCODE_TAB, kBack},
-        {SDL_SCANCODE_LSHIFT, kLeftThumb},  {SDL_SCANCODE_V, kRightThumb},
+    const bool wheel = now_ms() < g_wheel_until_ms.load();
+    const std::pair<bool, uint16_t> digital[] = {
+        {key(SDL_SCANCODE_UP) || key(SDL_SCANCODE_1) || wheel, kDpadUp},
+        {key(SDL_SCANCODE_DOWN), kDpadDown},
+        {key(SDL_SCANCODE_LEFT) || key(SDL_SCANCODE_Q), kDpadLeft},
+        {key(SDL_SCANCODE_RIGHT) || key(SDL_SCANCODE_E), kDpadRight},
+        {key(SDL_SCANCODE_ESCAPE), kStart},
+        {key(SDL_SCANCODE_TAB), kBack},
+        {key(SDL_SCANCODE_LSHIFT), kLeftThumb},
+        {key(SDL_SCANCODE_X), kRightThumb},
     };
-    for (auto [code, bit] : digital)
-        if (key(code)) state.buttons |= bit;
+    for (auto [pressed, bit] : digital)
+        if (pressed) state.buttons |= bit;
 
     const SDL_MouseButtonFlags mouse = SDL_GetMouseState(nullptr, nullptr);
     const std::pair<bool, AnalogButton> buttons[] = {
-        {key(SDL_SCANCODE_SPACE), kA},  {key(SDL_SCANCODE_ESCAPE), kB},
-        {key(SDL_SCANCODE_R), kX},      {key(SDL_SCANCODE_F), kY},
-        {key(SDL_SCANCODE_E), kBlack},  {key(SDL_SCANCODE_Q), kWhite},
-        {key(SDL_SCANCODE_Z) || (mouse & SDL_BUTTON_RMASK), kLeftTrigger},
-        {key(SDL_SCANCODE_C) || (mouse & SDL_BUTTON_LMASK), kRightTrigger},
+        {key(SDL_SCANCODE_F) || key(SDL_SCANCODE_RETURN), kA},
+        {key(SDL_SCANCODE_C) || key(SDL_SCANCODE_LCTRL) || key(SDL_SCANCODE_BACKSPACE), kB},
+        {key(SDL_SCANCODE_R), kX},
+        {key(SDL_SCANCODE_SPACE), kY},
+        {key(SDL_SCANCODE_V) || (mouse & SDL_BUTTON_MMASK), kBlack},
+        {key(SDL_SCANCODE_G), kWhite},
+        {(mouse & SDL_BUTTON_RMASK) != 0, kLeftTrigger},
+        {(mouse & SDL_BUTTON_LMASK) != 0, kRightTrigger},
     };
     for (auto [pressed, index] : buttons)
         state.analog_buttons[index] = std::max(state.analog_buttons[index], analog(pressed));
@@ -130,8 +188,16 @@ bool init_devices() {
         return false;
     }
     g_started = true;
+    SDL_AddEventWatch(watch_event, nullptr);
     refresh_ports();
     return true;
+}
+
+void take_mouse_motion(float& dx, float& dy) {
+    std::lock_guard lock(g_mouse_mutex);
+    dx = g_mouse_dx;
+    dy = g_mouse_dy;
+    g_mouse_dx = g_mouse_dy = 0.0f;
 }
 
 uint32_t connected_ports() {

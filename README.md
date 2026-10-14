@@ -141,6 +141,12 @@ export's calling convention and argument size come from the header.
   diffuse), CPU reads of render targets, Clear with rectangles. Unverified: half-pixel
   offset, viewport-as-scissor, EXP/LOG precision. Next: play further in and fix what
   looks wrong (the user tests by playing now).
+- Keyboard and mouse: see `input/devices.h` for the layout (CoD BRO's default pad
+  layout from config/default.cfg, PC-style keys). Mouse look adds to cl.viewangles
+  in a thunk before CL_MouseMove (`loader/patches.cpp`), because the Xbox build
+  runs its right stick through the Quake 3 mouse path (stick acceleration, 370 deg/s
+  limit). `--mouse-sensitivity` sets degrees per count (default 0.11). Click the
+  window to capture the mouse; F10 or Alt+Tab frees it.
 - Debugging a wrong picture: `XB_DUMP_FRAME=n` logs every draw of frame n (shader
   keys, combiners, texture modes/formats, raster states, first vertex) plus each
   vertex program's microcode (decode with `tools/nv2a_vsdis.py`); `XB_DUMP_STOP=k`
