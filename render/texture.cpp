@@ -222,17 +222,14 @@ struct XbLockedRect {  // D3DLOCKED_RECT
     XbPtr bits;
 };
 
-constexpr uint32_t kLockTiled = 0x40;  // D3DLOCK_TILED: the 0xF0000000 (tiled) view
-
+// D3DLOCK_TILED (0x40) asks for the 0xF0000000 view, through which the CPU sees a tiled
+// surface in linear order. Nothing is tiled here, so the plain address is that view.
+// (CoD BRO's movie player locks the back buffer this way every frame.)
 void lock(XbPtr container, uint32_t face, uint32_t level, XbPtr locked_address, XbPtr rect_address,
-          uint32_t flags) {
+          uint32_t /*flags*/) {
     const auto& pixels = *from_xbox_ptr<XbPixelContainer>(container);
     const SurfaceLevel surface = surface_level(pixels, face, level);
     uint32_t bits = surface.address;
-    if (flags & kLockTiled) {
-        static std::once_flag once;
-        std::call_once(once, [] { LOG_WARN("render", "tiled lock: using the plain address"); });
-    }
     if (rect_address) {
         const auto* rect = from_xbox_ptr<XbRect>(rect_address);
         bits += rect->top * surface.pitch + bits_per_pixel(format_of(pixels)) * rect->left / 8;
