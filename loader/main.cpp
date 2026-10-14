@@ -62,7 +62,8 @@ void print_usage(const char* program) {
         "  --press LIST     scripted presses on port 0, e.g. start@20,a@25.5 (seconds after start;\n"
         "                   buttons: a b x y black white lt rt start back up down left right ls rs)\n"
         "  --diag DIR [S]   diagnostics while playing: DIR/log.txt, a screenshot every S seconds\n"
-        "                   (default 10), F12 marks a problem (screenshot + draw dump in the log)\n"
+        "                   (default 10); F12 marks a problem: screenshot, a note typed while the\n"
+        "                   game is paused (DIR/marks.txt), draw dump in the log\n"
         "  --mouse-sensitivity DEG  degrees the view turns per mouse count (default 0.11)\n",
         program);
 }
@@ -70,7 +71,8 @@ void print_usage(const char* program) {
 std::optional<Options> parse_args(int argc, char** argv) {
     Options options;
     for (int i = 1; i < argc; ++i) {
-        const std::string arg = argv[i];
+        std::string arg = argv[i];
+        if (arg.size() > 2 && arg[0] == '-' && arg[1] != '-') arg.insert(0, "-");  // -diag works like --diag
         auto value = [&]() -> std::optional<fs::path> {
             if (i + 1 < argc) return fs::path(argv[++i]);
             std::fprintf(stderr, "%s needs a value\n", arg.c_str());
