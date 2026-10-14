@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -90,6 +91,14 @@ public:
 #ifndef _WIN32
         // dxvk-native supports several window systems; ours is SDL3.
         setenv("DXVK_WSI_DRIVER", "SDL3", 0);
+        // Present without waiting for the display (see BackendConfig::vsync) but without
+        // tearing: DXVK then uses the mailbox mode. (Windows composes windowed swap
+        // chains, which do not tear.)
+        if (config.vsync) {
+            const char* user = std::getenv("DXVK_CONFIG");
+            const std::string dxvk = std::string(user ? user : "") + (user && *user ? "; " : "") + "dxvk.tearFree = True";
+            setenv("DXVK_CONFIG", dxvk.c_str(), 1);
+        }
 #endif
         d3d_ = Direct3DCreate9(D3D_SDK_VERSION);
         if (!d3d_) {
@@ -110,7 +119,7 @@ public:
         pp.Windowed = TRUE;
         pp.EnableAutoDepthStencil = TRUE;
         pp.AutoDepthStencilFormat = D3DFMT_D24S8;
-        pp.PresentationInterval = config.vsync ? D3DPRESENT_INTERVAL_ONE : D3DPRESENT_INTERVAL_IMMEDIATE;
+        pp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
         // The title calls D3D from more than one thread (its vertical blank callback
         // and loading screens), so let the runtime serialize.
         const HRESULT hr = d3d_->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, pp.hDeviceWindow,
@@ -193,6 +202,14 @@ public:
     void present() override {
         show(overlay_lines_);
         draw_->end_frame();
+    }
+
+    double refresh_rate() override {
+        const SDL_DisplayMode* mode = SDL_GetCurrentDisplayMode(SDL_GetDisplayForWindow(window_));
+        if (!mode) return 0;
+        if (mode->refresh_rate_numerator && mode->refresh_rate_denominator)
+            return static_cast<double>(mode->refresh_rate_numerator) / mode->refresh_rate_denominator;
+        return mode->refresh_rate;
     }
 
     void set_overlay(std::vector<std::string> lines) override { overlay_lines_ = std::move(lines); }

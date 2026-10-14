@@ -26,6 +26,8 @@ struct BackendConfig {
     SurfaceDesc back_buffer;    // what present() shows
     SurfaceDesc depth_stencil;  // the device's own depth buffer (data 0 = none)
     uint32_t window_scale = 1;
+    // No tearing. Present never waits for the display either way: the title paces
+    // itself on the vertical blank (device.cpp), which runs at the display's rate.
     bool vsync = true;
 };
 
@@ -67,6 +69,9 @@ public:
 
     // Shows the back buffer.
     virtual void present() = 0;
+
+    // The window's display refresh rate in Hz, 0 if unknown.
+    virtual double refresh_rate() = 0;
 
     // Draws to the current render target with the current Xbox state.
     virtual void draw(const DrawInput& input) = 0;

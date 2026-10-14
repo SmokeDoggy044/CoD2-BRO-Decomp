@@ -39,7 +39,7 @@ namespace {
 using xbox::from_xbox_ptr;
 using xbox::to_xbox_ptr;
 
-constexpr uint32_t kVBlankHz = 60;  // NTSC
+constexpr double kVBlankHz = 60;  // NTSC
 
 struct State {
     D3DConfig config;
@@ -117,10 +117,16 @@ void call_title(uint32_t function, std::initializer_list<uint32_t> args) {
         LOG_ERROR("render", "cannot call title function %08x", function);
 }
 
-void vblank_thread() {
+// The title's vertical blank: it paces its frames on it (30 fps = every second one).
+// It runs at the display's refresh rate when that is close to NTSC's, so frames reach
+// the screen at an even rate; other rates would change the title's speed, so those
+// keep 60 Hz. Presenting does not wait for the display (backend.h): with a blocking
+// present, its wait came on top of the title's, and in heavy scenes frames missed
+// their vertical blank (50 ms frames in clusters, as the two clocks' phases drifted).
+void vblank_thread(double hz) {
     if (auto attach = xbox::kernel_config().attach_kernel_thread) attach();
     using Clock = std::chrono::steady_clock;
-    const auto period = std::chrono::nanoseconds(1'000'000'000 / kVBlankHz);
+    const auto period = std::chrono::nanoseconds(static_cast<int64_t>(1e9 / hz));
     auto next = Clock::now();
     for (;;) {
         next += period;
@@ -173,7 +179,10 @@ uint32_t XB_STDCALL Direct3D_CreateDevice(uint32_t /*adapter*/, uint32_t /*devic
 
     if (g.config.device_pointer) *from_xbox_ptr<XbPtr>(g.config.device_pointer) = to_xbox_ptr(g.device);
     *from_xbox_ptr<XbPtr>(out_device) = to_xbox_ptr(g.device);
-    std::thread(vblank_thread).detach();
+    const double display_hz = g.backend->refresh_rate();
+    const double vblank_hz = display_hz >= 59 && display_hz <= 61 ? display_hz : kVBlankHz;
+    LOG_INFO("render", "vertical blank at %.3f Hz (display %.3f Hz)", vblank_hz, display_hz);
+    std::thread(vblank_thread, vblank_hz).detach();
     return kD3DOk;
 }
 
