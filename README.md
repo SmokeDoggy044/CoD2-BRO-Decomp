@@ -23,7 +23,8 @@ assets.
 | `game/` | Decompiled game code and the `cod_bro` executable | Kept, portable |
 | `assets/` | Game files in the final version (empty during development) | Kept, not in git |
 | `tools/` | Kernel export generator, Ghidra scripts, data files | Kept |
-| `third_party/xbox-includes/` | Xbox kernel/SDK headers (GPLv2, github.com/mborgerson/xbox-includes) | Reference |
+| `third_party/xbox-includes/` | Xbox kernel/SDK headers (GPL-2.0/CC0/LGPL-2.1 per file, github.com/mborgerson/xbox-includes) | Reference |
+| `LICENSES/` | License texts and which applies where (the port's own license is still to be chosen) | - |
 
 Rules for portable code: no compiler extensions outside `platform/compiler.h`,
 fixed-width types in structs that mirror Xbox memory (with `static_assert`s), and
