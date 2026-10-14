@@ -127,7 +127,11 @@ export's calling convention and argument size come from the header.
   start: no new warnings; full sweep not run yet). Keyboard actions now follow the
   profile's controller style. Mission 4 played through clean with --diag and F11
   (playtest 2026-10-14, 19 min, through the menus with the profile): no marks, no
-  errors, only the "tiled lock" warning at menu startup. Next: mission 5.
+  errors, only the "tiled lock" warning at menu startup (the movie player's back-buffer
+  lock; warning removed). Mission 5 (playtest 2026-10-14, 15 min) also clean: 30 fps
+  throughout, but frames that miss a vblank (50 ms) cluster in heavy fights (the town
+  battle at the end, ~25 in 25 s); cause not known yet (candidates: DXVK pipeline
+  compiles, our per-draw translation cost, the title's own CPU load). Next: mission 6.
 - Later, once the game runs: raise the budget and enlarge the game's memory pools
   (`FUN_00043fb0` allocates fixed 35.2 MB + 3.7 MB arenas) for bigger assets/mods.
 - Threads run truly in parallel and ignore priorities (the Xbox is single-core with
@@ -183,8 +187,8 @@ export's calling convention and argument size come from the header.
   stop on an unimplemented function, Ctrl+C) DIR/summary.txt lists how the session
   ended and every distinct warning/error with count, first time and screenshot.
   Section loads (XeLoadSection) are logged at info. Frame pacing (`render/frame_pacing.h`):
-  a "frames" log line per second (fps, worst frame, hitches = frames over twice the
-  recent average), "stall" lines for gaps of 1 s+ (loading), fps on the overlay, and a
+  a "frames" log line per second (fps, worst frame, hitches = frames over 1.4x the
+  recent average, e.g. a missed vblank), "stall" lines for gaps of 1 s+ (loading), fps on the overlay, and a
   frame rate section in summary.txt (slow seconds, worst hitches, stalls, with the
   nearest screenshot). Time --diag spends (screenshots, a note prompt) is left out.
   The title runs at 30 fps.

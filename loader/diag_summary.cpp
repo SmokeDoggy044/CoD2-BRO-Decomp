@@ -212,7 +212,7 @@ void write_diag_summary(const fs::path& dir) {
         for (const FrameSecond& f : full)
             if (f.hitches) rough.push_back(f);
         std::sort(rough.begin(), rough.end(), [](const auto& a, const auto& b) { return a.worst_ms > b.worst_ms; });
-        std::fprintf(out, "  Hitches (a frame over twice the recent average): %lu in %zu s\n", hitches, rough.size());
+        std::fprintf(out, "  Hitches (a frame over 1.4x the recent average, e.g. a missed vblank): %lu in %zu s\n", hitches, rough.size());
         if (!rough.empty())
             std::fprintf(out, "  %7s  %8s  %7s  %7s  %s\n", "second", "worst ms", "frame", "hitches", "screenshot");
         for (size_t i = 0; i < rough.size() && i < 10; ++i)

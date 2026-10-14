@@ -1,9 +1,10 @@
 #pragma once
 
 // --diag frame pacing: frame times (Swap to Swap, minus the time --diag itself spent)
-// summed up per second of the session. A hitch is a frame more than twice as long as
-// the average of the 30 before it and at least 15 ms longer; a gap of a second or more
-// is a stall (loading, a breakpoint) and stays out of the per-second numbers.
+// summed up per second of the session. A hitch is a frame over 1.4 times the average of
+// the 30 before it and at least 10 ms longer - at a vblank-locked 30 fps, a frame that
+// missed its vblank (50 ms). A gap of a second or more is a stall (loading, a
+// breakpoint) and stays out of the per-second numbers.
 
 #include <cstdint>
 #include <optional>
@@ -51,7 +52,7 @@ public:
                 if (ms > current_.worst_ms) current_.worst_ms = ms, current_.worst_frame = frame_number;
                 if (history_count_ >= kHistory / 2) {
                     const double average = history_sum_ / history_count_;
-                    if (ms > 2 * average && ms > average + 15) ++current_.hitches;
+                    if (ms > 1.4 * average && ms > average + 10) ++current_.hitches;
                 }
                 push_history(ms);
             }

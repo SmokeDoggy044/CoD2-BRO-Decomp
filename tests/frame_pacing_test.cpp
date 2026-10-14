@@ -59,5 +59,15 @@ int main() {
     done = run(p, now, frame, 1000.0 / 60, 2);
     CHECK(!done.empty() && done[0].hitches == 1);
 
+    // 30 fps on 60 Hz vblanks: a 50 ms frame (missed vblank) is a hitch, 41 ms is not.
+    run(p, now, frame, 1000.0 / 30, 2);
+    p.frame(now += 0.041, ++frame);
+    p.frame(now += 0.025, ++frame);
+    done = run(p, now, frame, 1000.0 / 30, 2);
+    CHECK(!done.empty() && done[0].hitches == 0, "%u hitches", done.empty() ? 0 : done[0].hitches);
+    p.frame(now += 0.050, ++frame);
+    done = run(p, now, frame, 1000.0 / 30, 2);
+    CHECK(!done.empty() && done[0].hitches == 1);
+
     return test::g_failures ? 1 : 0;
 }
