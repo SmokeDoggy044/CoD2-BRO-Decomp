@@ -26,6 +26,9 @@ struct BackendConfig {
     SurfaceDesc back_buffer;    // what present() shows
     SurfaceDesc depth_stencil;  // the device's own depth buffer (data 0 = none)
     uint32_t window_scale = 1;
+    // Anisotropic filtering for mipmapped textures the title filters linearly (PC
+    // option; the Xbox titles rarely used it). 1 = the title's own filters.
+    uint32_t anisotropy = 1;
     // No tearing. Present never waits for the display either way: the title paces
     // itself on the vertical blank (device.cpp), which runs at the display's rate.
     bool vsync = true;

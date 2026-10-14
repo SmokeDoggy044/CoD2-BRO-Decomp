@@ -51,6 +51,7 @@ private:
 
     IDirect3DDevice9* device_;
     uint32_t depth_data_;  // the device's depth buffer's Xbox address
+    uint32_t anisotropy_;  // BackendConfig::anisotropy, within the device's limit
     uint32_t target_data_ = 0, target_width_ = 0, target_height_ = 0;
     bool has_depth_ = false;
     bool target_ok_ = false;

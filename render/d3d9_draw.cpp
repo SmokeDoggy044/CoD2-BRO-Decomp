@@ -284,7 +284,10 @@ struct D3D9Draw::Caches {
 };
 
 D3D9Draw::D3D9Draw(IDirect3DDevice9* device, const BackendConfig& config)
-    : device_(device), depth_data_(config.depth_stencil.data), caches_(std::make_unique<Caches>()) {
+    : device_(device), depth_data_(config.depth_stencil.data), anisotropy_(config.anisotropy),
+      caches_(std::make_unique<Caches>()) {
+    D3DCAPS9 caps{};
+    if (SUCCEEDED(device_->GetDeviceCaps(&caps))) anisotropy_ = std::min<uint32_t>(anisotropy_, caps.MaxAnisotropy);
     device_->SetRenderState(D3DRS_LIGHTING, FALSE);
     device_->SetRenderState(D3DRS_FOGENABLE, FALSE);
     device_->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE);
@@ -646,11 +649,17 @@ void D3D9Draw::draw(const DrawInput& input) {
         device_->SetSamplerState(stage, D3DSAMP_ADDRESSV, texture_address(s[kTssAddressV]));
         device_->SetSamplerState(stage, D3DSAMP_ADDRESSW, texture_address(s[kTssAddressW]));
         device_->SetSamplerState(stage, D3DSAMP_MAGFILTER, texture_filter(s[kTssMagFilter], false));
-        device_->SetSamplerState(stage, D3DSAMP_MINFILTER, texture_filter(s[kTssMinFilter], false));
+        DWORD min_filter = texture_filter(s[kTssMinFilter], false);
+        DWORD max_anisotropy = std::max<uint32_t>(1, s[kTssMaxAnisotropy]);
+        if (anisotropy_ > 1 && min_filter != D3DTEXF_POINT && texture->GetLevelCount() > 1) {
+            min_filter = D3DTEXF_ANISOTROPIC;
+            max_anisotropy = std::max<DWORD>(max_anisotropy, anisotropy_);
+        }
+        device_->SetSamplerState(stage, D3DSAMP_MINFILTER, min_filter);
         device_->SetSamplerState(stage, D3DSAMP_MIPFILTER, texture_filter(s[kTssMipFilter], true));
         device_->SetSamplerState(stage, D3DSAMP_MIPMAPLODBIAS, s[kTssMipMapLodBias]);
         device_->SetSamplerState(stage, D3DSAMP_MAXMIPLEVEL, s[kTssMaxMipLevel]);
-        device_->SetSamplerState(stage, D3DSAMP_MAXANISOTROPY, std::max<uint32_t>(1, s[kTssMaxAnisotropy]));
+        device_->SetSamplerState(stage, D3DSAMP_MAXANISOTROPY, max_anisotropy);
         device_->SetSamplerState(stage, D3DSAMP_BORDERCOLOR, s[kTssBorderColor]);
     }
 

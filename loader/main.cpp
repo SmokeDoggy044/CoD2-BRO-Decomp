@@ -44,6 +44,7 @@ struct Options {
     bool trace_kernel = false;
     uint32_t memory_mb = 64;
     uint32_t scale = 2;
+    uint32_t anisotropy = 16;
     uint32_t screenshot_interval = 0;
     std::optional<fs::path> screenshot_dir;
     bool silent = false;
@@ -74,6 +75,8 @@ void print_usage(const char* program) {
         "  --silent         no sound output (audio still runs, into a silent device)\n"
         "  --memory MB      Xbox memory budget (default 64, like a retail Xbox; devkit: 128)\n"
         "  --scale N        window size as a multiple of the game's resolution (default 2)\n"
+        "  --anisotropy N   anisotropic filtering for mipmapped textures, 1-16 (default 16;\n"
+        "                   1 = what the game asks for)\n"
         "  --screenshots N DIR  save every Nth frame as DIR/frame_<n>.bmp (debugging)\n"
         "  --press LIST     scripted presses on port 0, e.g. start@20,a@25.5 (seconds after start;\n"
         "                   buttons: a b x y black white lt rt start back up down left right ls rs)\n"
@@ -119,6 +122,12 @@ std::optional<Options> parse_args(int argc, char** argv) {
             if (i + 1 >= argc || (options.scale = static_cast<uint32_t>(std::atoi(argv[++i]))) < 1 ||
                 options.scale > 8) {
                 std::fprintf(stderr, "--scale needs a number (1-8)\n");
+                return std::nullopt;
+            }
+        } else if (arg == "--anisotropy") {
+            if (i + 1 >= argc || (options.anisotropy = static_cast<uint32_t>(std::atoi(argv[++i]))) < 1 ||
+                options.anisotropy > 16) {
+                std::fprintf(stderr, "--anisotropy needs a number (1-16)\n");
                 return std::nullopt;
             }
         } else if (arg == "--screenshots") {
@@ -323,6 +332,7 @@ int main(int argc, char** argv) {
     audio::configure({options->silent ? audio::OutputConfig::Device::Loopback : audio::OutputConfig::Device::Default});
     render::D3DConfig d3d_config;
     d3d_config.backend.window_scale = options->scale;
+    d3d_config.backend.anisotropy = options->anisotropy;
     d3d_config.screenshot_interval = options->screenshot_interval;
     if (options->diag_dir) {
         d3d_config.diag_dir = options->diag_dir->string();
