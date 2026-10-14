@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstdarg>
 
 #include "compiler.h"
@@ -11,6 +12,11 @@ enum class LogLevel { Trace, Debug, Info, Warn, Error };
 void log_set_level(LogLevel level);
 // Also writes every line to `path` (appending). False if it cannot be opened.
 bool log_set_file(const char* path);
+// Time origin of log timestamps and other "seconds since start" values. A relaunched
+// process (the title rebooting into another XBE) sets it to the first one's.
+std::chrono::steady_clock::time_point session_start();
+// Only before other threads start.
+void set_session_start(std::chrono::steady_clock::time_point start);
 bool log_enabled(LogLevel level);
 void logf(LogLevel level, const char* category, const char* fmt, ...) PLATFORM_PRINTF(3, 4);
 void vlogf(LogLevel level, const char* category, const char* fmt, va_list args);

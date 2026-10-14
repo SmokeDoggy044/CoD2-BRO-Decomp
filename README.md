@@ -103,6 +103,11 @@ export's calling convention and argument size come from the header.
   keyboard layout is in `input/devices.h`. `--press start@20,a@25` scripts presses for
   unattended runs. Xbox Live (`online/`) is unavailable: no network, no accounts. Every SDK function in a replaced library's
   section that we do not replace traps by name (`loader/patches.cpp`).
+  Title reboots (`XLaunchNewImage` -> `HalReturnToFirmware(QuickReboot)`): the game
+  reboots into `default.xbe` between levels and when quitting to the menu, with its
+  state in the LaunchDataPage; the loader re-execs itself with the page (memory file)
+  and the same options (minus `--press`); log and `--diag` times/marks continue.
+  Multiplayer (`codmp_xboxf.xbe`) is refused. XONLINE's launch hook is cleared.
   User APCs (`ReadFileEx`/`WriteFileEx` completions) run at the thread's next
   alertable user-mode wait; file handles are FILE_OBJECTs that
   `ObReferenceObjectByHandle`/`IoQueryVolumeInformation` work on.

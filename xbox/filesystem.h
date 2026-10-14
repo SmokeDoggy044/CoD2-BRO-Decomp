@@ -24,6 +24,10 @@ uint32_t create_symbolic_link(std::string_view link_name, std::string_view targe
 // cache folder, emptying it if `format` is set. Returns an NTSTATUS.
 uint32_t mount_utility_drive(bool format);
 
+// The host file behind an Xbox path (after symbolic links), e.g.
+// "\\Device\\CdRom0\\default.xbe"; empty if it is no existing file.
+std::filesystem::path host_file_path(std::string_view xbox_path);
+
 // The host file behind an open file handle (null for directories and other
 // handles), for SDK replacements that read files themselves.
 std::shared_ptr<platform::File> host_file(Handle handle);

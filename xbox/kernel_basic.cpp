@@ -9,7 +9,10 @@
 #include <chrono>
 #include <cstdarg>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
+#include <filesystem>
+#include <string>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -70,6 +73,36 @@ uint32_t XB_CDECL DbgPrint(const char* format, ...) {
         buffer[--length] = '\0';
     LOG_INFO("dbgprint", "%s", buffer);
     return 0;  // STATUS_SUCCESS
+}
+
+// Routines: 0 halt, 1 reboot, 2 quick reboot, 3 reboot into the debugger, 4 fatal
+// error. A quick reboot with a LaunchDataPage (XLaunchNewImage) starts the XBE named
+// there through KernelConfig::reboot and hands it the page; there is no dashboard
+// to return to otherwise, so the process ends. Shutdown notifications are not run:
+// the process is replaced or ends either way.
+[[noreturn]] void XB_STDCALL HalReturnToFirmware(uint32_t routine) {
+    constexpr uint32_t kQuickReboot = 2;
+    if (routine == kQuickReboot && LaunchDataPage) {
+        const auto* page = from_xbox_ptr<const uint8_t>(LaunchDataPage);
+        // LAUNCH_DATA_HEADER: type, title id, then the launch path at +8 as
+        // "<device path>;<file>" (e.g. "\Device\CdRom0;default.xbe").
+        char path[520 + 1] = {};
+        std::memcpy(path, page + 8, sizeof(path) - 1);
+        std::string xbox_path(path);
+        if (const size_t separator = xbox_path.find(';'); separator != std::string::npos) xbox_path[separator] = '\\';
+        const std::filesystem::path xbe = host_file_path(xbox_path);
+        uint32_t type;
+        std::memcpy(&type, page, 4);
+        if (!xbe.empty() && g_config.reboot) {
+            LOG_INFO("kernel", "HalReturnToFirmware: rebooting into %s (launch data type %d)", path,
+                     static_cast<int32_t>(type));
+            g_config.reboot(xbe, std::span(page, kLaunchDataPageSize));
+        }
+        LOG_ERROR("kernel", "HalReturnToFirmware: cannot launch %s", path);
+        std::exit(1);
+    }
+    LOG_INFO("kernel", "HalReturnToFirmware(%u): the title quit to the dashboard", routine);
+    std::exit(0);
 }
 
 // Only recorded; the list links inside the struct are left alone.
@@ -273,6 +306,7 @@ uint32_t XB_STDCALL RtlTimeFieldsToTime(const XbTimeFields* f, int64_t* time) {
 const KernelImpl kImpls[] = {
     KIMPL(DbgPrint),
     KIMPL(HalRegisterShutdownNotification),
+    KIMPL(HalReturnToFirmware),
     KIMPL(KeQueryPerformanceCounter),
     KIMPL(KeQueryPerformanceFrequency),
     KIMPL(KeQuerySystemTime),
@@ -333,7 +367,15 @@ bool kernel_init(const KernelConfig& config) {
     std::snprintf(g_image_file_name, sizeof(g_image_file_name), "%s", config.image_file_name);
     RtlInitAnsiString(&XeImageFileName, g_image_file_name);
     std::thread(tick_thread).detach();
-    return memory_init(config.memory) && filesystem_init(config);
+    if (!memory_init(config.memory) || !filesystem_init(config)) return false;
+    if (!config.launch_data_page.empty()) {
+        // The new title reads it with XGetLaunchInfo, which frees it.
+        LaunchDataPage = allocate_contiguous(kLaunchDataPageSize, kLaunchDataPageSize);
+        if (!LaunchDataPage) return false;
+        std::memcpy(from_xbox_ptr<void>(LaunchDataPage), config.launch_data_page.data(),
+                    std::min<size_t>(config.launch_data_page.size(), kLaunchDataPageSize));
+    }
+    return true;
 }
 
 // 733.33 MHz = 11/15 cycles per nanosecond (integer only: title threads run with the

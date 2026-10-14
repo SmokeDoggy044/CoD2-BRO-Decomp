@@ -912,6 +912,11 @@ uint32_t create_symbolic_link(std::string_view link_name, std::string_view targe
     return inserted ? kStatusSuccess : kStatusObjectNameCollision;
 }
 
+fs::path host_file_path(std::string_view xbox_path) {
+    const Resolved r = resolve(std::string(xbox_path));
+    return r.status == kStatusSuccess && r.exists && !r.directory ? r.host : fs::path();
+}
+
 std::shared_ptr<platform::File> host_file(Handle handle) {
     const auto object = lookup_handle_as<FileObject>(handle);
     return object ? object->file : nullptr;

@@ -294,12 +294,20 @@ bool install_sdk_replacements(const XbeImage& image, const SymbolTable& symbols)
     return ok;
 }
 
+// XAPI XLaunchNewImageA calls the first non-null entry of a launch hook table
+// (0x00897908-0x00897910, static data) instead of its own path. XONLINE puts
+// FUN_0037da38 there: the same launch plus Xbox Live dashboard handling and cleanup.
+// Without it XAPI writes the LaunchDataPage and calls HalReturnToFirmware itself.
+constexpr uint32_t kLaunchHookTable = 0x00897908;
+constexpr uint32_t kLaunchHookTableEnd = 0x00897910;
+
 void install_title_patches(const TitlePatchConfig& config) {
     g_mouse_degrees_per_count = config.mouse_degrees_per_count;
     for (const Patch& patch : kPatches) {
         install_jump(patch.address, patch.replacement);
         LOG_DEBUG("patches", "%08x: %s", patch.address, patch.what);
     }
+    std::memset(reinterpret_cast<void*>(uintptr_t{kLaunchHookTable}), 0, kLaunchHookTableEnd - kLaunchHookTable);
     install_rdtsc_patches();
     install_mouse_look();
 }

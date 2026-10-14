@@ -1,13 +1,19 @@
 // Route-B loader: runs the original default.xbe natively on 32-bit x86 Linux, with
 // the Xbox kernel (and, later, the SDK libraries) replaced by our own code.
 
+#include <chrono>
 #include <cstdio>
+#include <cerrno>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <optional>
-#include <unistd.h>
+#include <span>
 #include <string>
+#include <vector>
+
+#include <sys/mman.h>
+#include <unistd.h>
 
 #include "crash.h"
 #include "d3d.h"
@@ -44,7 +50,14 @@ struct Options {
     float mouse_sensitivity = 0.11f;
     std::optional<fs::path> diag_dir;
     uint32_t diag_seconds = 10;
+    // Set by a title reboot (see reboot_title), not by users.
+    std::optional<int> launch_data_fd;
+    std::optional<int64_t> session_start_ns;
 };
+
+// The command line, repeated when the title reboots into another XBE.
+std::vector<std::string> g_args;
+fs::path g_xbe;  // the running XBE
 
 void print_usage(const char* program) {
     std::printf(
@@ -68,11 +81,15 @@ void print_usage(const char* program) {
         program);
 }
 
+std::string option_name(std::string arg) {
+    if (arg.size() > 2 && arg[0] == '-' && arg[1] != '-') arg.insert(0, "-");  // -diag works like --diag
+    return arg;
+}
+
 std::optional<Options> parse_args(int argc, char** argv) {
     Options options;
     for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg.size() > 2 && arg[0] == '-' && arg[1] != '-') arg.insert(0, "-");  // -diag works like --diag
+        const std::string arg = option_name(argv[i]);
         auto value = [&]() -> std::optional<fs::path> {
             if (i + 1 < argc) return fs::path(argv[++i]);
             std::fprintf(stderr, "%s needs a value\n", arg.c_str());
@@ -125,6 +142,10 @@ std::optional<Options> parse_args(int argc, char** argv) {
                     return std::nullopt;
                 }
             }
+        } else if (arg == "--launch-data" && i + 1 < argc) {
+            options.launch_data_fd = std::atoi(argv[++i]);
+        } else if (arg == "--session-start" && i + 1 < argc) {
+            options.session_start_ns = std::strtoll(argv[++i], nullptr, 10);
         } else if (arg == "--silent") {
             options.silent = true;
         } else if (arg == "--debug") {
@@ -164,9 +185,62 @@ void call_guest(uint32_t function, const uint32_t* args, uint32_t count) {
     loader::run_on_xbox_stack(function, *env, std::span(args, count));
 }
 
-xbox::KernelConfig kernel_config(const Options& options, const fs::path& assets) {
+// The page the previous title left in LaunchDataPage, from the memory file
+// reboot_title passed on.
+std::vector<uint8_t> read_launch_data(int fd) {
+    std::vector<uint8_t> page(xbox::kLaunchDataPageSize);
+    const ssize_t got = pread(fd, page.data(), page.size(), 0);
+    close(fd);
+    if (got != static_cast<ssize_t>(page.size())) {
+        LOG_ERROR("loader", "launch data: read %zd of %zu bytes", got, page.size());
+        return {};
+    }
+    return page;
+}
+
+// HalReturnToFirmware(QuickReboot): the Xbox reboots into `xbe` with the launch data
+// page kept in memory. Here the loader replaces itself (exec) with the same command
+// line for `xbe`, passing the page in a memory file and the session start time (log
+// and --diag times continue). Scripted presses are for the first boot only.
+[[noreturn]] void reboot_title(const fs::path& xbe, std::span<const uint8_t> launch_data_page) {
+    // Patches and symbols are for default.xbe (multiplayer is codmp_xboxf.xbe).
+    if (fs::path(xbe).filename() != fs::path(g_xbe).filename()) {
+        LOG_ERROR("loader", "reboot: %s is not supported, only %s", xbe.filename().string().c_str(),
+                  g_xbe.filename().string().c_str());
+        _exit(1);
+    }
+    const int fd = memfd_create("cod_bro_launch_data", 0);  // inherited by the new image
+    if (fd < 0 || write(fd, launch_data_page.data(), launch_data_page.size()) !=
+                      static_cast<ssize_t>(launch_data_page.size())) {
+        LOG_ERROR("loader", "reboot: cannot pass the launch data");
+        _exit(1);
+    }
+    std::vector<std::string> args = {g_args[0]};
+    for (size_t i = 1; i < g_args.size(); ++i) {
+        const std::string name = option_name(g_args[i]);
+        if (name == "--xbe" || name == "--launch-data" || name == "--session-start" || name == "--press") {
+            ++i;  // dropped with its value
+            continue;
+        }
+        args.push_back(g_args[i]);
+    }
+    const auto start = platform::session_start().time_since_epoch();
+    args.insert(args.end(), {"--xbe", xbe.string(), "--launch-data", std::to_string(fd), "--session-start",
+                             std::to_string(std::chrono::duration_cast<std::chrono::nanoseconds>(start).count())});
+    std::vector<char*> argv;
+    for (std::string& arg : args) argv.push_back(arg.data());
+    argv.push_back(nullptr);
+    LOG_INFO("loader", "reboot: starting %s", xbe.string().c_str());
+    execv("/proc/self/exe", argv.data());
+    LOG_ERROR("loader", "reboot: exec failed: %s", std::strerror(errno));
+    _exit(1);
+}
+
+xbox::KernelConfig kernel_config(const Options& options, const fs::path& assets, const fs::path& xbe) {
+    static std::string image_file_name;
+    image_file_name = "\\Device\\CdRom0\\" + xbe.filename().string();
     xbox::KernelConfig config{};
-    config.image_file_name = "\\Device\\CdRom0\\default.xbe";
+    config.image_file_name = image_file_name.c_str();
     config.trace_calls = options.trace_kernel;
     config.current_thread = current_kthread;
     config.current_irql = current_irql;
@@ -175,6 +249,8 @@ xbox::KernelConfig kernel_config(const Options& options, const fs::path& assets)
     config.memory.physical_bytes = options.memory_mb * 1024 * 1024;
     config.cdrom_root = assets;
     config.data_root = options.data.value_or(platform::user_data_dir());
+    if (options.launch_data_fd) config.launch_data_page = read_launch_data(*options.launch_data_fd);
+    config.reboot = reboot_title;
     return config;
 }
 
@@ -183,6 +259,11 @@ xbox::KernelConfig kernel_config(const Options& options, const fs::path& assets)
 int main(int argc, char** argv) {
     const std::optional<Options> options = parse_args(argc, argv);
     if (!options) return 2;
+    g_args.assign(argv, argv + argc);
+    if (options->session_start_ns)
+        platform::set_session_start(std::chrono::steady_clock::time_point(
+            std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                std::chrono::nanoseconds(*options->session_start_ns))));
     platform::log_set_level(options->log_level);
     if (options->diag_dir) {
         fs::create_directories(*options->diag_dir);
@@ -200,7 +281,9 @@ int main(int argc, char** argv) {
     LOG_INFO("loader", "assets: %s", assets->string().c_str());
 
     static loader::XbeImage image;
-    if (!image.load(options->xbe.value_or(*assets / "default.xbe"))) return 1;
+    const fs::path xbe = options->xbe.value_or(*assets / "default.xbe");
+    if (!image.load(xbe)) return 1;
+    g_xbe = xbe;
 
     static loader::SymbolTable symbols;
     const fs::path symbol_path = options->symbols.value_or(COD_BRO_DEFAULT_SYMBOLS);
@@ -210,7 +293,7 @@ int main(int argc, char** argv) {
         LOG_WARN("loader", "no symbols at %s; backtraces will show addresses only", symbol_path.string().c_str());
 
     loader::install_crash_handler(image, symbols);
-    if (!xbox::kernel_init(kernel_config(*options, *assets))) return 1;
+    if (!xbox::kernel_init(kernel_config(*options, *assets, xbe))) return 1;
     xbox::charge_image_pages(loader::initial_image_pages(image));
     loader::install_kernel_thunks(image);
     loader::install_title_patches({options->mouse_sensitivity});

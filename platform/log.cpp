@@ -11,7 +11,8 @@ namespace {
 
 std::atomic<LogLevel> g_level{LogLevel::Info};
 std::mutex g_mutex;
-const auto g_start = std::chrono::steady_clock::now();
+// Set before any other thread starts (see set_session_start).
+std::chrono::steady_clock::time_point g_start = std::chrono::steady_clock::now();
 std::FILE* g_file = nullptr;
 
 const char* level_name(LogLevel level) {
@@ -28,6 +29,9 @@ const char* level_name(LogLevel level) {
 }  // namespace
 
 void log_set_level(LogLevel level) { g_level = level; }
+
+std::chrono::steady_clock::time_point session_start() { return g_start; }
+void set_session_start(std::chrono::steady_clock::time_point start) { g_start = start; }
 
 bool log_set_file(const char* path) {
     std::FILE* file = std::fopen(path, "a");

@@ -299,10 +299,18 @@ void upload_back_buffer_writes() {
 // D3DConfig).
 void diagnostics() {
     using Clock = std::chrono::steady_clock;
-    static const auto start = Clock::now();
-    static auto next_shot = start;
-    static auto flash_until = start;
-    static uint32_t marks = 0;
+    // Times and mark numbers continue across a title reboot (the loader relaunches).
+    static const auto start = platform::session_start();
+    static auto next_shot = Clock::now();
+    static auto flash_until = next_shot;
+    static uint32_t marks = [] {
+        uint32_t lines = 0;
+        if (std::FILE* file = std::fopen((g.config.diag_dir + "/marks.txt").c_str(), "r")) {
+            for (int c; (c = std::fgetc(file)) != EOF;) lines += c == '\n';
+            std::fclose(file);
+        }
+        return lines;
+    }();
     static std::string flash;
     const auto now = Clock::now();
     const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();

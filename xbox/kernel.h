@@ -61,7 +61,16 @@ struct KernelConfig {
     // Host folders behind the Xbox devices. Empty = device not available.
     std::filesystem::path cdrom_root;  // \Device\CdRom0 (D:), read-only: the game's files
     std::filesystem::path data_root;   // writable: <data>/E = partition 1 (E:, T:, U:), <data>/Z = cache (Z:)
+    // LaunchDataPage from the title that rebooted into this one (kLaunchDataPageSize
+    // bytes), or empty when started "from the dashboard".
+    std::vector<uint8_t> launch_data_page;
+    // Starts `xbe` (a host file) in place of the running title, handing it
+    // `launch_data_page`, the way HalReturnToFirmware(QuickReboot) does. Does not
+    // return. Null: the process exits instead.
+    void (*reboot)(const std::filesystem::path& xbe, std::span<const uint8_t> launch_data_page);
 };
+
+constexpr uint32_t kLaunchDataPageSize = 0x1000;
 
 // Returns false if the memory layout cannot be set up.
 bool kernel_init(const KernelConfig& config);
