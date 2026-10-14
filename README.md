@@ -113,7 +113,9 @@ export's calling convention and argument size come from the header.
   `ObReferenceObjectByHandle`/`IoQueryVolumeInformation` work on.
 - Polygon offset confirmed in mission 2 (playtest 2026-10-14): the barracks sign,
   floor and wall decals, maps and posters no longer z-fight. All marks of the
-  2026-10-13 playtest are fixed. Next: play on past mission 2 and mark what looks wrong.
+  2026-10-13 playtest are fixed. Mission 3 (tank level) played clean with F11 on: no
+  untranslated features, no new warnings. Next: mission 4 onwards (`--launch-data 3
+  3<DIR/launch_data.bin` repeats the last reboot), fix what the marks show.
 - Later, once the game runs: raise the budget and enlarge the game's memory pools
   (`FUN_00043fb0` allocates fixed 35.2 MB + 3.7 MB arenas) for bigger assets/mods.
 - Threads run truly in parallel and ignore priorities (the Xbox is single-core with
