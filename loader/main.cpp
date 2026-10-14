@@ -58,6 +58,7 @@ struct Options {
 // The command line, repeated when the title reboots into another XBE.
 std::vector<std::string> g_args;
 fs::path g_xbe;  // the running XBE
+std::optional<fs::path> g_diag_dir;
 
 void print_usage(const char* program) {
     std::printf(
@@ -209,6 +210,13 @@ std::vector<uint8_t> read_launch_data(int fd) {
                   g_xbe.filename().string().c_str());
         _exit(1);
     }
+    if (g_diag_dir) {
+        // To repeat this boot: --launch-data 3 3<launch_data.bin
+        if (std::FILE* file = std::fopen((*g_diag_dir / "launch_data.bin").string().c_str(), "wb")) {
+            std::fwrite(launch_data_page.data(), 1, launch_data_page.size(), file);
+            std::fclose(file);
+        }
+    }
     const int fd = memfd_create("cod_bro_launch_data", 0);  // inherited by the new image
     if (fd < 0 || write(fd, launch_data_page.data(), launch_data_page.size()) !=
                       static_cast<ssize_t>(launch_data_page.size())) {
@@ -260,6 +268,7 @@ int main(int argc, char** argv) {
     const std::optional<Options> options = parse_args(argc, argv);
     if (!options) return 2;
     g_args.assign(argv, argv + argc);
+    g_diag_dir = options->diag_dir;
     if (options->session_start_ns)
         platform::set_session_start(std::chrono::steady_clock::time_point(
             std::chrono::duration_cast<std::chrono::steady_clock::duration>(
