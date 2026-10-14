@@ -117,6 +117,13 @@ export's calling convention and argument size come from the header.
   2026-10-13 playtest are fixed. Mission 3 (tank level) played clean with F11 on: no
   untranslated features, no new warnings. Next: mission 4 onwards (`--launch-data 3
   3<DIR/launch_data.bin` repeats the last reboot), fix what the marks show.
+- **Resume here (2026-10-14 evening):** no game file has a cube or volume texture
+  (all 9,652 DDS in the .cod packs are 2D), so those stay unbuilt until a run hits
+  one. `--level N` (0-13, 0 = prologue) starts a mission directly once the menus
+  are up; `tools/feature_sweep.sh OUT [MISSIONS] [SECONDS]` runs each mission's
+  start unattended and gathers every summary.txt into OUT/report.txt (mission 4's
+  start: no new warnings; full sweep not run yet). Keyboard actions now follow the
+  profile's controller style. Next: the user plays mission 4 with --diag.
 - Later, once the game runs: raise the budget and enlarge the game's memory pools
   (`FUN_00043fb0` allocates fixed 35.2 MB + 3.7 MB arenas) for bigger assets/mods.
 - Threads run truly in parallel and ignore priorities (the Xbox is single-core with
@@ -153,7 +160,9 @@ export's calling convention and argument size come from the header.
   offset, viewport-as-scissor, EXP/LOG precision. Next: play further in and fix what
   looks wrong (the user tests by playing now).
 - Keyboard and mouse: see `input/devices.h` for the layout (CoD BRO's default pad
-  layout from config/default.cfg, PC-style keys). Mouse look adds to cl.viewangles
+  layout from config/default.cfg, PC-style keys). The action keys follow the
+  profile's controller style (style_a..l.cfg rebind the pad): `loader/patches.cpp`
+  moves each to the button bound to the same command and logs the pad's bindings. Mouse look adds to cl.viewangles
   in a thunk before CL_MouseMove (`loader/patches.cpp`), because the Xbox build
   runs its right stick through the Quake 3 mouse path (stick acceleration, 370 deg/s
   limit). `--mouse-sensitivity` sets degrees per count (default 0.11). Click the
