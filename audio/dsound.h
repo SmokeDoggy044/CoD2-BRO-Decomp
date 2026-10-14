@@ -21,6 +21,9 @@ void configure(const OutputConfig& config);
 // without the library prefix). The loader redirects each function it finds.
 std::span<const xbox::KernelImpl> dsound_functions();
 
+// Pauses or resumes all sound output (diagnostics: while the title is frozen).
+void set_paused(bool paused);
+
 // The output, once DirectSound has been created (tests render through it).
 Output* output();
 

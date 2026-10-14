@@ -14,6 +14,7 @@
 #include "backend.h"
 #include "d3d9_api.h"
 #include "d3d9_draw.h"
+#include "d3d9_overlay.h"
 #include "log.h"
 
 namespace render {
@@ -64,6 +65,7 @@ bool write_bmp(const char* path, const uint8_t* pixels, int32_t pitch, uint32_t 
 class D3D9Backend final : public Backend {
 public:
     ~D3D9Backend() override {
+        overlay_.reset();
         draw_.reset();
         release(staging_);
         release(device_);
@@ -123,6 +125,7 @@ public:
         height_ = config.height;
         back_buffer_data_ = config.back_buffer.data;
         draw_ = std::make_unique<D3D9Draw>(device_, config);
+        overlay_ = std::make_unique<D3D9Overlay>(device_);
         LOG_INFO("render", "D3D9 device: %ux%u", config.width, config.height);
         return true;
     }
@@ -175,16 +178,74 @@ public:
     }
 
     // The title's back buffer is a render target texture like any other; it is
-    // copied to the swap chain to be shown.
-    void present() override {
+    // copied to the swap chain to be shown, with the overlay on top.
+    void show(const std::vector<std::string>& overlay) {
         IDirect3DSurface9* swap_chain = nullptr;
         IDirect3DSurface9* back_buffer = draw_->target_surface(back_buffer_data_);
         if (back_buffer && SUCCEEDED(device_->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &swap_chain))) {
             device_->StretchRect(back_buffer, nullptr, swap_chain, nullptr, D3DTEXF_NONE);
+            overlay_->draw(swap_chain, overlay, 4, 4);
             swap_chain->Release();
         }
         device_->Present(nullptr, nullptr, nullptr, nullptr);
+    }
+
+    void present() override {
+        show(overlay_lines_);
         draw_->end_frame();
+    }
+
+    void set_overlay(std::vector<std::string> lines) override { overlay_lines_ = std::move(lines); }
+
+    std::optional<std::string> prompt(const std::vector<std::string>& heading) override {
+        constexpr size_t kMaxText = 200, kLineChars = 76;
+        const bool captured = SDL_GetWindowRelativeMouseMode(window_);
+        SDL_SetWindowRelativeMouseMode(window_, false);
+        SDL_StartTextInput(window_);
+        std::string text;
+        std::optional<std::string> result;
+        bool done = false;
+        while (!done) {
+            SDL_Event event;
+            bool have = SDL_WaitEventTimeout(&event, 100);
+            while (have && !done) {
+                switch (event.type) {
+                    case SDL_EVENT_QUIT:
+                    case SDL_EVENT_WINDOW_CLOSE_REQUESTED: closed_ = done = true; break;
+                    case SDL_EVENT_TEXT_INPUT:
+                        if (text.size() < kMaxText) text += event.text.text;
+                        break;
+                    case SDL_EVENT_KEY_DOWN:
+                        if (event.key.key == SDLK_BACKSPACE) {
+                            while (!text.empty() && (text.back() & 0xC0) == 0x80) text.pop_back();  // UTF-8
+                            if (!text.empty()) text.pop_back();
+                        } else if (event.key.key == SDLK_RETURN || event.key.key == SDLK_KP_ENTER) {
+                            result = text;
+                            done = true;
+                        } else if (event.key.key == SDLK_ESCAPE) {
+                            done = true;
+                        }
+                        break;
+                    default: break;
+                }
+                have = SDL_PollEvent(&event);
+            }
+            std::vector<std::string> lines = heading;
+            const std::string field = "> " + text + "_";
+            for (size_t i = 0; i < field.size(); i += kLineChars) lines.push_back(field.substr(i, kLineChars));
+            lines.push_back("Return: save   Escape: skip");
+            show(lines);
+        }
+        SDL_StopTextInput(window_);
+        // Let go of Return/Escape before the title reads the keyboard again.
+        for (int i = 0; i < 100; ++i) {
+            SDL_PumpEvents();
+            const bool* keys = SDL_GetKeyboardState(nullptr);
+            if (!keys[SDL_SCANCODE_RETURN] && !keys[SDL_SCANCODE_ESCAPE] && !keys[SDL_SCANCODE_KP_ENTER]) break;
+            SDL_Delay(10);
+        }
+        if (captured && !closed_) SDL_SetWindowRelativeMouseMode(window_, true);
+        return result;
     }
 
     void draw(const DrawInput& input) override {
@@ -194,6 +255,7 @@ public:
     }
 
     bool pump_events() override {
+        if (closed_) return false;
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT || event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) return false;
@@ -216,6 +278,9 @@ private:
     uint32_t width_ = 0, height_ = 0;
     uint32_t back_buffer_data_ = 0;
     bool mark_requested_ = false;
+    bool closed_ = false;
+    std::unique_ptr<D3D9Overlay> overlay_;
+    std::vector<std::string> overlay_lines_;
 };
 
 }  // namespace

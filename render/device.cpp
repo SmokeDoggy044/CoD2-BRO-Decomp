@@ -295,21 +295,39 @@ void upload_back_buffer_writes() {
                                  ((pixels.size >> kSizePitchShift) + 1) * 64);
 }
 
-// --diag: timed screenshots and F12 marks (see D3DConfig).
+// --diag: timed screenshots, F12 marks with a note, and the corner overlay (see
+// D3DConfig).
 void diagnostics() {
     using Clock = std::chrono::steady_clock;
     static const auto start = Clock::now();
     static auto next_shot = start;
+    static auto flash_until = start;
     static uint32_t marks = 0;
+    static std::string flash;
     const auto now = Clock::now();
     const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
+
     if (g.backend->take_mark_request()) {
         ++marks;
-        const std::string path = g.config.diag_dir + "/mark_" + std::to_string(marks) + ".bmp";
-        LOG_INFO("diag", "MARK %u at %llds, frame %u: %s; draws of the next frame follow", marks,
-                 static_cast<long long>(seconds), g.swap_count, path.c_str());
-        g.backend->save_back_buffer(path.c_str());
+        const std::string shot = g.config.diag_dir + "/mark_" + std::to_string(marks) + ".bmp";
+        g.backend->save_back_buffer(shot.c_str());
+        LOG_INFO("diag", "MARK %u at %llds, frame %u: %s", marks, static_cast<long long>(seconds), g.swap_count,
+                 shot.c_str());
+        if (g.config.pause_audio) g.config.pause_audio(true);
+        const auto note = g.backend->prompt({"MARK " + std::to_string(marks) + " saved - game paused",
+                                             "What is wrong here? (one or two sentences)"});
+        if (g.config.pause_audio) g.config.pause_audio(false);
+        const std::string text = note ? *note : "";
+        LOG_INFO("diag", "MARK %u note: %s", marks, note ? text.c_str() : "(none)");
+        if (std::FILE* file = std::fopen((g.config.diag_dir + "/marks.txt").c_str(), "a")) {
+            std::fprintf(file, "%u\t%llds\tframe %u\t%s\n", marks, static_cast<long long>(seconds), g.swap_count,
+                         text.c_str());
+            std::fclose(file);
+        }
+        LOG_INFO("diag", "MARK %u: draws of the next frame follow", marks);
         g.backend->dump_next_frame();
+        flash = "MARK " + std::to_string(marks) + (note ? " saved with note" : " saved");
+        flash_until = Clock::now() + std::chrono::seconds(3);
     }
     if (now >= next_shot) {
         next_shot = now + std::chrono::seconds(g.config.diag_seconds);
@@ -317,6 +335,9 @@ void diagnostics() {
         std::snprintf(name, sizeof(name), "/auto_%05lld.bmp", static_cast<long long>(seconds));
         g.backend->save_back_buffer((g.config.diag_dir + name).c_str());
     }
+    std::vector<std::string> overlay = {"DIAG  marks: " + std::to_string(marks) + "   F12: mark a problem"};
+    if (now < flash_until) overlay.push_back(flash);
+    g.backend->set_overlay(std::move(overlay));
 }
 
 uint32_t XB_STDCALL D3DDevice_Swap(uint32_t /*flags*/) {

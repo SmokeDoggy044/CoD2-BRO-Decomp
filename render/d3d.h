@@ -29,10 +29,12 @@ struct D3DConfig {
     uint32_t screenshot_interval = 0;
     std::string screenshot_dir = ".";
     // Diagnostics while playing: a screenshot every diag_seconds into diag_dir
-    // (auto_<seconds>.bmp), and on the mark key (F12) mark_<n>.bmp plus a draw dump
-    // of the next frame in the log. Empty = off.
+    // (auto_<seconds>.bmp), and on the mark key (F12) mark_<n>.bmp, a note typed by the
+    // user while the game is frozen (log and marks.txt) and a draw dump of the next
+    // frame in the log. A corner overlay counts the marks. Empty = off.
     std::string diag_dir;
     uint32_t diag_seconds = 10;
+    void (*pause_audio)(bool paused) = nullptr;  // while a mark's note is typed
 };
 
 // Call before the title creates its device.

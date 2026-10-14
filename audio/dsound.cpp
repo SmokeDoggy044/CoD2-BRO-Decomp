@@ -998,6 +998,10 @@ void configure(const OutputConfig& config) {
 
 std::span<const xbox::KernelImpl> dsound_functions() { return kFunctions; }
 
+void set_paused(bool paused) {
+    if (g.output) g.output->set_paused(paused);
+}
+
 Output* output() {
     std::lock_guard lock(g.mutex);
     return g.output.get();

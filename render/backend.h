@@ -6,6 +6,9 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
+#include <string>
+#include <vector>
 
 namespace render {
 
@@ -71,6 +74,12 @@ public:
     // Handles window events. Returns false once the user closed the window.
     virtual bool pump_events() = 0;
 
+    // Diagnostics: text shown in the window's corner from now on (not in screenshots).
+    virtual void set_overlay(std::vector<std::string> lines) = 0;
+    // Shows the last frame with `heading` and a text field until the user presses
+    // Return (the text) or Escape (nullopt). The title is frozen meanwhile (this runs
+    // on its thread). If the window is closed, pump_events() returns false afterwards.
+    virtual std::optional<std::string> prompt(const std::vector<std::string>& heading) = 0;
     // Diagnostics: true once after the user pressed the mark key (F12).
     virtual bool take_mark_request() = 0;
     // Logs every draw of the next frame (see D3D9Draw::dump_draw).

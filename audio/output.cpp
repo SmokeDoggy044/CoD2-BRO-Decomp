@@ -95,10 +95,19 @@ void Output::drive_loopback() {
     std::vector<int16_t> scratch(kChunk * 2);
     auto next = steady_clock::now();
     while (!stopping_) {
-        alcRenderSamplesSOFT(device_, scratch.data(), static_cast<ALCsizei>(kChunk));
+        if (!paused_) alcRenderSamplesSOFT(device_, scratch.data(), static_cast<ALCsizei>(kChunk));
         next += microseconds(kChunk * 1000000 / rate_);
         std::this_thread::sleep_until(next);
     }
+}
+
+void Output::set_paused(bool paused) {
+    if (paused_.exchange(paused) == paused || loopback_) return;
+    if (!alcIsExtensionPresent(device_, "ALC_SOFT_pause_device")) return;
+    if (paused)
+        alcDevicePauseSOFT(device_);
+    else
+        alcDeviceResumeSOFT(device_);
 }
 
 void Output::render(int16_t* out, size_t frames) {

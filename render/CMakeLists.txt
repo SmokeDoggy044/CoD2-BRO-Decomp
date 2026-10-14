@@ -2,6 +2,7 @@
 add_library(render STATIC
     backend_d3d9.cpp
     d3d9_draw.cpp
+    d3d9_overlay.cpp
     d3d9_shader.cpp
     device.cpp
     draw.cpp

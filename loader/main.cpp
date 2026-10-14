@@ -219,6 +219,7 @@ int main(int argc, char** argv) {
     if (options->diag_dir) {
         d3d_config.diag_dir = options->diag_dir->string();
         d3d_config.diag_seconds = options->diag_seconds;
+        d3d_config.pause_audio = &audio::set_paused;
     }
     if (options->screenshot_dir) {
         fs::create_directories(*options->screenshot_dir);

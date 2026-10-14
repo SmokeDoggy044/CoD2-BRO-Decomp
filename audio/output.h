@@ -56,6 +56,8 @@ public:
     void begin_batch();
     void end_batch();
     bool set_hrtf(bool enabled);
+    // Stops all output until resumed (the voices do not advance).
+    void set_paused(bool paused);
 
     bool is_loopback() const { return loopback_; }
     // Loopback only: mixes `frames` stereo 16-bit frames.
@@ -72,6 +74,7 @@ private:
     std::vector<std::unique_ptr<Source>> sources_;
     std::thread driver_;
     std::atomic<bool> stopping_{false};
+    std::atomic<bool> paused_{false};
 };
 
 }  // namespace audio
