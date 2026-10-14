@@ -9,6 +9,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <memory>
@@ -294,9 +295,34 @@ void upload_back_buffer_writes() {
                                  ((pixels.size >> kSizePitchShift) + 1) * 64);
 }
 
+// --diag: timed screenshots and F12 marks (see D3DConfig).
+void diagnostics() {
+    using Clock = std::chrono::steady_clock;
+    static const auto start = Clock::now();
+    static auto next_shot = start;
+    static uint32_t marks = 0;
+    const auto now = Clock::now();
+    const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
+    if (g.backend->take_mark_request()) {
+        ++marks;
+        const std::string path = g.config.diag_dir + "/mark_" + std::to_string(marks) + ".bmp";
+        LOG_INFO("diag", "MARK %u at %llds, frame %u: %s; draws of the next frame follow", marks,
+                 static_cast<long long>(seconds), g.swap_count, path.c_str());
+        g.backend->save_back_buffer(path.c_str());
+        g.backend->dump_next_frame();
+    }
+    if (now >= next_shot) {
+        next_shot = now + std::chrono::seconds(g.config.diag_seconds);
+        char name[32];
+        std::snprintf(name, sizeof(name), "/auto_%05lld.bmp", static_cast<long long>(seconds));
+        g.backend->save_back_buffer((g.config.diag_dir + name).c_str());
+    }
+}
+
 uint32_t XB_STDCALL D3DDevice_Swap(uint32_t /*flags*/) {
     platform::HostFloatEnv float_env;
     upload_back_buffer_writes();
+    if (!g.config.diag_dir.empty()) diagnostics();
     if (g.config.screenshot_interval && g.swap_count % g.config.screenshot_interval == 0) {
         const std::string path = g.config.screenshot_dir + "/frame_" + std::to_string(g.swap_count) + ".bmp";
         g.backend->save_back_buffer(path.c_str());

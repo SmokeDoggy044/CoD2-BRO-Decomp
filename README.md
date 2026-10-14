@@ -147,6 +147,9 @@ export's calling convention and argument size come from the header.
   runs its right stick through the Quake 3 mouse path (stick acceleration, 370 deg/s
   limit). `--mouse-sensitivity` sets degrees per count (default 0.11). Click the
   window to capture the mouse; F10 or Alt+Tab frees it.
+- Playtesting: `--diag DIR [S]` writes DIR/log.txt, a screenshot every S seconds
+  (auto_<seconds>.bmp, default 10) and on F12 mark_<n>.bmp plus the next frame's
+  draw dump in the log ("MARK n"). Section loads (XeLoadSection) are logged at info.
 - Debugging a wrong picture: `XB_DUMP_FRAME=n` logs every draw of frame n (shader
   keys, combiners, texture modes/formats, raster states, first vertex) plus each
   vertex program's microcode (decode with `tools/nv2a_vsdis.py`); `XB_DUMP_STOP=k`

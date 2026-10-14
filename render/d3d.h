@@ -28,6 +28,11 @@ struct D3DConfig {
     // Debugging: save every Nth frame as <screenshot_dir>/frame_<n>.bmp (0 = never).
     uint32_t screenshot_interval = 0;
     std::string screenshot_dir = ".";
+    // Diagnostics while playing: a screenshot every diag_seconds into diag_dir
+    // (auto_<seconds>.bmp), and on the mark key (F12) mark_<n>.bmp plus a draw dump
+    // of the next frame in the log. Empty = off.
+    std::string diag_dir;
+    uint32_t diag_seconds = 10;
 };
 
 // Call before the title creates its device.

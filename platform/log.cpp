@@ -12,6 +12,7 @@ namespace {
 std::atomic<LogLevel> g_level{LogLevel::Info};
 std::mutex g_mutex;
 const auto g_start = std::chrono::steady_clock::now();
+std::FILE* g_file = nullptr;
 
 const char* level_name(LogLevel level) {
     switch (level) {
@@ -28,6 +29,15 @@ const char* level_name(LogLevel level) {
 
 void log_set_level(LogLevel level) { g_level = level; }
 
+bool log_set_file(const char* path) {
+    std::FILE* file = std::fopen(path, "a");
+    if (!file) return false;
+    std::lock_guard<std::mutex> lock(g_mutex);
+    if (g_file) std::fclose(g_file);
+    g_file = file;
+    return true;
+}
+
 bool log_enabled(LogLevel level) { return level >= g_level.load(std::memory_order_relaxed); }
 
 void vlogf(LogLevel level, const char* category, const char* fmt, va_list args) {
@@ -35,12 +45,15 @@ void vlogf(LogLevel level, const char* category, const char* fmt, va_list args) 
     const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                         std::chrono::steady_clock::now() - g_start)
                         .count();
+    char text[2048];
+    std::vsnprintf(text, sizeof(text), fmt, args);
     std::lock_guard<std::mutex> lock(g_mutex);
-    std::fprintf(stderr, "[%8lld.%03lld] %-5s %-8s ", static_cast<long long>(ms / 1000),
-                 static_cast<long long>(ms % 1000), level_name(level), category);
-    std::vfprintf(stderr, fmt, args);
-    std::fputc('\n', stderr);
-    std::fflush(stderr);
+    for (std::FILE* out : {stderr, g_file}) {
+        if (!out) continue;
+        std::fprintf(out, "[%8lld.%03lld] %-5s %-8s %s\n", static_cast<long long>(ms / 1000),
+                     static_cast<long long>(ms % 1000), level_name(level), category, text);
+        std::fflush(out);
+    }
 }
 
 void logf(LogLevel level, const char* category, const char* fmt, ...) {

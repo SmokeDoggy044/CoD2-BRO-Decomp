@@ -9,6 +9,8 @@ namespace platform {
 enum class LogLevel { Trace, Debug, Info, Warn, Error };
 
 void log_set_level(LogLevel level);
+// Also writes every line to `path` (appending). False if it cannot be opened.
+bool log_set_file(const char* path);
 bool log_enabled(LogLevel level);
 void logf(LogLevel level, const char* category, const char* fmt, ...) PLATFORM_PRINTF(3, 4);
 void vlogf(LogLevel level, const char* category, const char* fmt, va_list args);

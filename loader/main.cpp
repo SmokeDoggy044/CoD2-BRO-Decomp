@@ -42,6 +42,8 @@ struct Options {
     bool silent = false;
     std::string press_script;
     float mouse_sensitivity = 0.11f;
+    std::optional<fs::path> diag_dir;
+    uint32_t diag_seconds = 10;
 };
 
 void print_usage(const char* program) {
@@ -59,6 +61,8 @@ void print_usage(const char* program) {
         "  --screenshots N DIR  save every Nth frame as DIR/frame_<n>.bmp (debugging)\n"
         "  --press LIST     scripted presses on port 0, e.g. start@20,a@25.5 (seconds after start;\n"
         "                   buttons: a b x y black white lt rt start back up down left right ls rs)\n"
+        "  --diag DIR [S]   diagnostics while playing: DIR/log.txt, a screenshot every S seconds\n"
+        "                   (default 10), F12 marks a problem (screenshot + draw dump in the log)\n"
         "  --mouse-sensitivity DEG  degrees the view turns per mouse count (default 0.11)\n",
         program);
 }
@@ -109,6 +113,15 @@ std::optional<Options> parse_args(int argc, char** argv) {
                 options.mouse_sensitivity > 10.0f) {
                 std::fprintf(stderr, "--mouse-sensitivity needs degrees per count (0-10)\n");
                 return std::nullopt;
+            }
+        } else if (arg == "--diag") {
+            if (!(options.diag_dir = value())) return std::nullopt;
+            if (i + 1 < argc && argv[i + 1][0] != '-') {
+                options.diag_seconds = static_cast<uint32_t>(std::atoi(argv[++i]));
+                if (options.diag_seconds < 1) {
+                    std::fprintf(stderr, "--diag needs seconds >= 1\n");
+                    return std::nullopt;
+                }
             }
         } else if (arg == "--silent") {
             options.silent = true;
@@ -169,6 +182,16 @@ int main(int argc, char** argv) {
     const std::optional<Options> options = parse_args(argc, argv);
     if (!options) return 2;
     platform::log_set_level(options->log_level);
+    if (options->diag_dir) {
+        fs::create_directories(*options->diag_dir);
+        const fs::path log = *options->diag_dir / "log.txt";
+        if (!platform::log_set_file(log.string().c_str())) {
+            std::fprintf(stderr, "cannot write %s\n", log.string().c_str());
+            return 1;
+        }
+        LOG_INFO("diag", "diagnostics in %s: a screenshot every %u s, F12 marks a problem",
+                 options->diag_dir->string().c_str(), options->diag_seconds);
+    }
 
     const auto assets = platform::resolve_asset_root(options->assets);
     if (!assets) return 1;
@@ -193,6 +216,10 @@ int main(int argc, char** argv) {
     render::D3DConfig d3d_config;
     d3d_config.backend.window_scale = options->scale;
     d3d_config.screenshot_interval = options->screenshot_interval;
+    if (options->diag_dir) {
+        d3d_config.diag_dir = options->diag_dir->string();
+        d3d_config.diag_seconds = options->diag_seconds;
+    }
     if (options->screenshot_dir) {
         fs::create_directories(*options->screenshot_dir);
         d3d_config.screenshot_dir = options->screenshot_dir->string();

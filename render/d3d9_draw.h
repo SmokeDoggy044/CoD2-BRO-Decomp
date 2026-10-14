@@ -30,6 +30,10 @@ public:
     // The surface drawn into for `data` (null if none yet).
     IDirect3DSurface9* target_surface(uint32_t data);
     bool has_depth() const { return has_depth_; }
+    void dump_next_frame() {
+        dump_frame_ = frame_ + 1;
+        dump_index_ = 0;
+    }
 
 private:
     struct Caches;

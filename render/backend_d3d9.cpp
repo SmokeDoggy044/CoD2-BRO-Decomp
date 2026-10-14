@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <utility>
 #include <vector>
 
 #include <memory>
@@ -194,10 +195,16 @@ public:
 
     bool pump_events() override {
         SDL_Event event;
-        while (SDL_PollEvent(&event))
+        while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT || event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) return false;
+            if (event.type == SDL_EVENT_KEY_DOWN && event.key.scancode == SDL_SCANCODE_F12 && !event.key.repeat)
+                mark_requested_ = true;
+        }
         return true;
     }
+
+    bool take_mark_request() override { return std::exchange(mark_requested_, false); }
+    void dump_next_frame() override { draw_->dump_next_frame(); }
 
 private:
     bool sdl_started_ = false;
@@ -208,6 +215,7 @@ private:
     std::unique_ptr<D3D9Draw> draw_;
     uint32_t width_ = 0, height_ = 0;
     uint32_t back_buffer_data_ = 0;
+    bool mark_requested_ = false;
 };
 
 }  // namespace

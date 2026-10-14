@@ -41,7 +41,7 @@ int32_t section_pages(const XbeSectionHeader& section) {
 uint32_t XB_STDCALL XeLoadSection(XbeSectionHeader* section) {
     if (section->reference_count == 0) xbox::charge_image_pages(section_pages(*section));
     g_image->load_section(*section);
-    LOG_DEBUG("kernel", "XeLoadSection(%s) refs=%u", g_image->section_name(*section).c_str(),
+    LOG_INFO("kernel", "XeLoadSection(%s) refs=%u", g_image->section_name(*section).c_str(),
               section->reference_count);
     return kStatusSuccess;
 }

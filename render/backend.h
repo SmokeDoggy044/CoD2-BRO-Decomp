@@ -70,6 +70,11 @@ public:
 
     // Handles window events. Returns false once the user closed the window.
     virtual bool pump_events() = 0;
+
+    // Diagnostics: true once after the user pressed the mark key (F12).
+    virtual bool take_mark_request() = 0;
+    // Logs every draw of the next frame (see D3D9Draw::dump_draw).
+    virtual void dump_next_frame() = 0;
 };
 
 // Null if the window or device cannot be created (logged).
