@@ -17,6 +17,9 @@
 //   mouse wheel / 1  D-pad up (next weapon)  Q / E  D-pad left / right (lean)
 //   Escape  start (pause)    Tab  back (objectives)
 //   menus: arrow keys D-pad, Return A (select), Backspace B (back)
+// The action keys (all but the menu keys, Escape and Tab) give these buttons only in
+// the default layout; a title can move them to the buttons its active layout uses
+// for the same actions (set_action_remap).
 // Clicking into the window captures the mouse; focus loss (Alt+Tab) or F10 frees it.
 // Gamepads use their Xbox-style layout; LB is white, RB is black.
 //
@@ -55,6 +58,12 @@ bool read_port(uint32_t port, PadState& state);
 // Mouse motion (counts) since the last call while the mouse is captured; 0 otherwise.
 // Titles take it where they turn the view (a title-specific hook).
 void take_mouse_motion(float& dx, float& dy);
+
+// Rewrites the pad state produced by the keyboard's and mouse's action keys (in the
+// default layout above) into the title's active layout. Called from read_port on the
+// title's polling thread; null (the default) keeps the default layout.
+using ActionRemap = void (*)(const PadState& default_layout, PadState& active_layout);
+void set_action_remap(ActionRemap remap);
 
 // Sets a port's rumble motors (0-65535; left is the low-frequency one).
 void set_rumble(uint32_t port, uint16_t left, uint16_t right);

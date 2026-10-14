@@ -57,6 +57,7 @@ uint8_t analog(bool pressed) { return pressed ? 0xFF : 0; }
 std::mutex g_mouse_mutex;
 float g_mouse_dx = 0.0f, g_mouse_dy = 0.0f;
 std::atomic<int64_t> g_wheel_until_ms{0};
+std::atomic<ActionRemap> g_action_remap{nullptr};
 constexpr int64_t kWheelPressMs = 80;  // long enough for the title's next poll
 
 int64_t now_ms() {
@@ -148,24 +149,34 @@ void read_keyboard_mouse(PadState& state) {
     add_axis(state.thumb_rx, stick(SDL_SCANCODE_J, SDL_SCANCODE_L));
     add_axis(state.thumb_ry, stick(SDL_SCANCODE_K, SDL_SCANCODE_I));
 
+    // Menu keys: fixed buttons in every layout.
+    const std::pair<bool, uint16_t> menu_digital[] = {
+        {key(SDL_SCANCODE_UP), kDpadUp},       {key(SDL_SCANCODE_DOWN), kDpadDown},
+        {key(SDL_SCANCODE_LEFT), kDpadLeft},   {key(SDL_SCANCODE_RIGHT), kDpadRight},
+        {key(SDL_SCANCODE_ESCAPE), kStart},    {key(SDL_SCANCODE_TAB), kBack},
+    };
+    for (auto [pressed, bit] : menu_digital)
+        if (pressed) state.buttons |= bit;
+    state.analog_buttons[kA] = std::max(state.analog_buttons[kA], analog(key(SDL_SCANCODE_RETURN)));
+    state.analog_buttons[kB] = std::max(state.analog_buttons[kB], analog(key(SDL_SCANCODE_BACKSPACE)));
+
+    // Action keys, in the default layout.
+    PadState actions;
     const bool wheel = now_ms() < g_wheel_until_ms.load();
     const std::pair<bool, uint16_t> digital[] = {
-        {key(SDL_SCANCODE_UP) || key(SDL_SCANCODE_1) || wheel, kDpadUp},
-        {key(SDL_SCANCODE_DOWN), kDpadDown},
-        {key(SDL_SCANCODE_LEFT) || key(SDL_SCANCODE_Q), kDpadLeft},
-        {key(SDL_SCANCODE_RIGHT) || key(SDL_SCANCODE_E), kDpadRight},
-        {key(SDL_SCANCODE_ESCAPE), kStart},
-        {key(SDL_SCANCODE_TAB), kBack},
+        {key(SDL_SCANCODE_1) || wheel, kDpadUp},
+        {key(SDL_SCANCODE_Q), kDpadLeft},
+        {key(SDL_SCANCODE_E), kDpadRight},
         {key(SDL_SCANCODE_LSHIFT), kLeftThumb},
         {key(SDL_SCANCODE_X), kRightThumb},
     };
     for (auto [pressed, bit] : digital)
-        if (pressed) state.buttons |= bit;
+        if (pressed) actions.buttons |= bit;
 
     const SDL_MouseButtonFlags mouse = SDL_GetMouseState(nullptr, nullptr);
     const std::pair<bool, AnalogButton> buttons[] = {
-        {key(SDL_SCANCODE_F) || key(SDL_SCANCODE_RETURN), kA},
-        {key(SDL_SCANCODE_C) || key(SDL_SCANCODE_LCTRL) || key(SDL_SCANCODE_BACKSPACE), kB},
+        {key(SDL_SCANCODE_F), kA},
+        {key(SDL_SCANCODE_C) || key(SDL_SCANCODE_LCTRL), kB},
         {key(SDL_SCANCODE_R), kX},
         {key(SDL_SCANCODE_SPACE), kY},
         {key(SDL_SCANCODE_V) || (mouse & SDL_BUTTON_MMASK), kBlack},
@@ -173,8 +184,16 @@ void read_keyboard_mouse(PadState& state) {
         {(mouse & SDL_BUTTON_RMASK) != 0, kLeftTrigger},
         {(mouse & SDL_BUTTON_LMASK) != 0, kRightTrigger},
     };
-    for (auto [pressed, index] : buttons)
-        state.analog_buttons[index] = std::max(state.analog_buttons[index], analog(pressed));
+    for (auto [pressed, index] : buttons) actions.analog_buttons[index] = analog(pressed);
+
+    if (ActionRemap remap = g_action_remap.load()) {
+        PadState active;
+        remap(actions, active);
+        actions = active;
+    }
+    state.buttons |= actions.buttons;
+    for (int i = 0; i < 8; ++i)
+        state.analog_buttons[i] = std::max(state.analog_buttons[i], actions.analog_buttons[i]);
 }
 
 }  // namespace
@@ -192,6 +211,8 @@ bool init_devices() {
     refresh_ports();
     return true;
 }
+
+void set_action_remap(ActionRemap remap) { g_action_remap = remap; }
 
 void take_mouse_motion(float& dx, float& dy) {
     std::lock_guard lock(g_mouse_mutex);

@@ -4,10 +4,12 @@
 #include "patches.h"
 
 #include <algorithm>
+#include <iterator>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <span>
+#include <string>
 #include <vector>
 
 #include "compiler.h"
@@ -25,6 +27,7 @@
 #include "symbols.h"
 #include "xbe.h"
 
+#include <strings.h>
 #include <sys/mman.h>
 
 namespace loader {
@@ -182,6 +185,98 @@ void install_mouse_look() {
     put_rel32(t, 0xE9, reinterpret_cast<const void*>(uintptr_t{kMouseMove}));
     put_rel32(site, 0xE8, thunk);
     LOG_INFO("patches", "mouse look: %.3f degrees per count", g_mouse_degrees_per_count);
+}
+
+// Keyboard actions follow the player's controller style. The keyboard gives the pad
+// buttons of the default layout (config/default.cfg); style_a..l.cfg bind the buttons
+// to other commands. The active binding of each key code is at keys[code].binding
+// (0x0093425c + code * 8, a string or null); the pad's key codes come from
+// FUN_002bdf10 and the key name table at 0x008d32e8.
+constexpr uint32_t kKeyBindings = 0x0093425c;
+
+struct PadControl {
+    uint16_t digital;     // DigitalButton bit, or 0 for an analog button
+    uint8_t analog;       // AnalogButton index when digital == 0
+    uint8_t key_code;     // the title's key code for it
+    const char* command;  // its command in the default layout
+};
+constexpr PadControl kPadControls[] = {
+    {0, input::kA, 0xd4, "+activate"},             // JOY6 / X
+    {0, input::kB, 0xd5, "lowerstance"},           // CIRCLE
+    {0, input::kX, 0xd3, "+reload"},               // SQUARE
+    {0, input::kY, 0xd6, "+moveup"},               // TRIANGLE
+    {0, input::kBlack, 0xd9, "+melee"},            // R2
+    {0, input::kWhite, 0xda, "+grenadeattack"},    // L2
+    {0, input::kLeftTrigger, 0xd8, "+speed"},      // L1
+    {0, input::kRightTrigger, 0xd7, "+attack"},    // R1
+    {input::kRightThumb, 0, 0xdb, "toggle cl_run"},  // R3
+    {input::kLeftThumb, 0, 0xdc, "+sprint"},       // L3
+    {input::kDpadUp, 0, 0x9a, "weapnext"},
+    {input::kDpadDown, 0, 0x9b, ""},
+    {input::kDpadLeft, 0, 0x9c, "+leanleftswitchnext"},
+    {input::kDpadRight, 0, 0x9d, "+leanrightswitchnext"},
+};
+
+// Commands that do the same as the default one where a style has no exact match.
+const char* similar_command(const char* command) {
+    struct Pair { const char* command; const char* similar; };
+    static constexpr Pair kSimilar[] = {
+        {"+reload", "+activatereload"},   {"+activate", "+activatereload"},
+        {"+leanleftswitchnext", "+leanleft"}, {"+leanrightswitchnext", "+leanright"},
+        {"weapnext", "weapprev"},
+    };
+    for (const Pair& pair : kSimilar)
+        if (std::strcmp(pair.command, command) == 0) return pair.similar;
+    return nullptr;
+}
+
+const char* key_binding(uint8_t key_code) {
+    const uint32_t binding = title<uint32_t>(kKeyBindings + key_code * 8u);
+    return binding ? reinterpret_cast<const char*>(uintptr_t{binding}) : "";
+}
+
+uint8_t control_value(const input::PadState& state, const PadControl& control) {
+    if (control.digital) return (state.buttons & control.digital) ? 0xFF : 0;
+    return state.analog_buttons[control.analog];
+}
+
+void set_control(input::PadState& state, const PadControl& control, uint8_t value) {
+    if (control.digital) {
+        if (value) state.buttons |= control.digital;
+    } else {
+        state.analog_buttons[control.analog] = std::max(state.analog_buttons[control.analog], value);
+    }
+}
+
+void remap_keyboard_actions(const input::PadState& default_layout, input::PadState& active_layout) {
+    const bool bound = std::any_of(std::begin(kPadControls), std::end(kPadControls),
+                                   [](const PadControl& control) { return *key_binding(control.key_code) != 0; });
+    if (!bound) {  // no bindings yet: keep the default layout
+        active_layout = default_layout;
+        return;
+    }
+    // Logs the pad's bindings when they change (a style picked in the options).
+    static std::string logged;
+    std::string bindings;
+    for (const PadControl& control : kPadControls) (bindings += key_binding(control.key_code)) += ", ";
+    if (bindings != logged) {
+        LOG_INFO("input", "pad bindings A B X Y black white LT RT R3 L3 up down left right: %s", bindings.c_str());
+        logged = bindings;
+    }
+    for (const PadControl& from : kPadControls) {
+        const uint8_t value = control_value(default_layout, from);
+        if (!value) continue;
+        // The control bound to the same command now, else to a similar one; nothing
+        // if the style has neither (the default control may do something else there).
+        const PadControl* to = nullptr;
+        for (const char* command : {from.command, similar_command(from.command)}) {
+            if (!command || !*command) continue;
+            for (const PadControl& candidate : kPadControls)
+                if (strcasecmp(key_binding(candidate.key_code), command) == 0) to = &candidate;
+            if (to) break;
+        }
+        if (to) set_control(active_layout, *to, value);
+    }
 }
 
 // --level N starts mission N without the menus. The client frame FUN_002f1e60 (called
@@ -356,6 +451,7 @@ void install_title_patches(const TitlePatchConfig& config) {
     install_rdtsc_patches();
     install_mouse_look();
     install_start_level(config.start_level);
+    input::set_action_remap(&remap_keyboard_actions);
 }
 
 }  // namespace loader
