@@ -111,6 +111,9 @@ export's calling convention and argument size come from the header.
   User APCs (`ReadFileEx`/`WriteFileEx` completions) run at the thread's next
   alertable user-mode wait; file handles are FILE_OBJECTs that
   `ObReferenceObjectByHandle`/`IoQueryVolumeInformation` work on.
+- Next: confirm in mission 2 (hangar floor marks, train-station map/posters) that
+  decals no longer z-fight now that the polygon offset is applied (the F12 dump shows
+  `zoffset 1 <slope>/<bias>`); then the remaining playtest marks.
 - Later, once the game runs: raise the budget and enlarge the game's memory pools
   (`FUN_00043fb0` allocates fixed 35.2 MB + 3.7 MB arenas) for bigger assets/mods.
 - Threads run truly in parallel and ignore priorities (the Xbox is single-core with
