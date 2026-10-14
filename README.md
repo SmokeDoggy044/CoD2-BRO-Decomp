@@ -118,8 +118,10 @@ export's calling convention and argument size come from the header.
   untranslated features, no new warnings. Next: mission 4 onwards (`--launch-data 3
   3<DIR/launch_data.bin` repeats the last reboot), fix what the marks show.
 - **Resume here (2026-10-14 evening):** no game file has a cube or volume texture
-  (all 9,652 DDS in the .cod packs are 2D), so those stay unbuilt until a run hits
-  one. `--level N` (0-13, 0 = prologue) starts a mission directly once the menus
+  (all 9,652 DDS in the .cod packs and the 229 loose ones are 2D; the DDS loader
+  `0x6b09e` sets the cube flag only from caps2, and the code-built normalization cube
+  `nglNormalCubeMapTex`, `FUN_0006f080`, is never called), so those stay unbuilt
+  until a run hits one. `--level N` (0-13, 0 = prologue) starts a mission directly once the menus
   are up; `tools/feature_sweep.sh OUT [MISSIONS] [SECONDS]` runs each mission's
   start unattended and gathers every summary.txt into OUT/report.txt (mission 4's
   start: no new warnings; full sweep not run yet). Keyboard actions now follow the
