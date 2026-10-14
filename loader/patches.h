@@ -15,6 +15,7 @@ constexpr uint32_t kTitleGamepadType = 0x007a9f78;
 
 struct TitlePatchConfig {
     float mouse_degrees_per_count = 0.11f;  // mouse look (PC CoD: sensitivity 5 * m_yaw 0.022)
+    int32_t start_level = -1;               // >= 0: start this mission once the menus are up (testing)
 };
 
 // Redirects the title's functions that cannot run on a PC (privileged instructions,

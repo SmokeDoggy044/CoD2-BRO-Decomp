@@ -184,6 +184,51 @@ void install_mouse_look() {
     LOG_INFO("patches", "mouse look: %.3f degrees per count", g_mouse_degrees_per_count);
 }
 
+// --level N starts mission N without the menus. The client frame FUN_002f1e60 (called
+// every frame from the main loop at 0x002f27a4) runs "spmap <name of mission k>" once
+// the UI is up (0x00933ee4) when 0x0095f920 holds k >= 0; the difficulty screen
+// FUN_0032d800 sets it, and the campaign level index 0x008dce48, on New Game.
+constexpr uint32_t kCallClientFrame = 0x002f27a4;
+constexpr uint32_t kClientFrame = 0x002f1e60;
+constexpr uint32_t kUiStarted = 0x00933ee4;
+constexpr uint32_t kLevelToStart = 0x0095f920;
+constexpr uint32_t kCampaignLevel = 0x008dce48;
+
+int32_t g_start_level = -1;  // pending until the UI is up
+
+void XB_CDECL start_level() {
+    if (g_start_level < 0 || title<int32_t>(kUiStarted) == 0) return;
+    title<int32_t>(kLevelToStart) = g_start_level;
+    title<int32_t>(kCampaignLevel) = g_start_level;
+    LOG_INFO("patches", "starting mission %d", g_start_level);
+    g_start_level = -1;
+}
+
+// pushad; pushfd; call start_level; popfd; popad; jmp FUN_002f1e60
+void install_start_level(int32_t level) {
+    if (level < 0) return;
+    auto* site = reinterpret_cast<uint8_t*>(uintptr_t{kCallClientFrame});
+    uint32_t relative;
+    std::memcpy(&relative, site + 1, 4);
+    if (site[0] != 0xE8 || kCallClientFrame + 5 + relative != kClientFrame) {
+        LOG_WARN("patches", "%08x: not the call to the client frame; --level ignored", kCallClientFrame);
+        return;
+    }
+    auto* thunk = static_cast<uint8_t*>(
+        mmap(nullptr, 64, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
+    if (thunk == MAP_FAILED) return;
+    uint8_t* t = thunk;
+    *t++ = 0x60;  // pushad
+    *t++ = 0x9C;  // pushfd
+    put_rel32(t, 0xE8, reinterpret_cast<const void*>(&start_level));
+    t += 5;
+    *t++ = 0x9D;  // popfd
+    *t++ = 0x61;  // popad
+    put_rel32(t, 0xE9, reinterpret_cast<const void*>(uintptr_t{kClientFrame}));
+    put_rel32(site, 0xE8, thunk);
+    g_start_level = level;
+}
+
 }  // namespace
 
 namespace {
@@ -310,6 +355,7 @@ void install_title_patches(const TitlePatchConfig& config) {
     std::memset(reinterpret_cast<void*>(uintptr_t{kLaunchHookTable}), 0, kLaunchHookTableEnd - kLaunchHookTable);
     install_rdtsc_patches();
     install_mouse_look();
+    install_start_level(config.start_level);
 }
 
 }  // namespace loader

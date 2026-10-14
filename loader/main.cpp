@@ -49,6 +49,7 @@ struct Options {
     bool silent = false;
     std::string press_script;
     float mouse_sensitivity = 0.11f;
+    int32_t start_level = -1;
     std::optional<fs::path> diag_dir;
     uint32_t diag_seconds = 10;
     // Set by a title reboot (see reboot_title), not by users.
@@ -81,7 +82,8 @@ void print_usage(const char* program) {
         "                   game is paused (DIR/marks.txt), draw dump in the log; new warnings\n"
         "                   and errors are marked by themselves; F11 shows draws that need\n"
         "                   missing features in magenta; DIR/summary.txt on exit\n"
-        "  --mouse-sensitivity DEG  degrees the view turns per mouse count (default 0.11)\n",
+        "  --mouse-sensitivity DEG  degrees the view turns per mouse count (default 0.11)\n"
+        "  --level N        start mission N (0-13, 0 = prologue) once the menus are up (testing)\n",
         program);
 }
 
@@ -135,6 +137,11 @@ std::optional<Options> parse_args(int argc, char** argv) {
             if (i + 1 >= argc || (options.mouse_sensitivity = std::strtof(argv[++i], nullptr)) <= 0.0f ||
                 options.mouse_sensitivity > 10.0f) {
                 std::fprintf(stderr, "--mouse-sensitivity needs degrees per count (0-10)\n");
+                return std::nullopt;
+            }
+        } else if (arg == "--level") {
+            if (i + 1 >= argc || (options.start_level = std::atoi(argv[++i])) < 0 || options.start_level > 13) {
+                std::fprintf(stderr, "--level needs a mission number (0-13)\n");
                 return std::nullopt;
             }
         } else if (arg == "--diag") {
@@ -205,7 +212,7 @@ std::vector<uint8_t> read_launch_data(int fd) {
 // HalReturnToFirmware(QuickReboot): the Xbox reboots into `xbe` with the launch data
 // page kept in memory. Here the loader replaces itself (exec) with the same command
 // line for `xbe`, passing the page in a memory file and the session start time (log
-// and --diag times continue). Scripted presses are for the first boot only.
+// and --diag times continue). Scripted presses and --level are for the first boot only.
 [[noreturn]] void reboot_title(const fs::path& xbe, std::span<const uint8_t> launch_data_page) {
     // Patches and symbols are for default.xbe (multiplayer is codmp_xboxf.xbe).
     if (fs::path(xbe).filename() != fs::path(g_xbe).filename()) {
@@ -229,7 +236,8 @@ std::vector<uint8_t> read_launch_data(int fd) {
     std::vector<std::string> args = {g_args[0]};
     for (size_t i = 1; i < g_args.size(); ++i) {
         const std::string name = option_name(g_args[i]);
-        if (name == "--xbe" || name == "--launch-data" || name == "--session-start" || name == "--press") {
+        if (name == "--xbe" || name == "--launch-data" || name == "--session-start" || name == "--press" ||
+            name == "--level") {
             ++i;  // dropped with its value
             continue;
         }
@@ -311,7 +319,7 @@ int main(int argc, char** argv) {
     if (!xbox::kernel_init(kernel_config(*options, *assets, xbe))) return 1;
     xbox::charge_image_pages(loader::initial_image_pages(image));
     loader::install_kernel_thunks(image);
-    loader::install_title_patches({options->mouse_sensitivity});
+    loader::install_title_patches({options->mouse_sensitivity, options->start_level});
     audio::configure({options->silent ? audio::OutputConfig::Device::Loopback : audio::OutputConfig::Device::Default});
     render::D3DConfig d3d_config;
     d3d_config.backend.window_scale = options->scale;
