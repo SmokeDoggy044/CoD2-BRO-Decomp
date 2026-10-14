@@ -6,6 +6,7 @@
 #include <cstring>
 #include <fstream>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -48,6 +49,16 @@ struct Problem {
 
 bool starts_with(const std::string& text, const char* prefix) { return text.rfind(prefix, 0) == 0; }
 
+// "frames" lines (render/frame_pacing.h): one per second, and one per stall.
+struct FrameSecond {
+    long second = 0;
+    unsigned fps = 0, frame = 0, hitches = 0;
+    double worst_ms = 0;
+};
+struct FrameStall {
+    double at = 0, seconds = 0;
+};
+
 }  // namespace
 
 void write_diag_summary(const fs::path& dir) {
@@ -78,7 +89,19 @@ void write_diag_summary(const fs::path& dir) {
     std::vector<std::string> fatal;                    // fatal/crash lines, in order
     uint32_t marks = 0, auto_marks = 0;
     bool closed = false;
+    std::vector<FrameSecond> frame_seconds;
+    std::vector<FrameStall> stalls;
     for (const LogLine& line : lines) {
+        if (line.category == "frames") {
+            FrameSecond f;
+            FrameStall stall;
+            if (std::sscanf(line.text.c_str(), "%lds: %u fps, worst %lf ms (frame %u), %u hitches", &f.second, &f.fps,
+                            &f.worst_ms, &f.frame, &f.hitches) == 5)
+                frame_seconds.push_back(f);
+            else if (std::sscanf(line.text.c_str(), "stall %lf s", &stall.seconds) == 1)
+                stall.at = line.seconds, stalls.push_back(stall);
+            continue;
+        }
         if (line.category == "diag") {
             unsigned n = 0;
             char picture[64];
@@ -155,6 +178,56 @@ void write_diag_summary(const fs::path& dir) {
     };
     table("Errors", errors);
     table("Warnings", warnings);
+
+    // Frame rate. Seconds a stall begins or ends in are partly idle: left out.
+    std::set<long> partial;
+    for (const FrameStall& stall : stalls) {
+        partial.insert(static_cast<long>(stall.at));
+        partial.insert(static_cast<long>(stall.at - stall.seconds));
+    }
+    std::vector<FrameSecond> full;
+    for (const FrameSecond& f : frame_seconds)
+        if (!partial.count(f.second)) full.push_back(f);
+    if (!full.empty()) {
+        std::vector<unsigned> fps;
+        unsigned long frames = 0, hitches = 0;
+        for (const FrameSecond& f : full) fps.push_back(f.fps), frames += f.fps, hitches += f.hitches;
+        std::nth_element(fps.begin(), fps.begin() + fps.size() / 2, fps.end());
+        const unsigned typical = fps[fps.size() / 2];
+        const unsigned slow_below = typical * 4 / 5;
+        std::fprintf(out, "\nFrame rate: typical %u fps, average %.1f over %zu s\n", typical,
+                     static_cast<double>(frames) / full.size(), full.size());
+
+        std::vector<FrameSecond> slow;
+        for (const FrameSecond& f : full)
+            if (f.fps < slow_below) slow.push_back(f);
+        std::sort(slow.begin(), slow.end(), [](const auto& a, const auto& b) { return a.fps < b.fps; });
+        std::fprintf(out, "  Slow seconds (under %u fps): %zu\n", slow_below, slow.size());
+        if (!slow.empty()) std::fprintf(out, "  %7s  %5s  %8s  %s\n", "second", "fps", "worst ms", "screenshot");
+        for (size_t i = 0; i < slow.size() && i < 10; ++i)
+            std::fprintf(out, "  %6lds  %5u  %8.0f  %s\n", slow[i].second, slow[i].fps, slow[i].worst_ms,
+                         nearest_shot(static_cast<double>(slow[i].second)).c_str());
+
+        std::vector<FrameSecond> rough;
+        for (const FrameSecond& f : full)
+            if (f.hitches) rough.push_back(f);
+        std::sort(rough.begin(), rough.end(), [](const auto& a, const auto& b) { return a.worst_ms > b.worst_ms; });
+        std::fprintf(out, "  Hitches (a frame over twice the recent average): %lu in %zu s\n", hitches, rough.size());
+        if (!rough.empty())
+            std::fprintf(out, "  %7s  %8s  %7s  %7s  %s\n", "second", "worst ms", "frame", "hitches", "screenshot");
+        for (size_t i = 0; i < rough.size() && i < 10; ++i)
+            std::fprintf(out, "  %6lds  %8.0f  %7u  %7u  %s\n", rough[i].second, rough[i].worst_ms, rough[i].frame,
+                         rough[i].hitches, nearest_shot(static_cast<double>(rough[i].second)).c_str());
+    }
+    if (!stalls.empty()) {
+        double total = 0;
+        for (const FrameStall& stall : stalls) total += stall.seconds;
+        std::sort(stalls.begin(), stalls.end(), [](const auto& a, const auto& b) { return a.seconds > b.seconds; });
+        std::fprintf(out, "  Stalls of 1 s or more (loading, pauses): %zu, %.0f s in all; longest:", stalls.size(), total);
+        for (size_t i = 0; i < stalls.size() && i < 5; ++i)
+            std::fprintf(out, " %.1f s at %.0f s%s", stalls[i].seconds, stalls[i].at, i + 1 < stalls.size() && i < 4 ? "," : "");
+        std::fprintf(out, "\n");
+    }
     std::fclose(out);
 }
 

@@ -26,6 +26,7 @@
 #include "dispatcher.h"
 #include "draw.h"
 #include "float_env.h"
+#include "frame_pacing.h"
 #include "log.h"
 #include "memory.h"
 #include "nv2a.h"
@@ -358,6 +359,20 @@ void diagnostics() {
     const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
     bool dump = false;
 
+    // Frame pacing: a "frames" line per second, and each stall (see FramePacing).
+    static FramePacing pacing;
+    static std::string fps_text;
+    if (auto second = pacing.frame(std::chrono::duration<double>(now - start).count(), g.swap_count)) {
+        LOG_INFO("frames", "%llds: %u fps, worst %.0f ms (frame %u), %u hitches",
+                 static_cast<long long>(second->second), second->frames, second->worst_ms, second->worst_frame,
+                 second->hitches);
+        char text[64];
+        std::snprintf(text, sizeof(text), "   fps %u  worst %.0f ms", second->frames, second->worst_ms);
+        fps_text = text;
+    }
+    if (auto stall = pacing.take_stall())
+        LOG_INFO("frames", "stall %.1f s before frame %u", stall->seconds, stall->frame);
+
     if (g.backend->take_mark_request()) {
         ++marks;
         const std::string shot = g.config.diag_dir + "/mark_" + std::to_string(marks) + ".bmp";
@@ -424,7 +439,7 @@ void diagnostics() {
 
     std::vector<std::string> overlay = {"DIAG  marks: " + std::to_string(marks) + "  auto: " +
                                         std::to_string(auto_marks) + "   F12: mark   F11: magenta " +
-                                        (highlight ? "ON" : "off")};
+                                        (highlight ? "ON" : "off") + fps_text};
     const uint32_t skipped_now = skipped_draws();
     const uint32_t unsupported = g.backend->unsupported_draws(), skipped = skipped_now - skipped_before;
     skipped_before = skipped_now;
@@ -433,6 +448,8 @@ void diagnostics() {
                           (highlight ? " (magenta)" : "") + ", " + std::to_string(skipped) + " not drawn");
     if (now < flash_until) overlay.push_back(flash);
     g.backend->set_overlay(std::move(overlay));
+    // What --diag spent here (screenshots, a paused note) is not the game's frame time.
+    pacing.exclude(std::chrono::duration<double>(Clock::now() - now).count());
 }
 
 uint32_t XB_STDCALL D3DDevice_Swap(uint32_t /*flags*/) {

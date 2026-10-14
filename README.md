@@ -182,7 +182,12 @@ export's calling convention and argument size come from the header.
   draws and the ones not drawn at all (FVF) per frame. On exit (window closed, crash,
   stop on an unimplemented function, Ctrl+C) DIR/summary.txt lists how the session
   ended and every distinct warning/error with count, first time and screenshot.
-  Section loads (XeLoadSection) are logged at info.
+  Section loads (XeLoadSection) are logged at info. Frame pacing (`render/frame_pacing.h`):
+  a "frames" log line per second (fps, worst frame, hitches = frames over twice the
+  recent average), "stall" lines for gaps of 1 s+ (loading), fps on the overlay, and a
+  frame rate section in summary.txt (slow seconds, worst hitches, stalls, with the
+  nearest screenshot). Time --diag spends (screenshots, a note prompt) is left out.
+  The title runs at 30 fps.
 - Debugging a wrong picture: `XB_DUMP_FRAME=n` logs every draw of frame n (shader
   keys, combiners, texture modes/formats, raster states, first vertex) plus each
   vertex program's microcode (decode with `tools/nv2a_vsdis.py`); `XB_DUMP_STOP=k`

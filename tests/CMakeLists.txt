@@ -17,3 +17,9 @@ foreach(test audio_test critical_section_test dispatcher_test filesystem_test me
     set_tests_properties(${test} PROPERTIES TIMEOUT 60)
 endforeach()
 target_link_libraries(audio_test PRIVATE audio)
+
+# Header-only parts of render/ (render itself needs D3D9).
+add_executable(frame_pacing_test frame_pacing_test.cpp)
+target_include_directories(frame_pacing_test PRIVATE ${PROJECT_SOURCE_DIR}/render)
+target_link_libraries(frame_pacing_test PRIVATE xbox)
+add_test(NAME frame_pacing_test COMMAND frame_pacing_test)
