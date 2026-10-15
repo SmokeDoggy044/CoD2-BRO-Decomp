@@ -154,8 +154,10 @@ export's calling convention and argument size come from the header.
   In-game menus over the scene (pause, options) are narrowed to 4:3 around the centre
   per draw: `loader/patches.cpp` wraps the in-game UI's screen/menu render calls and
   marks the NGL scenes they draw into; full-width quads (dimming, bars) stay wide.
-  Checked: pause menu and its Options. Not checked: objectives, death/mission failed
-  screens, dialogs. Next: fullscreen/window options, mission 6 playtest.
+  The objectives panel (held back) draws into the HUD's scene, so it gets a child
+  scene of its own and is narrowed around x = 50 of 640, the HUD's left anchor.
+  Checked: pause menu and its Options, objectives (mission 4, against --aspect 4:3).
+  Not checked: death/mission failed screens, dialogs. Next: fullscreen/window options, mission 6 playtest.
 - Later, once the game runs: raise the budget and enlarge the game's memory pools
   (`FUN_00043fb0` allocates fixed 35.2 MB + 3.7 MB arenas) for bigger assets/mods.
 - Threads run truly in parallel and ignore priorities (the Xbox is single-core with

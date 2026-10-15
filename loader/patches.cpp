@@ -421,12 +421,74 @@ void install_menu_render_hooks() {
     put_rel32(jump + 2, 0xE9, thunk);
 }
 
+// The objectives panel (shown while back is held) is cgame 2D laid out for 4:3 too,
+// outside the HUD components' widescreen layout: FUN_0027e630, called only from
+// FUN_00281f30 with one stack argument (its fade). It draws into the HUD's scene, so
+// it gets a child scene of its own, made like the pause screen's in FUN_003153d0, and
+// is narrowed around x = 50 of 640, the anchor the HUD's left-hand components use
+// (FUN_00311800).
+constexpr uint32_t kObjectivesCall = 0x00281f8f;
+constexpr uint32_t kObjectivesDraw = 0x0027e630;
+constexpr uint32_t kSceneCreate = 0x00062fc0;  // (mode) a child of the current scene, made current
+constexpr uint32_t kScenePop = 0x0005e730;     // the parent becomes current
+constexpr uint32_t kSceneSetClear = 0x0005e430;  // scene +0x360
+constexpr uint32_t kSceneSetFlag384 = 0x0005e490;
+constexpr uint32_t kSceneSetFlag385 = 0x0005e4b0;
+constexpr float kObjectivesAnchor = 50.0f / 640.0f;
+MenuScenes g_objectives_scenes;
+bool g_objectives_scene = false;  // made one this call
+
+template <typename... Args>
+uint32_t call_title(uint32_t address, Args... args) {
+    return reinterpret_cast<uint32_t(XB_CDECL*)(Args...)>(uintptr_t{address})(args...);
+}
+
+void XB_CDECL objectives_begin() {
+    g_objectives_scene = title<uint32_t>(kCurrentScene) != 0 && call_title(kSceneCreate, 0) != 0;
+    if (g_objectives_scene) {
+        call_title(kSceneSetClear, 0);
+        call_title(kSceneSetFlag385, 0);
+        call_title(kSceneSetFlag384, 0);
+    }
+    g_objectives_scenes = {0, 0, g_objectives_scene ? title<uint32_t>(kCurrentScene) : 0,
+                           title<uint32_t>(kEngineFrame)};
+}
+
+void XB_CDECL objectives_end() {
+    if (g_objectives_scene) call_title(kScenePop);
+}
+
+void install_objectives_hook() {
+    auto* site = reinterpret_cast<uint8_t*>(uintptr_t{kObjectivesCall});
+    if (site[0] != 0xE8 || site + 5 + *reinterpret_cast<int32_t*>(site + 1) !=
+                               reinterpret_cast<uint8_t*>(uintptr_t{kObjectivesDraw})) {
+        LOG_WARN("patches", "%08x: not the objectives draw call; objectives stay stretched", kObjectivesCall);
+        return;
+    }
+    auto* thunk = static_cast<uint8_t*>(
+        mmap(nullptr, 64, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
+    if (thunk == MAP_FAILED) return;
+    // begin; push dword [esp+4]; call FUN_0027e630; add esp,4; end; ret
+    uint8_t* t = put_preserving_call(thunk, &objectives_begin);
+    *t++ = 0xFF, *t++ = 0x74, *t++ = 0x24, *t++ = 0x04;
+    put_rel32(t, 0xE8, reinterpret_cast<const void*>(uintptr_t{kObjectivesDraw}));
+    t += 5;
+    *t++ = 0x83, *t++ = 0xC4, *t++ = 0x04;
+    t = put_preserving_call(t, &objectives_end);
+    *t++ = 0xC3;
+    put_rel32(site, 0xE8, thunk);
+}
+
 }  // namespace
 
-bool in_game_menu_draw() {
+float in_game_menu_draw() {
     const uint32_t scene = title<uint32_t>(kCurrentScene);
     const MenuScenes& m = g_menu_scenes;
-    return m.frame == title<uint32_t>(kEngineFrame) && (scene == m.scene || (scene >= m.begin && scene < m.end));
+    const MenuScenes& o = g_objectives_scenes;
+    const uint32_t frame = title<uint32_t>(kEngineFrame);
+    if (m.frame == frame && (scene == m.scene || (scene >= m.begin && scene < m.end))) return 0.5f;
+    if (o.frame == frame && o.scene != 0 && scene == o.scene) return kObjectivesAnchor;
+    return -1.0f;
 }
 
 namespace {
@@ -555,6 +617,7 @@ void install_title_patches(const TitlePatchConfig& config) {
     install_mouse_look();
     install_start_level(config.start_level);
     install_menu_render_hooks();
+    install_objectives_hook();
     input::set_action_remap(&remap_keyboard_actions);
 }
 

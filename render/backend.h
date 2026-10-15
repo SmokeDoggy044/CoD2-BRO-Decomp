@@ -43,10 +43,11 @@ struct BackendConfig {
     // movies; the title lays them out for its back buffer's shape only) are shown at
     // that shape instead, centred between black bars.
     bool pillarbox_flat_frames = false;
-    // With a wider display_aspect: asked per draw, true while the title draws UI laid
-    // out for its back buffer's shape over the wide picture (in-game menus). Such draws
-    // are narrowed to that shape around the centre, unless they span the full width.
-    bool (*narrow_ui_draw)() = nullptr;
+    // With a wider display_aspect: asked per draw; while the title draws UI laid out for
+    // its back buffer's shape over the wide picture (in-game menus), the x to narrow it
+    // to that shape around, as a fraction of the width (0.5 = the centre); otherwise
+    // negative. Draws spanning the full width are not narrowed.
+    float (*narrow_ui_draw)() = nullptr;
     // Anisotropic filtering for mipmapped textures the title filters linearly (PC
     // option; the Xbox titles rarely used it). 1 = the title's own filters.
     uint32_t anisotropy = 1;

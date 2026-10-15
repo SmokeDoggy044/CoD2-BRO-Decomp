@@ -388,11 +388,12 @@ IDirect3DSurface9* D3D9Draw::target_surface(uint32_t data) {
 
 D3D9Draw::~D3D9Draw() { release(magenta_); }
 
-bool D3D9Draw::narrow_draw(const DrawInput& input, uint32_t width) const {
+float D3D9Draw::narrow_anchor(const DrawInput& input, uint32_t width) const {
     // Only over a 3D scene (drawn before the UI): flat frames are pillarboxed whole.
-    if (narrow_factor_ >= 1.0f || !narrow_ui_draw_ || !frame_writes_depth_ || !(input.attribute_mask & 1) ||
-        !narrow_ui_draw_())
-        return false;
+    if (narrow_factor_ >= 1.0f || !narrow_ui_draw_ || !frame_writes_depth_ || !(input.attribute_mask & 1))
+        return -1.0f;
+    const float anchor = narrow_ui_draw_();
+    if (anchor < 0.0f) return -1.0f;
     // Full-width quads (dimming, letterbox bars) keep covering the picture.
     const uint32_t stride = static_cast<uint32_t>(std::popcount(input.attribute_mask)) * 4;
     float left = input.vertices[0], right = left;
@@ -400,7 +401,7 @@ bool D3D9Draw::narrow_draw(const DrawInput& input, uint32_t width) const {
         left = std::min(left, input.vertices[i * stride]);
         right = std::max(right, input.vertices[i * stride]);
     }
-    return !(left <= 1.0f && right >= static_cast<float>(width) - 1.0f);
+    return left <= 1.0f && right >= static_cast<float>(width) - 1.0f ? -1.0f : anchor;
 }
 
 void D3D9Draw::end_frame() {
@@ -641,10 +642,12 @@ void D3D9Draw::draw(const DrawInput& input) {
     const float surface_height = static_cast<float>(target_surface_height_);
     const float scale_x = surface_width / width, scale_y = surface_height / height;
     // UI laid out for the back buffer's shape over a wider 3D picture (in-game menus):
-    // narrowed to that shape around the centre, x' = w/2 + (x - w/2) * k.
-    const float narrow = narrow_draw(input, width) ? narrow_factor_ : 1.0f;
+    // narrowed to that shape around an anchor a (a fraction of the width),
+    // x' = a w + (x - a w) * k.
+    const float anchor = narrow_anchor(input, width);
+    const float narrow = anchor >= 0.0f ? narrow_factor_ : 1.0f;
     const float screen_to_clip[8] = {2.0f / width * narrow, -2.0f / height, 1.0f / input.depth_max, 0.0f,
-                                     -1.0f + (1.0f - narrow) + (scale_x - 1) / surface_width,
+                                     -1.0f + 2.0f * anchor * (1.0f - narrow) + (scale_x - 1) / surface_width,
                                      1.0f - (scale_y - 1) / surface_height, 0.0f, 0.0f};
     device_->SetVertexShaderConstantF(d3d9::kVsScreenToClip, screen_to_clip, 2);
     float fog_params[4] = {};
@@ -766,9 +769,9 @@ void D3D9Draw::draw(const DrawInput& input) {
     RECT clip{to_surface(v.x, width, scale_x), to_surface(v.y, height, scale_y),
               to_surface(v.x + v.width, width, scale_x), to_surface(v.y + v.height, height, scale_y)};
     if (narrow != 1.0f) {
-        const float centre = surface_width / 2;
-        clip.left = static_cast<LONG>(std::lround(centre + (clip.left - centre) * narrow));
-        clip.right = static_cast<LONG>(std::lround(centre + (clip.right - centre) * narrow));
+        const float at = surface_width * anchor;
+        clip.left = static_cast<LONG>(std::lround(at + (clip.left - at) * narrow));
+        clip.right = static_cast<LONG>(std::lround(at + (clip.right - at) * narrow));
     }
     device_->SetScissorRect(&clip);
 
