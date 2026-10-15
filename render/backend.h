@@ -39,6 +39,10 @@ struct BackendConfig {
     // own (4:3 for 640x480); 16/9 for a title rendering widescreen anamorphically.
     // The window and every render target are widened to it.
     float display_aspect = 0;
+    // With a wider display_aspect: frames without a 3D scene (menus, loading screens,
+    // movies; the title lays them out for its back buffer's shape only) are shown at
+    // that shape instead, centred between black bars.
+    bool pillarbox_flat_frames = false;
     // Anisotropic filtering for mipmapped textures the title filters linearly (PC
     // option; the Xbox titles rarely used it). 1 = the title's own filters.
     uint32_t anisotropy = 1;

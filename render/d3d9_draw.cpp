@@ -388,6 +388,8 @@ D3D9Draw::~D3D9Draw() { release(magenta_); }
 void D3D9Draw::end_frame() {
     ++frame_;
     unsupported_draws_ = 0;
+    flat_frames_ = frame_writes_depth_ ? 0 : flat_frames_ + 1;
+    frame_writes_depth_ = false;
 }
 
 D3D9Draw::CachedTexture* D3D9Draw::texture_for_stage(uint32_t stage) {
@@ -691,6 +693,7 @@ void D3D9Draw::draw(const DrawInput& input) {
     const uint32_t* rs = render_state();
     auto reg = [](uint32_t method) { return nv2a::reg(method); };
     device_->SetRenderState(D3DRS_ZENABLE, rs[kRsZEnable] && has_depth_ ? D3DZB_TRUE : D3DZB_FALSE);
+    if (rs[kRsZEnable] && has_depth_ && reg(kNvDepthMask)) frame_writes_depth_ = true;
     device_->SetRenderState(D3DRS_ZWRITEENABLE, reg(kNvDepthMask) != 0);
     device_->SetRenderState(D3DRS_ZFUNC, compare_func(reg(kNvDepthFunc)));
     device_->SetRenderState(D3DRS_ALPHATESTENABLE, reg(kNvAlphaTestEnable) != 0);

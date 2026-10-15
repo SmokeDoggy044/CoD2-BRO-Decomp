@@ -139,6 +139,7 @@ public:
         }
         width_ = config.width;
         height_ = config.height;
+        pillarbox_ = config.pillarbox_flat_frames && config.display_aspect > 0;
         back_buffer_data_ = config.back_buffer.data;
         draw_ = std::make_unique<D3D9Draw>(device_, config);
         overlay_ = std::make_unique<D3D9Overlay>(device_);
@@ -185,15 +186,24 @@ public:
         }
     }
 
-    // At the render scale.
+    // At the render scale, pillarboxed frames at their own shape.
     bool save_back_buffer(const char* path) override {
         IDirect3DSurface9* back_buffer = draw_->target_surface(back_buffer_data_);
+        IDirect3DSurface9* narrow = nullptr;
         IDirect3DSurface9* copy = nullptr;
         D3DSURFACE_DESC desc{};
-        bool ok = back_buffer && SUCCEEDED(back_buffer->GetDesc(&desc)) &&
-                  SUCCEEDED(device_->CreateOffscreenPlainSurface(desc.Width, desc.Height, D3DFMT_X8R8G8B8,
-                                                                 D3DPOOL_SYSTEMMEM, &copy, nullptr)) &&
-                  SUCCEEDED(device_->GetRenderTargetData(back_buffer, copy));
+        bool ok = back_buffer && SUCCEEDED(back_buffer->GetDesc(&desc));
+        if (ok && pillarboxed_) {
+            desc.Width = static_cast<UINT>(std::lround(static_cast<double>(desc.Height) * width_ / height_));
+            ok = SUCCEEDED(device_->CreateRenderTarget(desc.Width, desc.Height, D3DFMT_X8R8G8B8, D3DMULTISAMPLE_NONE,
+                                                       0, FALSE, &narrow, nullptr)) &&
+                 SUCCEEDED(device_->StretchRect(back_buffer, nullptr, narrow, nullptr, D3DTEXF_LINEAR));
+            back_buffer = narrow;
+        }
+        ok = ok &&
+             SUCCEEDED(device_->CreateOffscreenPlainSurface(desc.Width, desc.Height, D3DFMT_X8R8G8B8,
+                                                            D3DPOOL_SYSTEMMEM, &copy, nullptr)) &&
+             SUCCEEDED(device_->GetRenderTargetData(back_buffer, copy));
         D3DLOCKED_RECT locked{};
         if (ok) ok = SUCCEEDED(copy->LockRect(&locked, nullptr, D3DLOCK_READONLY));
         if (ok) {
@@ -201,6 +211,7 @@ public:
             copy->UnlockRect();
         }
         release(copy);
+        release(narrow);
         if (!ok) LOG_WARN("render", "cannot save the back buffer to %s", path);
         return ok;
     }
@@ -211,7 +222,20 @@ public:
         IDirect3DSurface9* swap_chain = nullptr;
         IDirect3DSurface9* back_buffer = draw_->target_surface(back_buffer_data_);
         if (back_buffer && SUCCEEDED(device_->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &swap_chain))) {
-            device_->StretchRect(back_buffer, nullptr, swap_chain, nullptr, D3DTEXF_LINEAR);
+            // Pillarbox after a few flat frames in a row, so that a moment without the
+            // scene (a fade) does not jump.
+            constexpr uint32_t kPillarboxAfter = 8;
+            pillarboxed_ = pillarbox_ && draw_->frame_is_flat() && draw_->flat_frames_before() >= kPillarboxAfter;
+            D3DSURFACE_DESC desc{};
+            swap_chain->GetDesc(&desc);
+            RECT dest{0, 0, static_cast<LONG>(desc.Width), static_cast<LONG>(desc.Height)};
+            if (pillarboxed_) {
+                const LONG width = std::lround(static_cast<double>(desc.Height) * width_ / height_);
+                dest.left = (static_cast<LONG>(desc.Width) - width) / 2;
+                dest.right = dest.left + width;
+                device_->ColorFill(swap_chain, nullptr, D3DCOLOR_XRGB(0, 0, 0));
+            }
+            device_->StretchRect(back_buffer, nullptr, swap_chain, &dest, D3DTEXF_LINEAR);
             overlay_->draw(swap_chain, overlay, 4, 4);
             swap_chain->Release();
         }
@@ -319,6 +343,8 @@ private:
     std::unique_ptr<D3D9Draw> draw_;
     uint32_t width_ = 0, height_ = 0;
     uint32_t back_buffer_data_ = 0;
+    bool pillarbox_ = false;    // BackendConfig::pillarbox_flat_frames
+    bool pillarboxed_ = false;  // the frame shown last was
     bool mark_requested_ = false;
     bool highlight_toggled_ = false;
     bool closed_ = false;

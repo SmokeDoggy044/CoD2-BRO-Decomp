@@ -146,9 +146,13 @@ export's calling convention and argument size come from the header.
   "480P (640x480) 16x9", `cg_widescreen 1`, `FUN_000649e0`), so the EEPROM says
   widescreen and the game renders anamorphically into its 640x480 back buffer: wider
   view (Hor+) and a 16:9 HUD. The window is 16:9 and render targets are widened
-  (2.67x2 at scale 2), so nothing is stretched. Checked in missions 1-2. Not handled:
-  the menus (UIX) and loading screens are 4:3 layouts and show stretched, as on a
-  16:9 TV. Next: pillarbox the menus, then fullscreen/window options, mission 6.
+  (2.67x2 at scale 2), so nothing is stretched. Checked in missions 1-2. The game only
+  lays out the HUD for 16:9 (each HUD component by hand on `cg_widescreen`,
+  `FUN_00311800`); menus, loading and briefing screens and movies are 4:3 layouts, so
+  frames without a 3D scene (no draw writes depth; their 2D draws may leave the depth
+  test on) are shown pillarboxed at 4:3 after 8 such frames in a row, screenshots too.
+  Not handled: menus drawn over the scene (the pause menu) stay stretched. Next:
+  fullscreen/window options, mission 6 playtest.
 - Later, once the game runs: raise the budget and enlarge the game's memory pools
   (`FUN_00043fb0` allocates fixed 35.2 MB + 3.7 MB arenas) for bigger assets/mods.
 - Threads run truly in parallel and ignore priorities (the Xbox is single-core with

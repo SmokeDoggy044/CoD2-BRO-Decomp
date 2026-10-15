@@ -39,6 +39,11 @@ public:
     void set_highlight(bool on) { highlight_ = on; }
     // Such draws in the current frame so far (counted with highlighting off too).
     uint32_t unsupported_draws() const { return unsupported_draws_; }
+    // Flat frames: no draw writes depth, so no 3D scene (menus, loading screens,
+    // movies; their 2D draws may leave the depth test on). Whether the current frame
+    // is one so far, and how many came before it.
+    bool frame_is_flat() const { return !frame_writes_depth_; }
+    uint32_t flat_frames_before() const { return flat_frames_; }
 
 private:
     struct Caches;
@@ -64,6 +69,8 @@ private:
     uint32_t dump_index_ = 0;
     bool highlight_ = false;
     uint32_t unsupported_draws_ = 0;
+    bool frame_writes_depth_ = false;
+    uint32_t flat_frames_ = 0;
     IDirect3DPixelShader9* magenta_ = nullptr;
     std::unique_ptr<Caches> caches_;
 };

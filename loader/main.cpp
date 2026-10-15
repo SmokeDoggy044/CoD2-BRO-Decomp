@@ -355,7 +355,10 @@ int main(int argc, char** argv) {
     render::D3DConfig d3d_config;
     d3d_config.backend.window_scale = options->scale;
     d3d_config.backend.anisotropy = options->anisotropy;
-    if (options->widescreen) d3d_config.backend.display_aspect = 16.0f / 9.0f;
+    if (options->widescreen) {
+        d3d_config.backend.display_aspect = 16.0f / 9.0f;
+        d3d_config.backend.pillarbox_flat_frames = true;  // the menus are 4:3 layouts
+    }
     d3d_config.backend.render_scale =
         options->render_scale > 0 ? options->render_scale : static_cast<float>(options->scale);
     d3d_config.screenshot_interval = options->screenshot_interval;
