@@ -58,6 +58,9 @@ struct KernelConfig {
     // kernel threads and from inside a kernel call made by the title (nested).
     void (*call_guest)(uint32_t function, const uint32_t* args, uint32_t count);
     MemoryConfig memory;
+    // The console's video settings say widescreen (16:9 TV). Titles that support it
+    // render 16:9 anamorphically into their 4:3 back buffer.
+    bool widescreen = false;
     // Host folders behind the Xbox devices. Empty = device not available.
     std::filesystem::path cdrom_root;  // \Device\CdRom0 (D:), read-only: the game's files
     std::filesystem::path data_root;   // writable: <data>/E = partition 1 (E:, T:, U:), <data>/Z = cache (Z:)

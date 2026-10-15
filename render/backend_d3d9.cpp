@@ -3,6 +3,7 @@
 
 #include <SDL3/SDL.h>
 
+#include <cmath>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -83,8 +84,12 @@ public:
         }
         sdl_started_ = true;
         const uint32_t scale = config.window_scale ? config.window_scale : 1;
-        window_ = SDL_CreateWindow("Call of Duty 2: Big Red One", static_cast<int>(config.width * scale),
-                                   static_cast<int>(config.height * scale), SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+        const uint32_t window_height = config.height * scale;
+        const uint32_t window_width =
+            config.display_aspect > 0 ? static_cast<uint32_t>(std::lround(window_height * config.display_aspect))
+                                      : config.width * scale;
+        window_ = SDL_CreateWindow("Call of Duty 2: Big Red One", static_cast<int>(window_width),
+                                   static_cast<int>(window_height), SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
         if (!window_) {
             LOG_ERROR("render", "window: %s", SDL_GetError());
             return false;
@@ -113,8 +118,8 @@ public:
         // The swap chain is the window's size; the title's back buffer (render scale)
         // is stretched onto it. Depth buffers are D3D9Draw's.
         D3DPRESENT_PARAMETERS pp{};
-        pp.BackBufferWidth = config.width * scale;
-        pp.BackBufferHeight = config.height * scale;
+        pp.BackBufferWidth = window_width;
+        pp.BackBufferHeight = window_height;
         pp.BackBufferFormat = D3DFMT_X8R8G8B8;
         pp.BackBufferCount = 1;
         pp.SwapEffect = D3DSWAPEFFECT_DISCARD;
@@ -137,8 +142,9 @@ public:
         back_buffer_data_ = config.back_buffer.data;
         draw_ = std::make_unique<D3D9Draw>(device_, config);
         overlay_ = std::make_unique<D3D9Overlay>(device_);
-        LOG_INFO("render", "D3D9 device: %ux%u, rendering at %.2fx, window %ux%u", config.width, config.height,
-                 static_cast<double>(config.render_scale), pp.BackBufferWidth, pp.BackBufferHeight);
+        LOG_INFO("render", "D3D9 device: %ux%u, rendering at %.2fx%.2f, window %ux%u", config.width, config.height,
+                 static_cast<double>(config.render_scale_x()), static_cast<double>(config.render_scale),
+                 pp.BackBufferWidth, pp.BackBufferHeight);
         return true;
     }
 

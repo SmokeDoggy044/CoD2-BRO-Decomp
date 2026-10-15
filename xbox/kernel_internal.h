@@ -39,6 +39,9 @@ T& immortal() {
     return *object;
 }
 
+// Applies the KernelConfig's console settings to the EEPROM image.
+void settings_init(const KernelConfig& config);
+
 // KeQuerySystemTime's clock: 100ns units since 1601-01-01.
 int64_t current_system_time();
 int64_t to_system_time(std::chrono::system_clock::time_point time);

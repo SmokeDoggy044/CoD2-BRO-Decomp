@@ -46,6 +46,7 @@ struct Options {
     uint32_t scale = 2;
     uint32_t anisotropy = 16;
     float render_scale = 0;  // 0: the window scale
+    bool widescreen = true;
     uint32_t screenshot_interval = 0;
     std::optional<fs::path> screenshot_dir;
     bool silent = false;
@@ -78,6 +79,7 @@ void print_usage(const char* program) {
         "  --scale N        window size as a multiple of the game's resolution (default 2)\n"
         "  --render-scale X render resolution as a multiple of the game's 640x480 (default: the\n"
         "                   window scale; above it = supersampling anti-aliasing, e.g. 4)\n"
+        "  --aspect A       16:9 (default: the game's widescreen mode, wider view and HUD) or 4:3\n"
         "  --anisotropy N   anisotropic filtering for mipmapped textures, 1-16 (default 16;\n"
         "                   1 = what the game asks for)\n"
         "  --screenshots N DIR  save every Nth frame as DIR/frame_<n>.bmp (debugging)\n"
@@ -131,6 +133,16 @@ std::optional<Options> parse_args(int argc, char** argv) {
             if (i + 1 >= argc || (options.render_scale = std::strtof(argv[++i], nullptr)) < 0.5f ||
                 options.render_scale > 8.0f) {
                 std::fprintf(stderr, "--render-scale needs a number (0.5-8)\n");
+                return std::nullopt;
+            }
+        } else if (arg == "--aspect") {
+            const std::string aspect = i + 1 < argc ? argv[++i] : "";
+            if (aspect == "16:9") {
+                options.widescreen = true;
+            } else if (aspect == "4:3") {
+                options.widescreen = false;
+            } else {
+                std::fprintf(stderr, "--aspect needs 16:9 or 4:3\n");
                 return std::nullopt;
             }
         } else if (arg == "--anisotropy") {
@@ -284,6 +296,7 @@ xbox::KernelConfig kernel_config(const Options& options, const fs::path& assets,
     config.attach_kernel_thread = attach_kernel_thread;
     config.call_guest = call_guest;
     config.memory.physical_bytes = options.memory_mb * 1024 * 1024;
+    config.widescreen = options.widescreen;
     config.cdrom_root = assets;
     config.data_root = options.data.value_or(platform::user_data_dir());
     if (options.launch_data_fd) config.launch_data_page = read_launch_data(*options.launch_data_fd);
@@ -342,6 +355,7 @@ int main(int argc, char** argv) {
     render::D3DConfig d3d_config;
     d3d_config.backend.window_scale = options->scale;
     d3d_config.backend.anisotropy = options->anisotropy;
+    if (options->widescreen) d3d_config.backend.display_aspect = 16.0f / 9.0f;
     d3d_config.backend.render_scale =
         options->render_scale > 0 ? options->render_scale : static_cast<float>(options->scale);
     d3d_config.screenshot_interval = options->screenshot_interval;

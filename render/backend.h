@@ -21,14 +21,24 @@ struct SurfaceDesc {
 };
 
 struct BackendConfig {
+    // Horizontal render scale: render_scale widened to the display aspect.
+    float render_scale_x() const {
+        return display_aspect > 0 ? render_scale * display_aspect * height / width : render_scale;
+    }
+
     uint32_t width = 640;  // the title's back buffer size
     uint32_t height = 480;
     SurfaceDesc back_buffer;    // what present() shows
     SurfaceDesc depth_stencil;  // the device's own depth buffer (data 0 = none)
     uint32_t window_scale = 1;
     // Render targets are this many times the size the title asked for (the title still
-    // sees its own sizes). Above window_scale it supersamples.
+    // sees its own sizes). Above window_scale it supersamples. Vertical; horizontally
+    // it grows with the display aspect.
     float render_scale = 1;
+    // The shape the title's picture is meant to be shown at: 0 = its back buffer's
+    // own (4:3 for 640x480); 16/9 for a title rendering widescreen anamorphically.
+    // The window and every render target are widened to it.
+    float display_aspect = 0;
     // Anisotropic filtering for mipmapped textures the title filters linearly (PC
     // option; the Xbox titles rarely used it). 1 = the title's own filters.
     uint32_t anisotropy = 1;

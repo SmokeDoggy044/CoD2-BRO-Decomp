@@ -367,6 +367,7 @@ bool kernel_init(const KernelConfig& config) {
     std::snprintf(g_image_file_name, sizeof(g_image_file_name), "%s", config.image_file_name);
     RtlInitAnsiString(&XeImageFileName, g_image_file_name);
     std::thread(tick_thread).detach();
+    settings_init(config);
     if (!memory_init(config.memory) || !filesystem_init(config)) return false;
     if (!config.launch_data_page.empty()) {
         // The new title reads it with XGetLaunchInfo, which frees it.

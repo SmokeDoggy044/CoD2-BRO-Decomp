@@ -287,7 +287,8 @@ struct D3D9Draw::Caches {
 
 D3D9Draw::D3D9Draw(IDirect3DDevice9* device, const BackendConfig& config)
     : device_(device), depth_data_(config.depth_stencil.data), anisotropy_(config.anisotropy),
-      render_scale_(config.render_scale > 0 ? config.render_scale : 1), caches_(std::make_unique<Caches>()) {
+      render_scale_x_(config.render_scale > 0 ? config.render_scale_x() : 1),
+      render_scale_y_(config.render_scale > 0 ? config.render_scale : 1), caches_(std::make_unique<Caches>()) {
     D3DCAPS9 caps{};
     if (SUCCEEDED(device_->GetDeviceCaps(&caps))) anisotropy_ = std::min<uint32_t>(anisotropy_, caps.MaxAnisotropy);
     device_->SetRenderState(D3DRS_LIGHTING, FALSE);
@@ -319,8 +320,8 @@ bool D3D9Draw::set_render_target(const SurfaceDesc& color, const SurfaceDesc* de
     const D3DFORMAT format = target_format(color.format);
     if (t.texture && (t.width != color.width || t.height != color.height || t.format != format)) caches.release_target(t);
     if (!t.texture) {
-        t.surface_width = std::max(1u, static_cast<uint32_t>(std::lround(color.width * render_scale_)));
-        t.surface_height = std::max(1u, static_cast<uint32_t>(std::lround(color.height * render_scale_)));
+        t.surface_width = std::max(1u, static_cast<uint32_t>(std::lround(color.width * render_scale_x_)));
+        t.surface_height = std::max(1u, static_cast<uint32_t>(std::lround(color.height * render_scale_y_)));
         if (FAILED(device_->CreateTexture(t.surface_width, t.surface_height, 1, D3DUSAGE_RENDERTARGET, format,
                                           D3DPOOL_DEFAULT, &t.texture, nullptr)) ||
             FAILED(t.texture->GetSurfaceLevel(0, &t.surface))) {
@@ -351,9 +352,9 @@ bool D3D9Draw::set_render_target(const SurfaceDesc& color, const SurfaceDesc* de
     IDirect3DSurface9* depth_surface = nullptr;
     if (depth && depth->data) {
         DepthBuffer& d = caches.depths[depth->data];
-        const uint32_t width = std::max(t.surface_width, static_cast<uint32_t>(std::lround(depth->width * render_scale_)));
+        const uint32_t width = std::max(t.surface_width, static_cast<uint32_t>(std::lround(depth->width * render_scale_x_)));
         const uint32_t height =
-            std::max(t.surface_height, static_cast<uint32_t>(std::lround(depth->height * render_scale_)));
+            std::max(t.surface_height, static_cast<uint32_t>(std::lround(depth->height * render_scale_y_)));
         if (d.surface && (d.width < width || d.height < height)) release(d.surface);
         if (!d.surface) {
             d.width = width;
@@ -613,7 +614,7 @@ void D3D9Draw::draw(const DrawInput& input) {
     }
 
     // Vertex constants: the NV2A slots, then screen space -> clip space. Screen space is
-    // the title's size; on a larger surface (render scale s), D3D9 has its pixel centres
+    // the title's size; on a larger surface (render scale s per axis), D3D9 has its pixel centres
     // on integers, so the title's pixel x is centred at x * s + (s - 1) / 2.
     device_->SetVertexShaderConstantF(0, reinterpret_cast<const float*>(nv.constants.data()), nv2a::kConstantSlots);
     const float surface_width = static_cast<float>(target_surface_width_);

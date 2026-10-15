@@ -140,7 +140,15 @@ export's calling convention and argument size come from the header.
   offset (pixel centres), depth buffers are its own, CPU back-buffer writes (movies)
   are stretched up, screenshots are at the render size. `--anisotropy N` (default 16)
   for mipmapped textures. Checked at 1x/2x/4x in missions 1-2 (HUD, glow, cutscenes):
-  same picture, sharper. Next: widescreen (FOV + HUD), then mission 6 playtest.
+  same picture, sharper.
+  Widescreen (`--aspect 16:9`, the default; `4:3` for the original): the game has its
+  own 16:9 mode, chosen from the console's video settings (XGetVideoFlags bit 0 ->
+  "480P (640x480) 16x9", `cg_widescreen 1`, `FUN_000649e0`), so the EEPROM says
+  widescreen and the game renders anamorphically into its 640x480 back buffer: wider
+  view (Hor+) and a 16:9 HUD. The window is 16:9 and render targets are widened
+  (2.67x2 at scale 2), so nothing is stretched. Checked in missions 1-2. Not handled:
+  the menus (UIX) and loading screens are 4:3 layouts and show stretched, as on a
+  16:9 TV. Next: pillarbox the menus, then fullscreen/window options, mission 6.
 - Later, once the game runs: raise the budget and enlarge the game's memory pools
   (`FUN_00043fb0` allocates fixed 35.2 MB + 3.7 MB arenas) for bigger assets/mods.
 - Threads run truly in parallel and ignore priorities (the Xbox is single-core with

@@ -121,4 +121,15 @@ const KernelImpl kSettingsImpls[] = {
 
 std::span<const KernelImpl> settings_kernel_impls() { return kSettingsImpls; }
 
+void settings_init(const KernelConfig& config) {
+    // XC_VIDEO: the flags are in the high word (XGetVideoFlags shifts them down);
+    // 0x00010000 = XC_VIDEO_FLAGS_WIDESCREEN, kept by XAPI for every AV pack.
+    constexpr uint32_t kVideoWidescreen = 0x00010000;
+    std::lock_guard lock(g_eeprom.mutex);
+    uint32_t video;
+    std::memcpy(&video, &g_eeprom.bytes[0x94], 4);
+    video = config.widescreen ? video | kVideoWidescreen : video & ~kVideoWidescreen;
+    std::memcpy(&g_eeprom.bytes[0x94], &video, 4);
+}
+
 }  // namespace xbox
