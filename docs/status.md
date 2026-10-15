@@ -9,7 +9,8 @@
   sign, floor and wall decals, maps and posters no longer z-fight. Mission 3 (tank
   level) and mission 4 (19 min, through the menus with the profile) played clean with
   F11 on: no untranslated features, no new warnings. Mission 5 (Liberator, 15 and
-  16 min) clean, 30 fps.
+  16 min) clean, 30 fps; one note from it is open: a dead gunner's body sank through
+  the floor grate of the turret well (likely the original's, not checked).
 - Mission 5 frame pacing: frames that missed a vblank (50 ms) clustered in heavy
   fights (the town battle at the end, ~25 in 25 s). Likely cause, fixed: a vsync'd
   Present waited on the display's clock on top of the title's wait for our vblank;
