@@ -288,7 +288,10 @@ struct D3D9Draw::Caches {
 D3D9Draw::D3D9Draw(IDirect3DDevice9* device, const BackendConfig& config)
     : device_(device), depth_data_(config.depth_stencil.data), anisotropy_(config.anisotropy),
       render_scale_x_(config.render_scale > 0 ? config.render_scale_x() : 1),
-      render_scale_y_(config.render_scale > 0 ? config.render_scale : 1), caches_(std::make_unique<Caches>()) {
+      render_scale_y_(config.render_scale > 0 ? config.render_scale : 1),
+      narrow_factor_(config.display_aspect > 0 ? static_cast<float>(config.width) / config.height / config.display_aspect
+                                               : 1.0f),
+      narrow_ui_draw_(config.narrow_ui_draw), caches_(std::make_unique<Caches>()) {
     D3DCAPS9 caps{};
     if (SUCCEEDED(device_->GetDeviceCaps(&caps))) anisotropy_ = std::min<uint32_t>(anisotropy_, caps.MaxAnisotropy);
     device_->SetRenderState(D3DRS_LIGHTING, FALSE);
@@ -385,10 +388,25 @@ IDirect3DSurface9* D3D9Draw::target_surface(uint32_t data) {
 
 D3D9Draw::~D3D9Draw() { release(magenta_); }
 
+bool D3D9Draw::narrow_draw(const DrawInput& input, uint32_t width) const {
+    // Only over a 3D scene (drawn before the UI): flat frames are pillarboxed whole.
+    if (narrow_factor_ >= 1.0f || !narrow_ui_draw_ || !frame_writes_depth_ || !(input.attribute_mask & 1) ||
+        !narrow_ui_draw_())
+        return false;
+    // Full-width quads (dimming, letterbox bars) keep covering the picture.
+    const uint32_t stride = static_cast<uint32_t>(std::popcount(input.attribute_mask)) * 4;
+    float left = input.vertices[0], right = left;
+    for (uint32_t i = 1; i < input.vertex_count; ++i) {
+        left = std::min(left, input.vertices[i * stride]);
+        right = std::max(right, input.vertices[i * stride]);
+    }
+    return !(left <= 1.0f && right >= static_cast<float>(width) - 1.0f);
+}
+
 void D3D9Draw::end_frame() {
     ++frame_;
     unsupported_draws_ = 0;
-    flat_frames_ = frame_writes_depth_ ? 0 : flat_frames_ + 1;
+    flat_frames_ = frame_is_flat() ? flat_frames_ + 1 : 0;
     frame_writes_depth_ = false;
 }
 
@@ -622,9 +640,12 @@ void D3D9Draw::draw(const DrawInput& input) {
     const float surface_width = static_cast<float>(target_surface_width_);
     const float surface_height = static_cast<float>(target_surface_height_);
     const float scale_x = surface_width / width, scale_y = surface_height / height;
-    const float screen_to_clip[8] = {2.0f / width, -2.0f / height, 1.0f / input.depth_max, 0.0f,
-                                     -1.0f + (scale_x - 1) / surface_width, 1.0f - (scale_y - 1) / surface_height,
-                                     0.0f, 0.0f};
+    // UI laid out for the back buffer's shape over a wider 3D picture (in-game menus):
+    // narrowed to that shape around the centre, x' = w/2 + (x - w/2) * k.
+    const float narrow = narrow_draw(input, width) ? narrow_factor_ : 1.0f;
+    const float screen_to_clip[8] = {2.0f / width * narrow, -2.0f / height, 1.0f / input.depth_max, 0.0f,
+                                     -1.0f + (1.0f - narrow) + (scale_x - 1) / surface_width,
+                                     1.0f - (scale_y - 1) / surface_height, 0.0f, 0.0f};
     device_->SetVertexShaderConstantF(d3d9::kVsScreenToClip, screen_to_clip, 2);
     float fog_params[4] = {};
     std::memcpy(fog_params, &nv2a::reg(kNvFogParams), 8);
@@ -744,6 +765,11 @@ void D3D9Draw::draw(const DrawInput& input) {
     };
     RECT clip{to_surface(v.x, width, scale_x), to_surface(v.y, height, scale_y),
               to_surface(v.x + v.width, width, scale_x), to_surface(v.y + v.height, height, scale_y)};
+    if (narrow != 1.0f) {
+        const float centre = surface_width / 2;
+        clip.left = static_cast<LONG>(std::lround(centre + (clip.left - centre) * narrow));
+        clip.right = static_cast<LONG>(std::lround(centre + (clip.right - centre) * narrow));
+    }
     device_->SetScissorRect(&clip);
 
     if (dump_frame_ && frame_ == dump_frame_) {

@@ -151,8 +151,11 @@ export's calling convention and argument size come from the header.
   `FUN_00311800`); menus, loading and briefing screens and movies are 4:3 layouts, so
   frames without a 3D scene (no draw writes depth; their 2D draws may leave the depth
   test on) are shown pillarboxed at 4:3 after 8 such frames in a row, screenshots too.
-  Not handled: menus drawn over the scene (the pause menu) stay stretched. Next:
-  fullscreen/window options, mission 6 playtest.
+  In-game menus over the scene (pause, options) are narrowed to 4:3 around the centre
+  per draw: `loader/patches.cpp` wraps the in-game UI's screen/menu render calls and
+  marks the NGL scenes they draw into; full-width quads (dimming, bars) stay wide.
+  Checked: pause menu and its Options. Not checked: objectives, death/mission failed
+  screens, dialogs. Next: fullscreen/window options, mission 6 playtest.
 - Later, once the game runs: raise the budget and enlarge the game's memory pools
   (`FUN_00043fb0` allocates fixed 35.2 MB + 3.7 MB arenas) for bigger assets/mods.
 - Threads run truly in parallel and ignore priorities (the Xbox is single-core with

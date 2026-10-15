@@ -324,7 +324,110 @@ void install_start_level(int32_t level) {
     g_start_level = level;
 }
 
+// --- In-game menus in widescreen ------------------------------------------------------
+//
+// In 16:9 the game lays out only its HUD for the wider picture (each HUD component by
+// hand on cg_widescreen); in-game menus (pause, options, dialogs) keep their 4:3
+// layout. The in-game UI's render functions (FUN_003153d0, FUN_00315440,
+// FUN_003154b0, one per UI state) draw their screen (the pause menu is +0x2c, drawn
+// by FUN_003153d0 while paused) and an open sub-menu (+0x30) through the object's
+// vtable (+0x1c); the HUD comes from other code (its own scenes). The
+// engine (NGL) queues 2D into scenes and draws them at the end of the frame
+// (FUN_00064ec0) with the current scene in kCurrentScene. Scenes come from a
+// per-frame bump allocator (kFrameAllocator), so the scenes the menu creates are
+// exactly those allocated while it renders; a screen also draws into the scene the
+// caller created for it just before. The renderer narrows draws from these scenes
+// (in_game_menu_draw).
+
+// The render calls: screens "mov eax,[ecx]; add esp,0x10; call [eax+0x1c]", sub-menus
+// "mov edx,[ecx]; call [edx+0x1c]", and in FUN_003154b0 the tail jump
+// "mov ecx,eax; mov eax,[ecx]; jmp [eax+0x1c]".
+constexpr uint32_t kScreenRenderCalls[] = {0x00315414, 0x00315476};
+constexpr uint32_t kMenuRenderCalls[] = {0x00315433, 0x00315491};
+constexpr uint32_t kMenuRenderJump = 0x00315515;
+constexpr uint32_t kCurrentScene = 0x0090259c;
+constexpr uint32_t kFrameAllocator = 0x009025a8;
+constexpr uint32_t kEngineFrame = 0x009028e0;  // counts swaps (FUN_00064ec0)
+
+struct MenuScenes {
+    uint32_t begin = 0, end = 0;  // allocated while the menu rendered
+    uint32_t scene = 0;           // a screen's own scene
+    uint32_t frame = UINT32_MAX;  // kEngineFrame then
+};
+MenuScenes g_menu_scenes;
+
+void XB_CDECL menu_render_begin() {
+    const uint32_t allocator = title<uint32_t>(kFrameAllocator);
+    g_menu_scenes = {allocator, allocator, 0, title<uint32_t>(kEngineFrame)};
+}
+
+void XB_CDECL screen_render_begin() {
+    menu_render_begin();
+    g_menu_scenes.scene = title<uint32_t>(kCurrentScene);
+}
+
+void XB_CDECL menu_render_end() { g_menu_scenes.end = title<uint32_t>(kFrameAllocator); }
+
+// pushad; pushfd; call function; popfd; popad
+uint8_t* put_preserving_call(uint8_t* t, void (*function)()) {
+    *t++ = 0x60, *t++ = 0x9C;
+    put_rel32(t, 0xE8, reinterpret_cast<const void*>(function));
+    t += 5;
+    *t++ = 0x9D, *t++ = 0x61;
+    return t;
+}
+
+void install_menu_render_hooks() {
+    const uint8_t screen_site[8] = {0x8B, 0x01, 0x83, 0xC4, 0x10, 0xFF, 0x50, 0x1C};
+    const uint8_t call_site[5] = {0x8B, 0x11, 0xFF, 0x52, 0x1C};
+    for (uint32_t address : kScreenRenderCalls)
+        if (std::memcmp(reinterpret_cast<void*>(uintptr_t{address}), screen_site, sizeof(screen_site)) != 0) {
+            LOG_WARN("patches", "%08x: not a screen render call; in-game menus stay stretched", address);
+            return;
+        }
+    const uint8_t jump_site[7] = {0x8B, 0xC8, 0x8B, 0x01, 0xFF, 0x60, 0x1C};
+    for (uint32_t address : kMenuRenderCalls)
+        if (std::memcmp(reinterpret_cast<void*>(uintptr_t{address}), call_site, sizeof(call_site)) != 0) {
+            LOG_WARN("patches", "%08x: not a menu render call; in-game menus stay stretched", address);
+            return;
+        }
+    auto* jump = reinterpret_cast<uint8_t*>(uintptr_t{kMenuRenderJump});
+    if (std::memcmp(jump, jump_site, sizeof(jump_site)) != 0) {
+        LOG_WARN("patches", "%08x: not the menu render jump; in-game menus stay stretched", kMenuRenderJump);
+        return;
+    }
+    auto* thunks = static_cast<uint8_t*>(
+        mmap(nullptr, 128, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
+    if (thunks == MAP_FAILED) return;
+    // Called with the menu in ecx: begin; mov edx,[ecx]; call [edx+0x1c]; end; ret
+    auto put_thunk = [](uint8_t* t, void (*begin)()) {
+        t = put_preserving_call(t, begin);
+        *t++ = 0x8B, *t++ = 0x11, *t++ = 0xFF, *t++ = 0x52, *t++ = 0x1C;
+        t = put_preserving_call(t, &menu_render_end);
+        *t++ = 0xC3;
+        return t;
+    };
+    uint8_t* const thunk = thunks;
+    uint8_t* const screen_thunk = put_thunk(thunk, &menu_render_begin);
+    put_thunk(screen_thunk, &screen_render_begin);
+    for (uint32_t address : kMenuRenderCalls) put_rel32(reinterpret_cast<uint8_t*>(uintptr_t{address}), 0xE8, thunk);
+    for (uint32_t address : kScreenRenderCalls) {  // add esp,0x10; call thunk
+        auto* site = reinterpret_cast<uint8_t*>(uintptr_t{address});
+        site[0] = 0x83, site[1] = 0xC4, site[2] = 0x10;
+        put_rel32(site + 3, 0xE8, screen_thunk);
+    }
+    // The tail jump: mov ecx,eax; jmp thunk (which returns to FUN_003154b0's caller).
+    jump[0] = 0x8B, jump[1] = 0xC8;
+    put_rel32(jump + 2, 0xE9, thunk);
+}
+
 }  // namespace
+
+bool in_game_menu_draw() {
+    const uint32_t scene = title<uint32_t>(kCurrentScene);
+    const MenuScenes& m = g_menu_scenes;
+    return m.frame == title<uint32_t>(kEngineFrame) && (scene == m.scene || (scene >= m.begin && scene < m.end));
+}
 
 namespace {
 
@@ -451,6 +554,7 @@ void install_title_patches(const TitlePatchConfig& config) {
     install_rdtsc_patches();
     install_mouse_look();
     install_start_level(config.start_level);
+    install_menu_render_hooks();
     input::set_action_remap(&remap_keyboard_actions);
 }
 

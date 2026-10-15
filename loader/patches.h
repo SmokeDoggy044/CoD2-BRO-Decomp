@@ -23,6 +23,10 @@ struct TitlePatchConfig {
 // Call after the image is mapped.
 void install_title_patches(const TitlePatchConfig& config);
 
+// True while the engine draws a scene an in-game menu created this frame (UI laid
+// out for 4:3; render::BackendConfig::narrow_ui_draw).
+bool in_game_menu_draw();
+
 class SymbolTable;
 class XbeImage;
 

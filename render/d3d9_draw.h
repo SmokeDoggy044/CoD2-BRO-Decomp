@@ -52,12 +52,16 @@ private:
     // The texture bound to a stage as a D3D9 texture (created or updated), or null.
     CachedTexture* texture_for_stage(uint32_t stage);
     bool magenta_shader();  // creates magenta_ once; false if that failed
+    // The draw is UI to narrow to the back buffer's shape (BackendConfig::narrow_ui_draw).
+    bool narrow_draw(const DrawInput& input, uint32_t width) const;
     void dump_draw(const DrawInput& input, const XbPixelShaderDef& def, uint64_t vs_key, uint32_t primitives);
 
     IDirect3DDevice9* device_;
     uint32_t depth_data_;  // the device's depth buffer's Xbox address
     uint32_t anisotropy_;  // BackendConfig::anisotropy, within the device's limit
     float render_scale_x_, render_scale_y_;  // BackendConfig::render_scale_x(), render_scale
+    float narrow_factor_;                    // back buffer aspect / display aspect
+    bool (*narrow_ui_draw_)();               // BackendConfig::narrow_ui_draw
     // The current target: its size as the title sees it and the D3D9 surface's.
     uint32_t target_data_ = 0, target_width_ = 0, target_height_ = 0;
     uint32_t target_surface_width_ = 0, target_surface_height_ = 0;

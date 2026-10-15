@@ -358,6 +358,7 @@ int main(int argc, char** argv) {
     if (options->widescreen) {
         d3d_config.backend.display_aspect = 16.0f / 9.0f;
         d3d_config.backend.pillarbox_flat_frames = true;  // the menus are 4:3 layouts
+        d3d_config.backend.narrow_ui_draw = &loader::in_game_menu_draw;
     }
     d3d_config.backend.render_scale =
         options->render_scale > 0 ? options->render_scale : static_cast<float>(options->scale);
