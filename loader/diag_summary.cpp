@@ -105,7 +105,8 @@ void write_diag_summary(const fs::path& dir) {
         if (line.category == "diag") {
             unsigned n = 0;
             char picture[64];
-            if (std::sscanf(line.text.c_str(), "MARK %u at", &n) == 1) ++marks;
+            int end = -1;  // %n: only "MARK n at", not the "MARK n note:"/"MARK n:" lines
+            if (std::sscanf(line.text.c_str(), "MARK %u at%n", &n, &end) == 1 && end > 0) ++marks;
             const size_t colon = line.text.find("): ");
             if (std::sscanf(line.text.c_str(), "AUTO MARK %u at %*ds, frame %*u (%63[^)])", &n, picture) == 2 &&
                 colon != std::string::npos) {
