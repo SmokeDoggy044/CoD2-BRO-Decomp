@@ -3,14 +3,12 @@
 ## Current state (2026-10-16)
 
 - **Before the prototype release (weekend of 2026-10-17/18):**
-  1. Xbox Live Options > Sign In and the Multiplayer menu reboot into
-     `codmp_xboxf.xbe`; the loader refuses and exits without a word (playtest
-     2026-10-16). Better: find where the menu starts the reboot and keep the player
-     in the menu with a notice; fallback: SDL message box, then reboot into
-     default.xbe.
-  2. Choose the port's license (LICENSES/README.md).
-  3. Fullscreen/window options in the game, then in the launcher.
+  1. Choose the port's license (LICENSES/README.md).
+  2. Fullscreen/window options in the game, then in the launcher.
 - **After the release:**
+  - XFONT (the XOnline sign-in UI's text) writes through the frame buffer's tiled
+    view (address | 0xF0000000), which is not mapped; only reachable through Sign In,
+    which is cut off now.
   - Windows: the loader core is Linux-only (set_thread_area for fs, signals for
     SEH/crashes, mmap at 0x10000, memfd + execv reboot); needs a Windows way to
     give title code its KPCR on fs.
@@ -18,6 +16,10 @@
     setting does nothing (apply the ramp in the final pass).
   - Mission 6+ playtests; death/mission-failed screens and dialogs in widescreen.
   - Launcher: a .desktop file / icon for Linux desktops.
+- Multiplayer and Xbox Live (2026-10-16): the Multiplayer item (console command
+  `load_mp_exe`) and Sign In (main menu, Xbox Live Options) keep the player in the
+  menu with a 4 s notice over the game (`render::show_notice`); the status line says
+  "Not signed in". Confirmed by the user.
 - Sound through the release's bundled OpenAL Soft confirmed by the user
   (2026-10-16).
 - Launcher (2026-10-16): `cod_bro_launcher` (Dear ImGui on SDL3) sets the game-file
@@ -83,7 +85,8 @@
   state in the LaunchDataPage; the loader re-execs itself with the page (memory file)
   and the same options (minus `--press`); log and `--diag` times/marks continue.
   `--launch-data 3 3<DIR/launch_data.bin` repeats the last reboot. Multiplayer
-  (`codmp_xboxf.xbe`) is refused; XONLINE's launch hook is cleared.
+  (`codmp_xboxf.xbe`) is refused (its command `load_mp_exe` shows a notice instead);
+  XONLINE's launch hook is cleared.
 - Timing: the title reads the CPU's time stamp counter (RDTSC, 27 sites incl. XAPI
   QueryPerformanceCounter) and assumes the Xbox's 733 MHz; each site goes through a
   trampoline to `xbox::cpu_time_stamp_counter()`. Without it the game ran ~5x fast on
