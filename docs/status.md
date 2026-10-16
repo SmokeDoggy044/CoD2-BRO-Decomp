@@ -2,8 +2,24 @@
 
 ## Current state (2026-10-16)
 
-- **Next:** fullscreen/window options (add them to the launcher too); mission 6
-  playtest; check the death/mission failed screens and dialogs in widescreen.
+- **Before the prototype release (weekend of 2026-10-17/18):**
+  1. Xbox Live Options > Sign In and the Multiplayer menu reboot into
+     `codmp_xboxf.xbe`; the loader refuses and exits without a word (playtest
+     2026-10-16). Better: find where the menu starts the reboot and keep the player
+     in the menu with a notice; fallback: SDL message box, then reboot into
+     default.xbe.
+  2. Choose the port's license (LICENSES/README.md).
+  3. Fullscreen/window options in the game, then in the launcher.
+- **After the release:**
+  - Windows: the loader core is Linux-only (set_thread_area for fs, signals for
+    SEH/crashes, mmap at 0x10000, memfd + execv reboot); needs a Windows way to
+    give title code its KPCR on fs.
+  - In-game brightness: `SetGammaRamp` is ignored, so the game's brightness
+    setting does nothing (apply the ramp in the final pass).
+  - Mission 6+ playtests; death/mission-failed screens and dialogs in widescreen.
+  - Launcher: a .desktop file / icon for Linux desktops.
+- Sound through the release's bundled OpenAL Soft confirmed by the user
+  (2026-10-16).
 - Launcher (2026-10-16): `cod_bro_launcher` (Dear ImGui on SDL3) sets the game-file
   folder and the player options, saved as `settings.ini` (see the README, Running),
   and starts the game; the game starts it when it finds no game files.
@@ -11,8 +27,7 @@
   cod_bro-0.1.0-linux.tar.gz in the Steam Runtime sniper SDK: glibc 2.30+, bundles
   SDL3/OpenAL Soft/DXVK built from source. Checked: starts on bare 32-bit Debian
   11; plays on Fedora with its own libraries (mission 1, same frames as the dev
-  build). Sound through the bundled OpenAL not yet heard (runs were --silent). The
-  port's own license is still unchosen.
+  build). Sound confirmed by the user.
 - Missions 1-5 played through or started clean under `--diag` (see
   [playtesting.md](playtesting.md)). Mission 2 confirmed polygon offset: the barracks
   sign, floor and wall decals, maps and posters no longer z-fight. Mission 3 (tank
