@@ -9,11 +9,14 @@
   - XFONT (the XOnline sign-in UI's text) writes through the frame buffer's tiled
     view (address | 0xF0000000), which is not mapped; only reachable through Sign In,
     which is cut off now.
-  - Windows: the loader core is Linux-only (set_thread_area for fs, signals for
-    SEH/crashes, mmap at 0x10000, memfd + execv reboot); needs a Windows way to
-    give title code its KPCR on fs. Started 2026-10-16: the portable code and its
-    tests build with MinGW (`windows-mingw` preset) and pass under Wine; next is the
-    loader (address-space reservation at 0x10000, FS sites, threads, crashes, reboot).
+  - Windows: the loader runs under Wine (2026-10-16: menus, mission 1, quit-to-menu
+    reboot). cod_bro_loader.exe is a stub at 0x10000 that holds the Xbox ranges
+    and loads cod_bro_loader_core.dll; FS stays the TEB (StackBase/StackLimit
+    switched to the Xbox stack, 36 KPCR-field reads patched to TEB TLS slots).
+    Next: a run on real Windows (address-space layout and SEH differ from Wine),
+    then a Windows release package. Untested: non-ASCII paths (narrow strings use
+    the ANSI code page), the console window the stub opens when started from the
+    launcher.
   - In-game brightness: `SetGammaRamp` is ignored, so the game's brightness
     setting does nothing (apply the ramp in the final pass).
   - Mission 6 (Gela) ran at ~20 fps for ~12 s (60-71 s into `--level 6`, after the
