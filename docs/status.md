@@ -1,9 +1,15 @@
 # Status and next steps
 
-## Current state (2026-10-14)
+## Current state (2026-10-16)
 
-- **Next:** fullscreen/window options; mission 6 playtest; check the death/mission
-  failed screens and dialogs in widescreen.
+- **Next:** fullscreen/window options (add them to the launcher too); mission 6
+  playtest; check the death/mission failed screens and dialogs in widescreen.
+- Launcher (2026-10-16): `cod_bro_launcher` (Dear ImGui on SDL3) sets the game-file
+  folder and the player options, saved as `settings.ini` (see the README, Running),
+  and starts the game; the game starts it when it finds no game files. Not yet
+  tried by hand (Browse dialog, Play). Missing for a release: install/package rules
+  (only the executables + `assets/README.md`) and shipping the 32-bit libraries the
+  loader needs on Linux (SDL3, dxvk-native, OpenAL Soft, fmt, libdisplay-info).
 - Missions 1-5 played through or started clean under `--diag` (see
   [playtesting.md](playtesting.md)). Mission 2 confirmed polygon offset: the barracks
   sign, floor and wall decals, maps and posters no longer z-fight. Mission 3 (tank
