@@ -14,12 +14,15 @@
     give title code its KPCR on fs.
   - In-game brightness: `SetGammaRamp` is ignored, so the game's brightness
     setting does nothing (apply the ramp in the final pass).
-  - Water looks invisible: the sea in a landing-craft cinematic (playtest
-    2026-10-16, F12 mark 61 s after a Continue) shows the boats over flat murky
-    fog, no water surface. The frame dump flags no untranslated feature: bisect the
-    draws (XB_DUMP_FRAME / XB_DUMP_STOP).
+  - Mission 6 (Gela) ran at ~20 fps for ~12 s (60-71 s into `--level 6`, after the
+    landing-craft cinematic; playtest 2026-10-16): check whether the game or the
+    renderer is the bottleneck there.
   - Mission 6+ playtests; death/mission-failed screens and dialogs in widescreen.
   - Launcher: a .desktop file / icon for Linux desktops.
+- Water (2026-10-16): vertex program EXP/LOG now follow the Xbox (vs_1_1 expp/logp:
+  EXP = 2^floor, frac, 2^s, 1). The water's wave program uses EXP.y as its phase;
+  with D3D9's full-precision exp the sea was flat murky fog. Confirmed by the user in
+  mission 6.
 - Fullscreen (2026-10-16): `--fullscreen`/`--windowed`, `fullscreen = true` in
   settings.ini, "Display mode" in the launcher, Alt+Enter while playing. Borderless at
   the desktop's mode; the swap chain is the largest display's size and the window
