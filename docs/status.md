@@ -3,8 +3,8 @@
 ## Current state (2026-10-16)
 
 - **Before the prototype release (weekend of 2026-10-17/18):**
-  1. Choose the port's license (LICENSES/README.md).
-  2. Fullscreen: check Alt+Enter and a resized window (black bars, no stretching).
+  1. Fullscreen: check Alt+Enter and a resized window (black bars, no stretching).
+  (License chosen 2026-10-16: GPL-2.0-or-later.)
 - **After the release:**
   - XFONT (the XOnline sign-in UI's text) writes through the frame buffer's tiled
     view (address | 0xF0000000), which is not mapped; only reachable through Sign In,
