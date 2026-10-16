@@ -7,10 +7,11 @@
 - Launcher (2026-10-16): `cod_bro_launcher` (Dear ImGui on SDL3) sets the game-file
   folder and the player options, saved as `settings.ini` (see the README, Running),
   and starts the game; the game starts it when it finds no game files.
-- Release (2026-10-16): `cpack --preset linux-loader-release` (README, Releasing).
-  The optimized build plays (menus, mission 1 checked). Open: built on Fedora 44 it
-  needs glibc 2.43 (our binaries, Fedora's SDL3 and OpenAL), too new for Ubuntu
-  24.04/Debian 12/SteamOS: build in an older environment for a public release. The
+- Release (2026-10-16): `packaging/sniper/build.sh` (README, Releasing) builds
+  cod_bro-0.1.0-linux.tar.gz in the Steam Runtime sniper SDK: glibc 2.30+, bundles
+  SDL3/OpenAL Soft/DXVK built from source. Checked: starts on bare 32-bit Debian
+  11; plays on Fedora with its own libraries (mission 1, same frames as the dev
+  build). Sound through the bundled OpenAL not yet heard (runs were --silent). The
   port's own license is still unchosen.
 - Missions 1-5 played through or started clean under `--diag` (see
   [playtesting.md](playtesting.md)). Mission 2 confirmed polygon offset: the barracks
