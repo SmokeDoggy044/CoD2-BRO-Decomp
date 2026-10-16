@@ -4,7 +4,7 @@
 
 - **Before the prototype release (weekend of 2026-10-17/18):**
   1. Choose the port's license (LICENSES/README.md).
-  2. Fullscreen/window options in the game, then in the launcher.
+  2. Fullscreen: check Alt+Enter and a resized window (black bars, no stretching).
 - **After the release:**
   - XFONT (the XOnline sign-in UI's text) writes through the frame buffer's tiled
     view (address | 0xF0000000), which is not mapped; only reachable through Sign In,
@@ -14,8 +14,18 @@
     give title code its KPCR on fs.
   - In-game brightness: `SetGammaRamp` is ignored, so the game's brightness
     setting does nothing (apply the ramp in the final pass).
+  - Water looks invisible: the sea in a landing-craft cinematic (playtest
+    2026-10-16, F12 mark 61 s after a Continue) shows the boats over flat murky
+    fog, no water surface. The frame dump flags no untranslated feature: bisect the
+    draws (XB_DUMP_FRAME / XB_DUMP_STOP).
   - Mission 6+ playtests; death/mission-failed screens and dialogs in widescreen.
   - Launcher: a .desktop file / icon for Linux desktops.
+- Fullscreen (2026-10-16): `--fullscreen`/`--windowed`, `fullscreen = true` in
+  settings.ini, "Display mode" in the launcher, Alt+Enter while playing. Borderless at
+  the desktop's mode; the swap chain is the largest display's size and the window
+  shows its corner (Present source rect), so no device Reset. Render scale defaults
+  to the window's/screen's height (2.25 at 1080p). Fullscreen start confirmed by the
+  user; Alt+Enter and resizing not yet tried.
 - Multiplayer and Xbox Live (2026-10-16): the Multiplayer item (console command
   `load_mp_exe`) and Sign In (main menu, Xbox Live Options) keep the player in the
   menu with a 4 s notice over the game (`render::show_notice`); the status line says
