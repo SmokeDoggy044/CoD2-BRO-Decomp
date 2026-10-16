@@ -11,7 +11,9 @@
     which is cut off now.
   - Windows: the loader core is Linux-only (set_thread_area for fs, signals for
     SEH/crashes, mmap at 0x10000, memfd + execv reboot); needs a Windows way to
-    give title code its KPCR on fs.
+    give title code its KPCR on fs. Started 2026-10-16: the portable code and its
+    tests build with MinGW (`windows-mingw` preset) and pass under Wine; next is the
+    loader (address-space reservation at 0x10000, FS sites, threads, crashes, reboot).
   - In-game brightness: `SetGammaRamp` is ignored, so the game's brightness
     setting does nothing (apply the ramp in the final pass).
   - Mission 6 (Gela) ran at ~20 fps for ~12 s (60-71 s into `--level 6`, after the
@@ -79,7 +81,7 @@
   alertable user-mode wait. Not yet: named objects, semaphores.
 - Settings (`xbox/settings.cpp`): a full default EEPROM image (NTSC, English);
   `XboxHDKey` is a fixed port key, so saves from a real console won't verify.
-- Memory (`xbox/memory.cpp`, host side `platform/vmem*`): NT-style virtual memory at
+- Memory (`xbox/kernel_memory.cpp`, host side `platform/vmem*`): NT-style virtual memory at
   0x10000000-0x50000000, contiguous memory at 0x80000000 + physical, and one physical
   page budget (`--memory MB`, default 64 like a retail Xbox) shared by the image,
   contiguous and committed memory. Our own renderer/audio code is outside it.
