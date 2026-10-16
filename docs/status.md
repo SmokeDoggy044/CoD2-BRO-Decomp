@@ -6,10 +6,12 @@
   playtest; check the death/mission failed screens and dialogs in widescreen.
 - Launcher (2026-10-16): `cod_bro_launcher` (Dear ImGui on SDL3) sets the game-file
   folder and the player options, saved as `settings.ini` (see the README, Running),
-  and starts the game; the game starts it when it finds no game files. Not yet
-  tried by hand (Browse dialog, Play). Missing for a release: install/package rules
-  (only the executables + `assets/README.md`) and shipping the 32-bit libraries the
-  loader needs on Linux (SDL3, dxvk-native, OpenAL Soft, fmt, libdisplay-info).
+  and starts the game; the game starts it when it finds no game files.
+- Release (2026-10-16): `cpack --preset linux-loader-release` (README, Releasing).
+  The optimized build plays (menus, mission 1 checked). Open: built on Fedora 44 it
+  needs glibc 2.43 (our binaries, Fedora's SDL3 and OpenAL), too new for Ubuntu
+  24.04/Debian 12/SteamOS: build in an older environment for a public release. The
+  port's own license is still unchosen.
 - Missions 1-5 played through or started clean under `--diag` (see
   [playtesting.md](playtesting.md)). Mission 2 confirmed polygon offset: the barracks
   sign, floor and wall decals, maps and posters no longer z-fight. Mission 3 (tank
