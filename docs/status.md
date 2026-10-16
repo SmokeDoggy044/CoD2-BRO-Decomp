@@ -19,6 +19,9 @@
     renderer is the bottleneck there.
   - Mission 6+ playtests; death/mission-failed screens and dialogs in widescreen.
   - Launcher: a .desktop file / icon for Linux desktops.
+- Aim assist (2026-10-16): `--aim-assist on|off`, launcher checkbox (default on).
+  Off patches the sticky aim function (FUN_002db7d0) to clear its target and
+  return; confirmed by the user (moving enemies no longer tracked).
 - Water (2026-10-16): vertex program EXP/LOG now follow the Xbox (vs_1_1 expp/logp:
   EXP = 2^floor, frac, 2^s, 1). The water's wave program uses EXP.y as its phase;
   with D3D9's full-precision exp the sea was flat murky fog. Confirmed by the user in
@@ -129,7 +132,7 @@ keys follow the profile's controller style (style_a..l.cfg rebind the pad):
 pad's bindings. Mouse look adds to cl.viewangles in a thunk before CL_MouseMove,
 because the Xbox build runs its right stick through the Quake 3 mouse path (stick
 acceleration, 370 deg/s limit). `--mouse-sensitivity` sets degrees per count (default
-0.11).
+0.11). `--aim-assist off` turns off sticky aim (the game has no setting for it).
 
 ## Rendering (`render/`)
 
