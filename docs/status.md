@@ -23,8 +23,11 @@
     (SDL_WINDOW_VULKAN on Windows made window creation depend on a Vulkan driver),
     and D3D9 is loaded at run time: bundled DXVK (`dxvk/d3d9.dll`, built by
     `packaging/windows-dxvk/build.sh`) first, the system's as the fallback
-    (`--d3d9`). Wine: all three choices and the fallback tested. Next: the new zip on
-    the test PC; if it still fails, the log.
+    (`--d3d9`). Wine: all three choices and the fallback tested. The test PC has an
+    RTX 3080 with NVIDIA drivers (Vulkan and D3D9 both present), so the GPU side is
+    not the likely cause; still unknown. Next: the new zip on the test PC, then its
+    log / error box, or Event Viewer's "Application Error" entry (faulting module,
+    exception code, offset) for the old zip.
   - In-game brightness: `SetGammaRamp` is ignored, so the game's brightness
     setting does nothing (apply the ramp in the final pass).
   - Mission 6 (Gela) ran at ~20 fps for ~12 s (60-71 s into `--level 6`, after the
