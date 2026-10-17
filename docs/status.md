@@ -40,6 +40,17 @@
   Screenshots (`--screenshots`, --diag) are taken before the ramp.
 - Launcher (2026-10-17): "Reporting a problem" with Open log folder / Open save
   folder buttons, for players attaching log.txt and saves to issues.
+- 60 fps (2026-10-17): `--fps 30|60`, launcher "Frame rate" (default 30 until
+  playtested). The title waits a number of vblanks per frame (0x008a2cb0), set only
+  by FUN_000645c0(mode) - always mode 2 (startup x2, movie player); the patch
+  replaces it so mode 2 means 1 vblank. Game time is clock-based (Com_Frame msec
+  from Com_EventLoop): its accumulated time at 0x008ddaa8 runs at 1.000x wall time
+  at both rates (Gela, 3 x 20 s). Gela release build: 59.7 fps average, 2 hitches
+  in 120 s (30 fps: 10). 1/30 s constants checked: FUN_0032d890 (a fade loop, 2
+  frames per 1/30 s step -> half as long at 60), FUN_00094610 (time-based update
+  intervals), FUN_0022c910 (initial value, overwritten with the real time). Open:
+  a playtest for per-frame tuning (weapon sway, effects, physics, AI) and heavy
+  fights (mission 5 town), then the default.
 - Aim assist (2026-10-16): `--aim-assist on|off`, launcher checkbox (default on).
   Off patches the sticky aim function (FUN_002db7d0) to clear its target and
   return; confirmed by the user (moving enemies no longer tracked).
