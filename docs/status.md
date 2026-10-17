@@ -11,7 +11,9 @@ loader builds) and the first three functions (level-script strings, 0x0011d5e0 /
    (ask before renaming in the user's database). Started 2026-10-17:
    [tools/q3match](../tools/q3match/README.md) proposes 99 names
    (`tools/data/q3_name_proposals.csv`: 62 command handlers, Cvar_Get,
-   Cmd_AddCommand, CL_Init, FS_Startup, CM_LoadMap, ...); not applied yet. Only ~1,200
+   Cmd_AddCommand, CL_Init, FS_Startup, CM_LoadMap, ...). 96 applied in Ghidra
+   (2026-10-17, `tools/ghidra/ApplyNames.java`; all but 3 graph guesses; 59 handler
+   functions created), symbols re-exported. Only ~1,200
    `.text` functions reference strings, so the rest is manual matching from these
    anchors.
 2. Decompile in batches by subsystem (leaf functions first), `--compare` runs per
