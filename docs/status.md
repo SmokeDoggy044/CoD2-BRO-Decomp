@@ -1,5 +1,12 @@
 # Status and next steps
 
+**Resume here (2026-10-17):** 60 fps is done (default). Next: system-link
+multiplayer - the user imports codmp_xboxf.xbe into the Ghidra project; then export
+its symbols (scripts/ExportSymbols.java), SdkCallUsage on XNET/XONLINE, check
+split-screen / dedicated-server code, and measure how much of the SP replacements
+apply. Also pending: the route C plan + a list of every game-code patch and its
+intent (discussed in chat, not yet written down), heavy fights at 60 fps, v0.1.1.
+
 ## Current state (2026-10-16)
 
 - **Prototype release:** private GitHub pre-release v0.1.0 (2026-10-16), Linux
