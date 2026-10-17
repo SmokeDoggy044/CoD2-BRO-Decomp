@@ -40,8 +40,8 @@
   Screenshots (`--screenshots`, --diag) are taken before the ramp.
 - Launcher (2026-10-17): "Reporting a problem" with Open log folder / Open save
   folder buttons, for players attaching log.txt and saves to issues.
-- 60 fps (2026-10-17): `--fps 30|60`, launcher "Frame rate" (default 30 until
-  playtested). The title waits a number of vblanks per frame (0x008a2cb0), set only
+- 60 fps (2026-10-17): `--fps 60|30`, launcher "Frame rate"; default 60 since the
+  Gela playtest (2026-10-17). The title waits a number of vblanks per frame (0x008a2cb0), set only
   by FUN_000645c0(mode) - always mode 2 (startup x2, movie player); the patch
   replaces it so mode 2 means 1 vblank. Game time is clock-based (Com_Frame msec
   from Com_EventLoop): its accumulated time at 0x008ddaa8 runs at 1.000x wall time
@@ -52,9 +52,9 @@
   (.xbv) show one frame per game frame (2x speed at 60, user playtest): frames with
   a movie frame (decoder vtable 0x007cf390 slot 2) wait 2 vblanks, chosen per frame
   where the wait is set up (jumps to 0x00064370). Gela's briefing: 24 s at 30 fps,
-  then 60. Open:
-  a playtest for per-frame tuning (weapon sway, effects, physics, AI) and heavy
-  fights (mission 5 town), then the default.
+  then 60. Tracers starting beside the boat gun: the same at 30 fps (original).
+  Gela gameplay at 60 confirmed by the user (normal speed). Open: heavy fights
+  (mission 5 town) at 60; per-frame tuning in later missions.
 - Aim assist (2026-10-16): `--aim-assist on|off`, launcher checkbox (default on).
   Off patches the sticky aim function (FUN_002db7d0) to clear its target and
   return; confirmed by the user (moving enemies no longer tracked).
