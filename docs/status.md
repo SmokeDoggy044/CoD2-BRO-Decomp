@@ -1,13 +1,15 @@
 # Status and next steps
 
-**Resume here (2026-10-17, evening):** multiplayer runs from the campaign's
-Multiplayer item (and back), and system link works between two games on one PC
-(host + join, same match); see [multiplayer.md](multiplayer.md) for the design and
-the "Not done" list. Mouse look, style remap, 60 fps, widescreen menus and aim assist
-work in MP too (user-tested 2026-10-17). Released as private pre-release v0.1.1 (2026-10-17, Linux
-tar.gz + Windows zip; smoke-tested: Linux package with its bundled libraries, Windows
-zip under Wine; multiplayer between two PCs and on real Windows not tested yet). Also pending: the route C plan + a list of every game-code patch and its
-intent, heavy fights at 60 fps, v0.1.1.
+**Resume here (2026-10-17, end of session):** v0.1.1 is out (private pre-release,
+Linux + Windows): 60 fps by default and system-link multiplayer from the campaign's
+Multiplayer item or the launcher's button, with mouse look, style remap, 60 fps,
+widescreen menus and aim assist in MP too (user-tested on one PC; design and open
+items in [multiplayer.md](multiplayer.md)). Next candidates:
+1. Multiplayer between two PCs, and v0.1.1 on real Windows (firewall prompt).
+2. The route C plan + a list of every game-code patch and its intent (asked for).
+3. Heavy fights at 60 fps (mission 5 town), missions 7-13 playtests.
+4. MP: split screen (if any), the ~40 startup memory warnings. One release-build MP
+   sample read 30 fps in-match once (not reproduced; log not kept).
 
 ## Current state (2026-10-16)
 
