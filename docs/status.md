@@ -25,9 +25,16 @@
     `packaging/windows-dxvk/build.sh`) first, the system's as the fallback
     (`--d3d9`). Wine: all three choices and the fallback tested. The test PC has an
     RTX 3080 with NVIDIA drivers (Vulkan and D3D9 both present), so the GPU side is
-    not the likely cause; still unknown. Next: the new zip on the test PC, then its
-    log / error box, or Event Viewer's "Application Error" entry (faulting module,
-    exception code, offset) for the old zip.
+    not the likely cause. Its log (cod_bro/Logs/log.txt) ended right after the
+    symbols, before the first std::thread: mapping the XBE over the stub wiped the
+    exe's PE headers at 0x10000, and real Windows reads them (PEB->ImageBaseAddress)
+    for CreateThread's default stack sizes, so thread creation failed and
+    std::terminate ended the process silently (Wine caches the sizes at startup).
+    Fixed (unverified on real Windows): `os::keep_executable_headers` writes `MZ`
+    and e_lfanew into the XBE header (magic and signature bytes, unread at run
+    time), pointing at a copy of the stub's NT headers at 0x03FFF000 with no data
+    directories; uncaught C++ exceptions are now logged and reported. Next: the new
+    zip on the test PC.
   - In-game brightness: `SetGammaRamp` is ignored, so the game's brightness
     setting does nothing (apply the ramp in the final pass).
   - Mission 6 (Gela) ran at ~20 fps for ~12 s (60-71 s into `--level 6`, after the
