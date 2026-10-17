@@ -8,7 +8,12 @@ Done: the [comparison harness](comparison-harness.md) (`--compare`,
 loader builds) and the first three functions (level-script strings, 0x0011d5e0 /
 0x0011d7c0 / 0x0011db70: 2,263 tests in mission 1, all matched). Next:
 1. Match engine functions against the Quake 3 GPL source and name them in Ghidra
-   (ask before renaming in the user's database).
+   (ask before renaming in the user's database). Started 2026-10-17:
+   [tools/q3match](../tools/q3match/README.md) proposes 99 names
+   (`tools/data/q3_name_proposals.csv`: 62 command handlers, Cvar_Get,
+   Cmd_AddCommand, CL_Init, FS_Startup, CM_LoadMap, ...); not applied yet. Only ~1,200
+   `.text` functions reference strings, so the rest is manual matching from these
+   anchors.
 2. Decompile in batches by subsystem (leaf functions first), `--compare` runs per
    batch, then mark tested ones `Replaced`.
 3. Stand-ins for common pure kernel calls in test processes (critical sections), so
