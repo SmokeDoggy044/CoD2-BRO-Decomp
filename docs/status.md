@@ -20,11 +20,15 @@
     fallback (`--d3d9`). Every run writes `log.txt` in the user data folder; error
     boxes on startup failures, crashes and uncaught C++ exceptions. Untested:
     non-ASCII paths (narrow strings use the ANSI code page).
-  - Mission 6 (Gela) ran at ~20 fps for ~12 s (60-71 s into `--level 6`, after the
-    landing-craft cinematic; playtest 2026-10-16): check whether the game or the
-    renderer is the bottleneck there.
   - Mission 6+ playtests; death/mission-failed screens and dialogs in widescreen.
   - Launcher: a .desktop file / icon for Linux desktops.
+- Mission 6 (Gela) slowdown (2026-10-17): ~20 fps for ~13 s in the opening
+  landing-craft cutscene, only in the Debug build (`linux-loader`, -O0) that the
+  playtests used: the title's render thread was CPU-bound in our unoptimized draw
+  translation (vertex fetch `draw_streams`, texture `hash_bytes`, std::fill, TLS
+  lookups). The Release build (`linux-loader-release`, as players get) holds 30 fps
+  there. Playtests now run the release build. Found with the sampling profiler
+  (`XB_PROFILE=auto`, loader/profiler.h; see the README).
 - Gamma and brightness (2026-10-17): the game sets one gamma ramp at device
   creation (FUN_00064bc0, static table 0x008a29b0: an S-curve, 0/128/255 -> 3/123/
   252) and never changes it; its GLimp_SetGamma-like wrapper 0x00064540 has no
