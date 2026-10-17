@@ -1,11 +1,11 @@
 # Status and next steps
 
-**Resume here (2026-10-17):** 60 fps is done (default). Next: system-link
-multiplayer - the user imports codmp_xboxf.xbe into the Ghidra project; then export
-its symbols (scripts/ExportSymbols.java), SdkCallUsage on XNET/XONLINE, check
-split-screen / dedicated-server code, and measure how much of the SP replacements
-apply. Also pending: the route C plan + a list of every game-code patch and its
-intent (discussed in chat, not yet written down), heavy fights at 60 fps, v0.1.1.
+**Resume here (2026-10-17, evening):** multiplayer boots (`--xbe
+codmp_xboxf.xbe`) and system link works between two games on one PC (host + join,
+same match); see [multiplayer.md](multiplayer.md) for the design and the "Not done"
+list (campaign Multiplayer item -> reboot into MP, Xbox Live cut-off, PC features in
+MP). Also pending: the route C plan + a list of every game-code patch and its
+intent, heavy fights at 60 fps, v0.1.1.
 
 ## Current state (2026-10-16)
 
