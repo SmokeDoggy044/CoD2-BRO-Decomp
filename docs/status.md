@@ -10,31 +10,16 @@
   - XFONT (the XOnline sign-in UI's text) writes through the frame buffer's tiled
     view (address | 0xF0000000), which is not mapped; only reachable through Sign In,
     which is cut off now.
-  - Windows: the loader runs under Wine (2026-10-16: menus, mission 1, quit-to-menu
-    reboot). cod_bro_loader.exe is a stub at 0x10000 that holds the Xbox ranges
-    and loads cod_bro_loader_core.dll; FS stays the TEB (StackBase/StackLimit
-    switched to the Xbox stack, 36 KPCR-field reads patched to TEB TLS slots).
-    Release zip built (`windows-mingw-release` + cpack). Next: a run on real
-    Windows (address-space layout and SEH differ from Wine). Untested: non-ASCII
-    paths (narrow strings use the ANSI code page).
-    2026-10-16: the first real-Windows test failed to start, with no output (no
-    console, no log). Since then: an always-written log (`%APPDATA%\cod_bro\log.txt`),
-    error boxes on startup failures and crashes, the window no longer needs Vulkan
-    (SDL_WINDOW_VULKAN on Windows made window creation depend on a Vulkan driver),
-    and D3D9 is loaded at run time: bundled DXVK (`dxvk/d3d9.dll`, built by
-    `packaging/windows-dxvk/build.sh`) first, the system's as the fallback
-    (`--d3d9`). Wine: all three choices and the fallback tested. The test PC has an
-    RTX 3080 with NVIDIA drivers (Vulkan and D3D9 both present), so the GPU side is
-    not the likely cause. Its log (cod_bro/Logs/log.txt) ended right after the
-    symbols, before the first std::thread: mapping the XBE over the stub wiped the
-    exe's PE headers at 0x10000, and real Windows reads them (PEB->ImageBaseAddress)
-    for CreateThread's default stack sizes, so thread creation failed and
-    std::terminate ended the process silently (Wine caches the sizes at startup).
-    Fixed (confirmed on real Windows 2026-10-16: the game runs): `os::keep_executable_headers` writes `MZ`
-    and e_lfanew into the XBE header (magic and signature bytes, unread at run
-    time), pointing at a copy of the stub's NT headers at 0x03FFF000 with no data
-    directories; uncaught C++ exceptions are now logged and reported. Next: the new
-    zip on the test PC.
+  - Windows (2026-10-16): runs on real Windows (RTX 3080; Alt+Enter and resizing
+    confirmed) and under Wine. cod_bro_loader.exe is a stub at 0x10000 that holds
+    the Xbox ranges and loads cod_bro_loader_core.dll; FS stays the TEB
+    (StackBase/StackLimit switched to the Xbox stack, 36 KPCR-field reads patched to
+    TEB TLS slots); `os::keep_executable_headers` keeps valid PE headers at 0x10000
+    (real Windows reads them for CreateThread's stack sizes; Wine does not). D3D9 is
+    loaded at run time: bundled DXVK (`dxvk/d3d9.dll`) first, the system's as the
+    fallback (`--d3d9`). Every run writes `log.txt` in the user data folder; error
+    boxes on startup failures, crashes and uncaught C++ exceptions. Untested:
+    non-ASCII paths (narrow strings use the ANSI code page).
   - In-game brightness: `SetGammaRamp` is ignored, so the game's brightness
     setting does nothing (apply the ramp in the final pass).
   - Mission 6 (Gela) ran at ~20 fps for ~12 s (60-71 s into `--level 6`, after the
@@ -53,8 +38,8 @@
   settings.ini, "Display mode" in the launcher, Alt+Enter while playing. Borderless at
   the desktop's mode; the swap chain is the largest display's size and the window
   shows its corner (Present source rect), so no device Reset. Render scale defaults
-  to the window's/screen's height (2.25 at 1080p). Fullscreen start confirmed by the
-  user; Alt+Enter and resizing not yet tried.
+  to the window's/screen's height (2.25 at 1080p). Fullscreen start, Alt+Enter and
+  resizing confirmed by the user.
 - Multiplayer and Xbox Live (2026-10-16): the Multiplayer item (console command
   `load_mp_exe`) and Sign In (main menu, Xbox Live Options) keep the player in the
   menu with a 4 s notice over the game (`render::show_notice`); the status line says
