@@ -1,5 +1,21 @@
 # Status and next steps
 
+**Decompilation fork (2026-10-17):** this repository (CoD2-BRO-Decomp, local
+`cod_bro/decomp/`) is the native loader's fork for the decompilation; the loader
+repo (`upstream`) stays as it is. Merge loader fixes with `git pull upstream main`.
+Done: the [comparison harness](comparison-harness.md) (`--compare`,
+`tools/data/functions.csv`), the `game/code/` library (libcod_bro_game.so in Linux
+loader builds) and the first three functions (level-script strings, 0x0011d5e0 /
+0x0011d7c0 / 0x0011db70: 2,263 tests in mission 1, all matched). Next:
+1. Match engine functions against the Quake 3 GPL source and name them in Ghidra
+   (ask before renaming in the user's database).
+2. Decompile in batches by subsystem (leaf functions first), `--compare` runs per
+   batch, then mark tested ones `Replaced`.
+3. Stand-ins for common pure kernel calls in test processes (critical sections), so
+   more functions become testable.
+4. The level sections (~5,000 compiler-generated script functions): a translator,
+   not hand decompilation.
+
 **Resume here (2026-10-17, end of session):** v0.1.1 is out (private pre-release,
 Linux + Windows): 60 fps by default and system-link multiplayer from the campaign's
 Multiplayer item or the launcher's button, with mouse look, style remap, 60 fps,
