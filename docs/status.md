@@ -48,7 +48,11 @@
   at both rates (Gela, 3 x 20 s). Gela release build: 59.7 fps average, 2 hitches
   in 120 s (30 fps: 10). 1/30 s constants checked: FUN_0032d890 (a fade loop, 2
   frames per 1/30 s step -> half as long at 60), FUN_00094610 (time-based update
-  intervals), FUN_0022c910 (initial value, overwritten with the real time). Open:
+  intervals), FUN_0022c910 (initial value, overwritten with the real time). Movies
+  (.xbv) show one frame per game frame (2x speed at 60, user playtest): frames with
+  a movie frame (decoder vtable 0x007cf390 slot 2) wait 2 vblanks, chosen per frame
+  where the wait is set up (jumps to 0x00064370). Gela's briefing: 24 s at 30 fps,
+  then 60. Open:
   a playtest for per-frame tuning (weapon sway, effects, physics, AI) and heavy
   fights (mission 5 town), then the default.
 - Aim assist (2026-10-16): `--aim-assist on|off`, launcher checkbox (default on).
