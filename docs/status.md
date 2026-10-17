@@ -165,6 +165,18 @@ Xbox Live is unavailable: no network, no accounts.
 
 ## Later
 
+- Sharper game text: the menus/HUD use pre-rendered bitmap fonts ("garamond" in
+  frontend.cod, GemFontOne, nglSysFont), not GARA.TTF (that one is XFONT for the
+  UIX Xbox Live screens, see games notes). Plan: find the font texture + glyph
+  table, rasterize the player's own media/GARA.TTF at 2-4x into the same layout
+  (reproduce any baked glow) and substitute it; fallback: an alpha edge-sharpening
+  pixel shader for font draws. Check first that the bitmap font is that Garamond.
+- Multiplayer (outline, unverified): system link needs no server software (a
+  player's game hosts, Q3-style listen server). Steps: run codmp_xboxf.xbe (own
+  symbols/patches), replace XNet with host UDP sockets, LAN discovery + join by IP;
+  an optional lobby server later. First: SdkCallUsage on its XNET/XONLINE calls,
+  dedicated-server and split-screen code present or not.
+
 - Raise the memory budget and enlarge the game's memory pools (`FUN_00043fb0`
   allocates fixed 35.2 MB + 3.7 MB arenas) for bigger assets/mods.
 - Route C: decompile the rest; see [comparison-harness.md](comparison-harness.md).
