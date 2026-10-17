@@ -2,9 +2,10 @@
 
 ## Current state (2026-10-16)
 
-- **Before the prototype release (weekend of 2026-10-17/18):**
+- **Prototype release:** private GitHub pre-release v0.1.0 (2026-10-16), Linux
+  tar.gz + Windows zip; license GPL-2.0-or-later. Before going public:
   1. Fullscreen: check Alt+Enter and a resized window (black bars, no stretching).
-  (License chosen 2026-10-16: GPL-2.0-or-later.)
+  2. A run of the Windows zip on real Windows.
 - **After the release:**
   - XFONT (the XOnline sign-in UI's text) writes through the frame buffer's tiled
     view (address | 0xF0000000), which is not mapped; only reachable through Sign In,
@@ -13,10 +14,9 @@
     reboot). cod_bro_loader.exe is a stub at 0x10000 that holds the Xbox ranges
     and loads cod_bro_loader_core.dll; FS stays the TEB (StackBase/StackLimit
     switched to the Xbox stack, 36 KPCR-field reads patched to TEB TLS slots).
-    Next: a run on real Windows (address-space layout and SEH differ from Wine),
-    then a Windows release package. Untested: non-ASCII paths (narrow strings use
-    the ANSI code page), the console window the stub opens when started from the
-    launcher.
+    Release zip built (`windows-mingw-release` + cpack). Next: a run on real
+    Windows (address-space layout and SEH differ from Wine). Untested: non-ASCII
+    paths (narrow strings use the ANSI code page).
   - In-game brightness: `SetGammaRamp` is ignored, so the game's brightness
     setting does nothing (apply the ramp in the final pass).
   - Mission 6 (Gela) ran at ~20 fps for ~12 s (60-71 s into `--level 6`, after the
