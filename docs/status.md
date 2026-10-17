@@ -5,7 +5,7 @@
 - **Prototype release:** private GitHub pre-release v0.1.0 (2026-10-16), Linux
   tar.gz + Windows zip; license GPL-2.0-or-later. Before going public:
   1. Fullscreen: check Alt+Enter and a resized window (black bars, no stretching).
-  2. A run of the Windows zip on real Windows.
+  2. ~~A run of the Windows zip on real Windows.~~ Runs (2026-10-16, RTX 3080).
 - **After the release:**
   - XFONT (the XOnline sign-in UI's text) writes through the frame buffer's tiled
     view (address | 0xF0000000), which is not mapped; only reachable through Sign In,
@@ -30,7 +30,7 @@
     exe's PE headers at 0x10000, and real Windows reads them (PEB->ImageBaseAddress)
     for CreateThread's default stack sizes, so thread creation failed and
     std::terminate ended the process silently (Wine caches the sizes at startup).
-    Fixed (unverified on real Windows): `os::keep_executable_headers` writes `MZ`
+    Fixed (confirmed on real Windows 2026-10-16: the game runs): `os::keep_executable_headers` writes `MZ`
     and e_lfanew into the XBE header (magic and signature bytes, unread at run
     time), pointing at a copy of the stub's NT headers at 0x03FFF000 with no data
     directories; uncaught C++ exceptions are now logged and reported. Next: the new
