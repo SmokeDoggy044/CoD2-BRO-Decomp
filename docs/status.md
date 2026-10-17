@@ -1,10 +1,9 @@
 # Status and next steps
 
-**Resume here (2026-10-17, evening):** multiplayer boots (`--xbe
-codmp_xboxf.xbe`) and system link works between two games on one PC (host + join,
-same match); see [multiplayer.md](multiplayer.md) for the design and the "Not done"
-list (campaign Multiplayer item -> reboot into MP, Xbox Live cut-off, PC features in
-MP). Also pending: the route C plan + a list of every game-code patch and its
+**Resume here (2026-10-17, evening):** multiplayer runs from the campaign's
+Multiplayer item (and back), and system link works between two games on one PC
+(host + join, same match); see [multiplayer.md](multiplayer.md) for the design and
+the "Not done" list (PC features in MP: mouse look, 60 fps, widescreen). Also pending: the route C plan + a list of every game-code patch and its
 intent, heavy fights at 60 fps, v0.1.1.
 
 ## Current state (2026-10-16)
@@ -75,10 +74,12 @@ intent, heavy fights at 60 fps, v0.1.1.
   shows its corner (Present source rect), so no device Reset. Render scale defaults
   to the window's/screen's height (2.25 at 1080p). Fullscreen start, Alt+Enter and
   resizing confirmed by the user.
-- Multiplayer and Xbox Live (2026-10-16): the Multiplayer item (console command
-  `load_mp_exe`) and Sign In (main menu, Xbox Live Options) keep the player in the
-  menu with a 4 s notice over the game (`render::show_notice`); the status line says
-  "Not signed in". Confirmed by the user.
+- Multiplayer and Xbox Live (2026-10-17): the Multiplayer item (console command
+  `load_mp_exe`) reboots into codmp_xboxf.xbe, and its "Back to Single Player" into
+  default.xbe (checked both ways). Sign In (SP main menu, Xbox Live Options) and MP's
+  Play Xbox Live keep the player in the menu with a 4 s notice over the game
+  (`render::show_notice`); the status line says "Not signed in". See
+  [multiplayer.md](multiplayer.md).
 - Sound through the release's bundled OpenAL Soft confirmed by the user
   (2026-10-16).
 - Launcher (2026-10-16): `cod_bro_launcher` (Dear ImGui on SDL3) sets the game-file
@@ -143,8 +144,8 @@ intent, heavy fights at 60 fps, v0.1.1.
   reboots into `default.xbe` between levels and when quitting to the menu, with its
   state in the LaunchDataPage; the loader re-execs itself with the page (memory file)
   and the same options (minus `--press`); log and `--diag` times/marks continue.
-  `--launch-data 3 3<DIR/launch_data.bin` repeats the last reboot. Multiplayer
-  (`codmp_xboxf.xbe`) is refused (its command `load_mp_exe` shows a notice instead);
+  `--launch-data 3 3<DIR/launch_data.bin` repeats the last reboot. Reboots between
+  default.xbe and codmp_xboxf.xbe switch the title setup (addresses, symbols);
   XONLINE's launch hook is cleared.
 - Timing: the title reads the CPU's time stamp counter (RDTSC, 27 sites incl. XAPI
   QueryPerformanceCounter) and assumes the Xbox's 733 MHz; each site goes through a
