@@ -17,6 +17,14 @@
     Release zip built (`windows-mingw-release` + cpack). Next: a run on real
     Windows (address-space layout and SEH differ from Wine). Untested: non-ASCII
     paths (narrow strings use the ANSI code page).
+    2026-10-16: the first real-Windows test failed to start, with no output (no
+    console, no log). Since then: an always-written log (`%APPDATA%\cod_bro\log.txt`),
+    error boxes on startup failures and crashes, the window no longer needs Vulkan
+    (SDL_WINDOW_VULKAN on Windows made window creation depend on a Vulkan driver),
+    and D3D9 is loaded at run time: bundled DXVK (`dxvk/d3d9.dll`, built by
+    `packaging/windows-dxvk/build.sh`) first, the system's as the fallback
+    (`--d3d9`). Wine: all three choices and the fallback tested. Next: the new zip on
+    the test PC; if it still fails, the log.
   - In-game brightness: `SetGammaRamp` is ignored, so the game's brightness
     setting does nothing (apply the ramp in the final pass).
   - Mission 6 (Gela) ran at ~20 fps for ~12 s (60-71 s into `--level 6`, after the
