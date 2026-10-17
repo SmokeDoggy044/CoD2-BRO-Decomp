@@ -4,7 +4,7 @@
 
 - **Prototype release:** private GitHub pre-release v0.1.0 (2026-10-16), Linux
   tar.gz + Windows zip; license GPL-2.0-or-later. Before going public:
-  1. Fullscreen: check Alt+Enter and a resized window (black bars, no stretching).
+  1. ~~Fullscreen: check Alt+Enter and a resized window.~~ Both work (user, 2026-10-16).
   2. ~~A run of the Windows zip on real Windows.~~ Runs (2026-10-16, RTX 3080).
 - **After the release:**
   - XFONT (the XOnline sign-in UI's text) writes through the frame buffer's tiled
