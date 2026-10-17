@@ -3,8 +3,8 @@
 **Resume here (2026-10-17, evening):** multiplayer runs from the campaign's
 Multiplayer item (and back), and system link works between two games on one PC
 (host + join, same match); see [multiplayer.md](multiplayer.md) for the design and
-the "Not done" list (PC features in MP: 60 fps, widescreen; mouse look and the
-keyboard's style remap work there since 2026-10-17, user check pending). Also pending: the route C plan + a list of every game-code patch and its
+the "Not done" list. Mouse look, style remap, 60 fps, widescreen menus and aim assist
+work in MP too (user-tested 2026-10-17). Also pending: the route C plan + a list of every game-code patch and its
 intent, heavy fights at 60 fps, v0.1.1.
 
 ## Current state (2026-10-16)
