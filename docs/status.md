@@ -4,7 +4,9 @@
 Multiplayer item (and back), and system link works between two games on one PC
 (host + join, same match); see [multiplayer.md](multiplayer.md) for the design and
 the "Not done" list. Mouse look, style remap, 60 fps, widescreen menus and aim assist
-work in MP too (user-tested 2026-10-17). Also pending: the route C plan + a list of every game-code patch and its
+work in MP too (user-tested 2026-10-17). Released as private pre-release v0.1.1 (2026-10-17, Linux
+tar.gz + Windows zip; smoke-tested: Linux package with its bundled libraries, Windows
+zip under Wine; multiplayer between two PCs and on real Windows not tested yet). Also pending: the route C plan + a list of every game-code patch and its
 intent, heavy fights at 60 fps, v0.1.1.
 
 ## Current state (2026-10-16)
