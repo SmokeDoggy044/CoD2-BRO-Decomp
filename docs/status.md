@@ -20,13 +20,22 @@
     fallback (`--d3d9`). Every run writes `log.txt` in the user data folder; error
     boxes on startup failures, crashes and uncaught C++ exceptions. Untested:
     non-ASCII paths (narrow strings use the ANSI code page).
-  - In-game brightness: `SetGammaRamp` is ignored, so the game's brightness
-    setting does nothing (apply the ramp in the final pass).
   - Mission 6 (Gela) ran at ~20 fps for ~12 s (60-71 s into `--level 6`, after the
     landing-craft cinematic; playtest 2026-10-16): check whether the game or the
     renderer is the bottleneck there.
   - Mission 6+ playtests; death/mission-failed screens and dialogs in widescreen.
   - Launcher: a .desktop file / icon for Linux desktops.
+- Gamma and brightness (2026-10-17): the game sets one gamma ramp at device
+  creation (FUN_00064bc0, static table 0x008a29b0: an S-curve, 0/128/255 -> 3/123/
+  252) and never changes it; its GLimp_SetGamma-like wrapper 0x00064540 has no
+  callers, and the menus have no brightness option (the Brightness00-10 widgets in
+  frontend.cod have no code or text behind them). The ramp is now applied while
+  copying to the window (ps_2_0 lookup pass, `D3D9Backend::draw_with_gamma`;
+  checked pixel-exact against the table), so the picture has the Xbox's contrast.
+  PC option on top: `--brightness X` (0.5-2, launcher slider), 255*(ramp/255)^(1/X).
+  Screenshots (`--screenshots`, --diag) are taken before the ramp.
+- Launcher (2026-10-17): "Reporting a problem" with Open log folder / Open save
+  folder buttons, for players attaching log.txt and saves to issues.
 - Aim assist (2026-10-16): `--aim-assist on|off`, launcher checkbox (default on).
   Off patches the sticky aim function (FUN_002db7d0) to clear its target and
   return; confirmed by the user (moving enemies no longer tracked).
