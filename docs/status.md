@@ -6,7 +6,7 @@ Multiplayer item or the launcher's button, with mouse look, style remap, 60 fps,
 widescreen menus and aim assist in MP too (user-tested on one PC; design and open
 items in [multiplayer.md](multiplayer.md)). Next candidates:
 1. Multiplayer between two PCs, and v0.1.1 on real Windows (firewall prompt).
-2. The route C plan + a list of every game-code patch and its intent (asked for).
+2. The full native build plan + a list of every game-code patch and its intent (asked for).
 3. Heavy fights at 60 fps (mission 5 town), missions 7-13 playtests.
 4. MP: split screen (if any), the ~40 startup memory warnings. One release-build MP
    sample read 30 fps in-match once (not reproduced; log not kept).
@@ -111,8 +111,8 @@ items in [multiplayer.md](multiplayer.md)). Next candidates:
   229 loose ones are 2D; the DDS loader `0x6b09e` sets the cube flag only from caps2,
   and the code-built normalization cube `nglNormalCubeMapTex`, `FUN_0006f080`, is
   never called), so those stay unbuilt until a run hits one.
-- Route B focus: replace graphics (D3D8 -> D3D9/DXVK), sound, input, kernel and
-  saves. Game code stays original; decompile only what route B needs (raw GPU
+- Native loader focus: replace graphics (D3D8 -> D3D9/DXVK), sound, input, kernel and
+  saves. Game code stays original; decompile only what the loader needs (raw GPU
   command sites `BeginPush`/`RunPushBuffer`, PC bugs/timing, wanted features).
   Otherwise: run, implement what it stops at, repeat.
 
@@ -207,4 +207,4 @@ Xbox Live is unavailable: no network, no accounts.
 
 - Raise the memory budget and enlarge the game's memory pools (`FUN_00043fb0`
   allocates fixed 35.2 MB + 3.7 MB arenas) for bigger assets/mods.
-- Route C: decompile the rest; see [comparison-harness.md](comparison-harness.md).
+- Full native build: decompile the rest; see [comparison-harness.md](comparison-harness.md).
