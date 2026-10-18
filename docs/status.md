@@ -42,8 +42,22 @@ inlined render-state code. Start: measure its size and list its entry points, th
 name -> decompile -> --compare (screenshots), replaced as one module.
 Started 2026-10-18: the tr_* layer, NGL (frame, scenes, quads, meshes, textures, fonts,
 states), the 23 shader classes, lighting, models, effects, NGL's matrices, fog pass, light sets and
-mesh builder are named (third pass 2026-10-18); open items in naming.md (Renderer). Next: decompile
-the renderer's leaf functions (matrix builders, setters) under --compare, or the client/UI naming.
+mesh builder are named (third pass 2026-10-18); open items in naming.md (Renderer).
+Decompiling began 2026-10-18 (second session): 50 renderer leaf functions in
+game/code/ngl.cpp (quad/scene setters, matrix builders, nglDepthToZValue, light sets,
+frame allocators, texture helpers) and game/code/tr_main.cpp (myGLMultMatrix,
+RE_ClearScene, R_ClearFrameLists, far cull); 53 functions matched in total, none
+mismatched. Not reached by --level 1/4 runs: nglColorToVec4, nglAllocFrameGpu,
+nglLightVectorWorld, nglPaletteSetEntry, RE_GetFarCullDist. Skipped on purpose:
+nglSetVBlankMode (the loader's frame-pacing patch hooks it), nglSetAspect /
+nglSetViewMatrix / nglDynamicVB_EndFrame (tail calls into undecompiled code).
+Next batch (read, not written yet): nglRotateQuadVerts/nglRotateQuad (fsin/fcos on
+x87 - check results bit for bit), nglMeshBuilder_SetBounds, Q_PrintStrlen,
+DObj_GetBoneBasePose/Parent/Index, DObj_AnyModelHasFlags (EDI argument),
+FX_AllocEffect, R_AddViewModelRefEntity, RE_LoadWorldMap, GLimp_Init; then the
+bigger leaves (nglEvalPointLight, nglSelectMeshLightSet, R_SetupProjection,
+R_CopyFrustumPlanes, CM_CellForPoint, R_ClipPolygonToPlane, the std_* sort helpers),
+then functions that call others (title_function pointer or our own versions).
 Each batch: CSV rows -> ApplyNames -> save -> ExportSymbols ->
 tools/smoke_test.sh -> commit. User decision 2026-10-17: decompilation only, no
 static recompilation.
