@@ -10,7 +10,7 @@ loader builds) and the level-script string class (game/code/script_string.cpp,
 (57 to 9,669 tests each); Find, FindLast and SetChar are not reached from `--level`
 runs (only a front-end text dialog calls them). Next:
 1. Name engine functions after their Quake 3 / RTCW counterparts (Ghidra): in
-   progress, 804 functions + 395 globals so far - workflow, findings and next steps in
+   progress, 832 functions + 520 globals so far - workflow, findings and next steps in
    [naming.md](naming.md). Decision (user, 2026-10-17): keep naming before step 2,
    including CoD-specific code (AI, script, anim trees, vehicles) named from its
    bodies, so the decompilation and --compare work covers both CoD-specific and
@@ -26,9 +26,9 @@ runs (only a front-end text dialog calls them). Next:
    not function-by-function decompilation.
 
 **Resume here (decomp, 2026-10-18, end of session):** naming is step 1 above
-([naming.md](naming.md), "Next"). The game module is named except the last ~10
-small AI functions listed in naming.md (move mode 7, grenade escape paths, slide
-move); after them the cgame from CG_DrawActiveFrame. Names are neutral and
+([naming.md](naming.md), "Next"). The game module is named, AI included (a
+handful of low-value AI helpers stay open, listed in naming.md); next is the
+cgame from CG_DrawActiveFrame, then the XAnim tree module as one batch. Names are neutral and
 descriptive (user, 2026-10-18): no identifiers from later titles of the series.
 Each batch: CSV rows -> ApplyNames -> save -> ExportSymbols ->
 tools/smoke_test.sh -> commit. User decision 2026-10-17: decompilation only, no
