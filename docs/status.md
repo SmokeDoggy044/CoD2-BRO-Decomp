@@ -8,7 +8,7 @@ Done: the [comparison harness](comparison-harness.md) (`--compare`,
 loader builds) and the first three functions (level-script strings, 0x0011d5e0 /
 0x0011d7c0 / 0x0011db70: 2,263 tests in mission 1, all matched). Next:
 1. Name engine functions after their Quake 3 / RTCW counterparts (Ghidra): in
-   progress, 523 functions + 358 globals so far - workflow, findings and next steps in
+   progress, 595 functions + 360 globals so far - workflow, findings and next steps in
    [naming.md](naming.md). Decision (user, 2026-10-17): keep naming before step 2,
    including CoD-specific code (AI, script, anim trees, vehicles) named from its
    bodies, so the decompilation and --compare work covers both CoD-specific and
@@ -23,9 +23,9 @@ loader builds) and the first three functions (level-script strings, 0x0011d5e0 /
 
 **Resume here (decomp, 2026-10-17, end of session):** naming is step 1 above
 ([naming.md](naming.md), "Next"). The game module's entity, client, spawn, mover,
-trigger, damage, vehicle and turret code is named; next is its AI (Actor_*,
-0x001f0000-0x0021ffff), starting from the AI state table at 0x00830c40 (0x24 bytes
-per state, like the entity callback tables), then the leftovers listed in
+trigger, damage, vehicle and turret code is named; next is the rest of its AI (Actor_*,
+0x001f0000-0x0021ffff): the state machine and g_aiStateFuncs (0x00830c28) are named,
+next the state thinks' callees (naming.md, "Next"), then the leftovers listed in
 naming.md. Each batch: CSV rows -> ApplyNames -> save -> ExportSymbols ->
 tools/smoke_test.sh -> commit. User decision 2026-10-17: decompilation only, no
 static recompilation.
