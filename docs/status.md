@@ -15,6 +15,18 @@ toggle, default on); not yet user-playtested. Next candidates:
 
 ## Current state (2026-10-16)
 
+- Mouse in the menus (2026-10-18), campaign and multiplayer: hovering selects an item,
+  left click selects it and presses A, right click B, the wheel moves up/down; the
+  cursor is free while a menu is up and the mouse is captured again when it closes.
+  The UI's managers (SP front end 0x0095f8f8, in-game 0x0095f8fc, dialogs 0x0095f900;
+  MP 0x004b31f8 / 0x004b3200) poll the pad each frame (FUN_0031fc10, MP
+  FUN_0028d080); a thunk there hit-tests the active screen's items against their
+  text widgets' boxes (only widgets drawn in the last frames, hooked at the text draw
+  FUN_00321160 / MP FUN_0028e5d0) and selects through the screen's own vtable. Layout
+  and offsets in loader/patches.cpp ("Menus with the mouse"). Checked unattended with
+  scripted pointer positions (boxes on screenshots: profile manager, main menu, dialog,
+  pause menu in 16:9, MP menus); not yet played with a real mouse.
+
 - Sharper text (2026-10-17): `--sharp-text on|off` (default on; launcher "Sharper
   text"). The game's text is four bitmap fonts, each a DDS atlas + a plain-text
   `.fdf` glyph table in the packs (sp/global.cod: garamond 512x256 DXT1,
