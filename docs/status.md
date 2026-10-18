@@ -25,12 +25,12 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-17, end of session):** naming is step 1 above
-([naming.md](naming.md), "Next"). The game module's entity, client, spawn, mover,
-trigger, damage, vehicle and turret code is named, and the AI state machine and pathfinding; next is the rest of its AI (Actor_*,
-0x001f0000-0x0021ffff): the state machine and g_aiStateFuncs (0x00830c28) are named,
-next the state thinks' callees (naming.md, "Next"), then the leftovers listed in
-naming.md. Each batch: CSV rows -> ApplyNames -> save -> ExportSymbols ->
+**Resume here (decomp, 2026-10-18, end of session):** naming is step 1 above
+([naming.md](naming.md), "Next"). The game module is named except the last ~10
+small AI functions listed in naming.md (move mode 7, grenade escape paths, slide
+move); after them the cgame from CG_DrawActiveFrame. Names are neutral and
+descriptive (user, 2026-10-18): no identifiers from later titles of the series.
+Each batch: CSV rows -> ApplyNames -> save -> ExportSymbols ->
 tools/smoke_test.sh -> commit. User decision 2026-10-17: decompilation only, no
 static recompilation.
 
