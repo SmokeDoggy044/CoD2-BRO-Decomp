@@ -8,8 +8,8 @@ Done: the [comparison harness](comparison-harness.md) (`--compare`,
 loader builds) and the first three functions (level-script strings, 0x0011d5e0 /
 0x0011d7c0 / 0x0011db70: 2,263 tests in mission 1, all matched). Next:
 1. Name engine functions after their Quake 3 / RTCW counterparts (Ghidra): in
-   progress, 308 functions + 147 globals so far - workflow, findings and next steps in
-   [naming.md](naming.md). Next: the remaining `re` slots, then the game and cgame
+   progress, 321 functions + 149 globals so far - workflow, findings and next steps in
+   [naming.md](naming.md). Next: the game and cgame
    modules from their vmMain exports.
 2. Decompile in batches by subsystem (leaf functions first), `--compare` runs per
    batch, then mark tested ones `Replaced`.
