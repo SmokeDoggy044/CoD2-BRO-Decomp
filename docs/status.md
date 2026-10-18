@@ -7,42 +7,10 @@ Done: the [comparison harness](comparison-harness.md) (`--compare`,
 `tools/data/functions.csv`), the `game/code/` library (libcod_bro_game.so in Linux
 loader builds) and the first three functions (level-script strings, 0x0011d5e0 /
 0x0011d7c0 / 0x0011db70: 2,263 tests in mission 1, all matched). Next:
-1. Match engine functions against the Quake 3 GPL source and name them in Ghidra
-   (ask before renaming in the user's database). Started 2026-10-17:
-   [tools/q3match](../tools/q3match/README.md) proposes 99 names
-   (`tools/data/q3_name_proposals.csv`: 62 command handlers, Cvar_Get,
-   Cmd_AddCommand, CL_Init, FS_Startup, CM_LoadMap, ...). 96 applied in Ghidra
-   (2026-10-17, `tools/ghidra/ApplyNames.java`; all but 3 graph guesses; 59 handler
-   functions created), symbols re-exported. Only ~1,200
-   `.text` functions reference strings, so the rest is manual matching from these
-   anchors (CoD2 Linux server 1.3 checked: stripped, not used).
-   Manual matching (`tools/data/manual_names.csv`, address/name/kind/confidence/
-   evidence; applied with ApplyNames.java): Cvar, Cmd/Cbuf, Com_Frame/event loop,
-   FS, client input (CL_CreateCmd parts, IN_KeyDown/Up, CL_KeyState), Com_Init,
-   SV_Init, q_shared (Q_stricmp/strcat/strncmp, Info_*, Swap_Init + byte-order
-   helpers, COM_ParseExt), MSG_Read/WriteLong, CM area/PVS/leaf helpers, CL_GetSnapshot/
-   GetUserCmd, PM_DropTimers, the rest of files.c (open by mode/write/append, list,
-   paths, copy, shutdown), Cvar_InfoString/Update/Shutdown, Com_Milliseconds/
-   Shutdown/ParseCommandLine/AddStartupCommands/SafeMode, ByteToDir/DirToByte,
-   PlaneFromPoints, the VM layer (VM_Create/VM_Call, the game and cgame vmMain
-   dispatchers and their main exports, gvm/cgvm), the game and cgame command tables -
-   189 functions + 68 globals (2026-10-17). CoD's game exports drop
-   ClientUserinfoChanged, so from case 4 the numbering is Q3's minus one (checked
-   per body); case 8 toggles g_reloading, case 10 advances level.time.
-   Syscalls (2026-10-17): SV_GameSystemCalls only errors and CL_CgameSystemCalls has
-   no callers - the game calls the engine directly and the cgame calls the renderer
-   through re (0x009284e8, filled by CL_InitRef from GetRefAPI). The tables
-   themselves name things instead: CL_InitRef builds refimport_t in Q3 order
-   (ri.Milliseconds = CL_ScaledMilliseconds, Cvar_Set, Cmd_Argc, Cbuf_ExecuteText,
-   FS_FreeFile/ListFiles/FileExists), and the dead cgame syscall cases confirm the re
-   slots by argument count (RE_ClearScene 11, RE_AddPolyToScene 12, RE_RenderScene 15,
-   RE_SetColor 17, RE_StretchPic 18, text 34-39). 212 functions + 72 globals; plus 75 cvar_t* globals named
-   after their cvars by `tools/ghidra/CvarGlobals.java` (`tools/data/cvar_globals.csv`;
-   Q3 global names win where they differ, e.g. com_sv_running for "sv_running"). Notes: Com_Error/G_Error calls
-   compile to `__break(code, message)` here; cvar_t is Q3's (0x2c bytes);
-   CM_LoadMap only registers cm_noCurves/cm_playerCurveClip (collision lives
-   elsewhere); G_RunThink calls ent->think through an index table at 0x008da788.
-   Next: the client (cl_input/cl_keys/cl_cgame), then cgame and game.
+1. Name engine functions after their Quake 3 / RTCW counterparts (Ghidra): in
+   progress, 308 functions + 147 globals so far - workflow, findings and next steps in
+   [naming.md](naming.md). Next: the remaining `re` slots, then the game and cgame
+   modules from their vmMain exports.
 2. Decompile in batches by subsystem (leaf functions first), `--compare` runs per
    batch, then mark tested ones `Replaced`.
 3. Stand-ins for common pure kernel calls in test processes (critical sections), so
@@ -50,7 +18,10 @@ loader builds) and the first three functions (level-script strings, 0x0011d5e0 /
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not hand decompilation.
 
-**Resume here (2026-10-17, end of session):** v0.1.1 is out (private pre-release,
+**Resume here (decomp, 2026-10-17):** naming is step 1 above ([naming.md](naming.md)).
+User decision 2026-10-17: decompilation only, no static recompilation.
+
+**Resume here (loader, 2026-10-17, end of session):** v0.1.1 is out (private pre-release,
 Linux + Windows): 60 fps by default and system-link multiplayer from the campaign's
 Multiplayer item or the launcher's button, with mouse look, style remap, 60 fps,
 widescreen menus and aim assist in MP too (user-tested on one PC; design and open
