@@ -40,6 +40,8 @@ translated by render/), so a decompiled renderer that calls a PC graphics API se
 both. Scope: the NGL scene code (~0x0005d000-0x00066000), the RE_* refexport side and the
 inlined render-state code. Start: measure its size and list its entry points, then
 name -> decompile -> --compare (screenshots), replaced as one module.
+Started 2026-10-18: the tr_* layer, NGL (frame, scenes, quads, meshes, textures, fonts,
+states) and the 23 shader classes are named; open items in naming.md (Renderer).
 Each batch: CSV rows -> ApplyNames -> save -> ExportSymbols ->
 tools/smoke_test.sh -> commit. User decision 2026-10-17: decompilation only, no
 static recompilation.
