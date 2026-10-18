@@ -17,7 +17,9 @@ runs (only a front-end text dialog calls them). Next:
    Q3-derived functions. Order (user, 2026-10-17): module by module - the game
    module is done except the AI; then the cgame (CG_DrawActiveFrame), then client/UI.
 2. Decompile in batches by subsystem (leaf functions first), `--compare` runs per
-   batch, then mark tested ones `Replaced`.
+   batch. Decision (user, 2026-10-18): matched functions stay `Compare` until their
+   whole module is finished, then the module becomes `Replaced` at once; naming
+   stays the main work until then.
 3. Stand-ins for common pure kernel calls in test processes (critical sections), so
    more functions become testable.
 4. The level sections (~5,000 compiler-generated script functions): a translator,
