@@ -12,8 +12,8 @@ loader builds) and the first three functions (level-script strings, 0x0011d5e0 /
    [naming.md](naming.md). Decision (user, 2026-10-17): keep naming before step 2,
    including CoD-specific code (AI, script, anim trees, vehicles) named from its
    bodies, so the decompilation and --compare work covers both CoD-specific and
-   Q3-derived functions. Next: the game and cgame modules from G_RunFrame and
-   CG_DrawActiveFrame.
+   Q3-derived functions. Order (user, 2026-10-17): module by module - the game
+   module is done except the AI; then the cgame (CG_DrawActiveFrame), then client/UI.
 2. Decompile in batches by subsystem (leaf functions first), `--compare` runs per
    batch, then mark tested ones `Replaced`.
 3. Stand-ins for common pure kernel calls in test processes (critical sections), so
@@ -21,8 +21,14 @@ loader builds) and the first three functions (level-script strings, 0x0011d5e0 /
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not hand decompilation.
 
-**Resume here (decomp, 2026-10-17):** naming is step 1 above ([naming.md](naming.md)).
-User decision 2026-10-17: decompilation only, no static recompilation.
+**Resume here (decomp, 2026-10-17, end of session):** naming is step 1 above
+([naming.md](naming.md), "Next"). The game module's entity, client, spawn, mover,
+trigger, damage, vehicle and turret code is named; next is its AI (Actor_*,
+0x001f0000-0x0021ffff), starting from the AI state table at 0x00830c40 (0x24 bytes
+per state, like the entity callback tables), then the leftovers listed in
+naming.md. Each batch: CSV rows -> ApplyNames -> save -> ExportSymbols ->
+tools/smoke_test.sh -> commit. User decision 2026-10-17: decompilation only, no
+static recompilation.
 
 **Resume here (loader, 2026-10-17, end of session):** v0.1.1 is out (private pre-release,
 Linux + Windows): 60 fps by default and system-link multiplayer from the campaign's
