@@ -43,27 +43,30 @@ name -> decompile -> --compare (screenshots), replaced as one module.
 Started 2026-10-18: the tr_* layer, NGL (frame, scenes, quads, meshes, textures, fonts,
 states), the 23 shader classes, lighting, models, effects, NGL's matrices, fog pass, light sets and
 mesh builder are named (third pass 2026-10-18); open items in naming.md (Renderer).
-Decompiling began 2026-10-18: 62 renderer leaf functions in game/code/ngl.cpp (quad
-setters and rotate/scale, scene setters, matrix builders, nglDepthToZValue, light sets,
-frame allocators, texture helpers, mesh-builder bounds), game/code/tr_main.cpp
-(myGLMultMatrix, RE_ClearScene, R_ClearFrameLists, far cull, GLimp_Init, Q_PrintStrlen,
-RE_LoadWorldMap, R_AddViewModelRefEntity), game/code/dobj.cpp (bone base pose / parent /
-index) and game/code/fx.cpp (FX_AllocEffect); 61 functions matched in total, none
-mismatched. Not reached by --level 1/4 runs: nglColorToVec4, nglAllocFrameGpu,
-nglLightVectorWorld, nglPaletteSetEntry, RE_GetFarCullDist, Q_PrintStrlen (one caller,
-0x00241a9b), DObj_GetBoneBasePose/Parent (XAnim callers at 0x0022xxxx), and
-nglScaleQuadVerts / nglRotateQuad (rotates the UVs; neither has direct callers).
-x87 sin/cos go through platform_x87_sin/cos (compiler.h; FSIN/FCOS under the title's
-precision control - nglRotateQuadVerts matched bit for bit). `--compare` runs without
-the PC features (`--pc-patches off`), so nglSetVBlankMode is compared too. Skipped on
-purpose: nglSetAspect / nglSetViewMatrix / nglDynamicVB_EndFrame (tail calls into
-undecompiled code), DObj_AnyModelHasFlags (flags in EDI - no C convention; needs an asm
-entry shim, which compiler.h does not have yet).
-Next batch: the bigger leaves (nglEvalPointLight, nglSelectMeshLightSet,
-R_SetupProjection, R_CopyFrustumPlanes, CM_CellForPoint, R_ClipPolygonToPlane, the std_*
-sort helpers; list more with SmallLeaves.java over 0x0005d000-0x0007c000 and
-0x00234000-0x0023c000), then functions that call others (title_function pointer or our
-own versions).
+Decompiling began 2026-10-18: game/code/ngl.cpp (quad setters and rotate/scale, scene
+setters, matrix builders, nglDepthToZValue, light sets, frame allocators, texture helpers,
+mesh-builder bounds; second batch: scene depth/time setters, pre-swap/end-frame
+callbacks, the mesh (file) manager setters/getters and mesh walk, mesh relocation,
+shader-handle and index-buffer helpers, nglEvalPointLight, the draw lists' std::sort
+helpers), game/code/tr_main.cpp (myGLMultMatrix, RE_ClearScene, R_ClearFrameLists, far
+cull, GLimp_Init, Q_PrintStrlen, RE_LoadWorldMap, R_AddViewModelRefEntity, R_CullPortal,
+R_SetupProjection, R_CopyFrustumPlanes, R_ClipPolygonToPlane), game/code/dobj.cpp,
+game/code/fx.cpp and game/code/unzip.cpp (inflate_trees_fixed); 86 functions matched,
+none mismatched. Not reached by --level 1/2/4 runs: nglColorToVec4, nglAllocFrameGpu,
+nglLightVectorWorld, nglPaletteSetEntry, RE_GetFarCullDist, Q_PrintStrlen,
+DObj_GetBoneBasePose/Parent, nglScaleQuadVerts, nglRotateQuad, nglEvalPointLight (no
+point lights there), std_PushHeap_* (heap sort fallback only), nglIndexBuffer_Clear,
+inflate_trees_fixed. x87 sin/cos/tan go through platform_x87_* and RSQRTSS through
+platform_rsqrt_estimate (compiler.h). `--compare` runs without the PC features
+(`--pc-patches off`). Skipped on purpose: nglSetAspect / nglSetViewMatrix /
+nglDynamicVB_EndFrame (tail calls into undecompiled code), DObj_AnyModelHasFlags (flags
+in EDI - needs an asm entry shim), nglSelectMeshLightSet (one path reads an
+uninitialized stack slot), 1-4 byte functions (too short for the harness's jump).
+Next batch: the remaining leaves over 0x0005d000-0x0007c000 and 0x00234000-0x0023c000
+(R_AddCellEntities, R_LayoutTextWithIcons, nglTextureSetPixel, nglLightSetAddProjector,
+the unnamed FP leaves 0x00068560/0x00068680/0x00073c20/0x0023be90/0x0023b2e0, std_*
+insertion sorts and partitions), then functions that call others (our own versions
+or the title's through a function pointer).
 Each batch: CSV rows -> ApplyNames -> save -> ExportSymbols ->
 tools/smoke_test.sh -> commit. User decision 2026-10-17: decompilation only, no
 static recompilation.
