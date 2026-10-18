@@ -5,10 +5,12 @@
 repo (`upstream`) stays as it is. Merge loader fixes with `git pull upstream main`.
 Done: the [comparison harness](comparison-harness.md) (`--compare`,
 `tools/data/functions.csv`), the `game/code/` library (libcod_bro_game.so in Linux
-loader builds) and the first three functions (level-script strings, 0x0011d5e0 /
-0x0011d7c0 / 0x0011db70: 2,263 tests in mission 1, all matched). Next:
+loader builds) and the level-script string class (game/code/script_string.cpp,
+0x0011d540-0x0011db70): 11 functions, 8 matched in every test over missions 1 and 4
+(57 to 9,669 tests each); Find, FindLast and SetChar are not reached from `--level`
+runs (only a front-end text dialog calls them). Next:
 1. Name engine functions after their Quake 3 / RTCW counterparts (Ghidra): in
-   progress, 686 functions + 388 globals so far - workflow, findings and next steps in
+   progress, 699 functions + 388 globals so far - workflow, findings and next steps in
    [naming.md](naming.md). Decision (user, 2026-10-17): keep naming before step 2,
    including CoD-specific code (AI, script, anim trees, vehicles) named from its
    bodies, so the decompilation and --compare work covers both CoD-specific and
