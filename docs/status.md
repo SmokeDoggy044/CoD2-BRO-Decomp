@@ -33,6 +33,13 @@ tree module (core named); the client/UI is in progress (Q3 client paths, CL_Fram
 per-frame subsystems, the front-end panel/screen setup named; next: the screen classes'
 vtables, memory-unit dialogs, the streaming loader - see naming.md). Names are neutral and
 descriptive (user, 2026-10-18): no identifiers from later titles of the series.
+**Next module (user decision 2026-10-18): the renderer**, ahead of the rest of the
+client/UI. There are requests for a recomp, and the renderer is needed for the decomp
+anyway: it is the game code tied to the hardware (NV2A commands and inlined D3D, now
+translated by render/), so a decompiled renderer that calls a PC graphics API serves
+both. Scope: the NGL scene code (~0x0005d000-0x00066000), the RE_* refexport side and the
+inlined render-state code. Start: measure its size and list its entry points, then
+name -> decompile -> --compare (screenshots), replaced as one module.
 Each batch: CSV rows -> ApplyNames -> save -> ExportSymbols ->
 tools/smoke_test.sh -> commit. User decision 2026-10-17: decompilation only, no
 static recompilation.
