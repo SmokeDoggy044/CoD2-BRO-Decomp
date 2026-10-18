@@ -9,8 +9,11 @@ loader builds) and the first three functions (level-script strings, 0x0011d5e0 /
 0x0011d7c0 / 0x0011db70: 2,263 tests in mission 1, all matched). Next:
 1. Name engine functions after their Quake 3 / RTCW counterparts (Ghidra): in
    progress, 356 functions + 153 globals so far - workflow, findings and next steps in
-   [naming.md](naming.md). Next: the game and cgame
-   modules from their vmMain exports.
+   [naming.md](naming.md). Decision (user, 2026-10-17): keep naming before step 2,
+   including CoD-specific code (AI, script, anim trees, vehicles) named from its
+   bodies, so the decompilation and --compare work covers both CoD-specific and
+   Q3-derived functions. Next: the game and cgame modules from G_RunFrame and
+   CG_DrawActiveFrame.
 2. Decompile in batches by subsystem (leaf functions first), `--compare` runs per
    batch, then mark tested ones `Replaced`.
 3. Stand-ins for common pure kernel calls in test processes (critical sections), so
