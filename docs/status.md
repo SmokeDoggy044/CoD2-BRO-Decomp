@@ -19,7 +19,7 @@ loader builds) and the first three functions (level-script strings, 0x0011d5e0 /
 3. Stand-ins for common pure kernel calls in test processes (critical sections), so
    more functions become testable.
 4. The level sections (~5,000 compiler-generated script functions): a translator,
-   not hand decompilation.
+   not function-by-function decompilation.
 
 **Resume here (decomp, 2026-10-17, end of session):** naming is step 1 above
 ([naming.md](naming.md), "Next"). The game module's entity, client, spawn, mover,
