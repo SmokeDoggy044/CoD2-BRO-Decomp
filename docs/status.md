@@ -24,7 +24,11 @@ loader builds) and the first three functions (level-script strings, 0x0011d5e0 /
    GetUserCmd, PM_DropTimers, the rest of files.c (open by mode/write/append, list,
    paths, copy, shutdown), Cvar_InfoString/Update/Shutdown, Com_Milliseconds/
    Shutdown/ParseCommandLine/AddStartupCommands/SafeMode, ByteToDir/DirToByte,
-   PlaneFromPoints - 135 functions + 56 globals (2026-10-17); plus 75 cvar_t* globals named
+   PlaneFromPoints, the VM layer (VM_Create/VM_Call, the game and cgame vmMain
+   dispatchers and their main exports, gvm/cgvm), the game and cgame command tables -
+   189 functions + 68 globals (2026-10-17). CoD's game exports drop
+   ClientUserinfoChanged, so from case 4 the numbering is Q3's minus one (checked
+   per body); case 8 toggles g_reloading, case 10 advances level.time; plus 75 cvar_t* globals named
    after their cvars by `tools/ghidra/CvarGlobals.java` (`tools/data/cvar_globals.csv`;
    Q3 global names win where they differ, e.g. com_sv_running for "sv_running"). Notes: Com_Error/G_Error calls
    compile to `__break(code, message)` here; cvar_t is Q3's (0x2c bytes);
