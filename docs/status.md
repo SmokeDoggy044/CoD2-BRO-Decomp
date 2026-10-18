@@ -28,7 +28,15 @@ loader builds) and the first three functions (level-script strings, 0x0011d5e0 /
    dispatchers and their main exports, gvm/cgvm), the game and cgame command tables -
    189 functions + 68 globals (2026-10-17). CoD's game exports drop
    ClientUserinfoChanged, so from case 4 the numbering is Q3's minus one (checked
-   per body); case 8 toggles g_reloading, case 10 advances level.time; plus 75 cvar_t* globals named
+   per body); case 8 toggles g_reloading, case 10 advances level.time.
+   Syscalls (2026-10-17): SV_GameSystemCalls only errors and CL_CgameSystemCalls has
+   no callers - the game calls the engine directly and the cgame calls the renderer
+   through re (0x009284e8, filled by CL_InitRef from GetRefAPI). The tables
+   themselves name things instead: CL_InitRef builds refimport_t in Q3 order
+   (ri.Milliseconds = CL_ScaledMilliseconds, Cvar_Set, Cmd_Argc, Cbuf_ExecuteText,
+   FS_FreeFile/ListFiles/FileExists), and the dead cgame syscall cases confirm the re
+   slots by argument count (RE_ClearScene 11, RE_AddPolyToScene 12, RE_RenderScene 15,
+   RE_SetColor 17, RE_StretchPic 18, text 34-39). 212 functions + 72 globals; plus 75 cvar_t* globals named
    after their cvars by `tools/ghidra/CvarGlobals.java` (`tools/data/cvar_globals.csv`;
    Q3 global names win where they differ, e.g. com_sv_running for "sv_running"). Notes: Com_Error/G_Error calls
    compile to `__break(code, message)` here; cvar_t is Q3's (0x2c bytes);
