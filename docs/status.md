@@ -15,7 +15,14 @@ loader builds) and the first three functions (level-script strings, 0x0011d5e0 /
    (2026-10-17, `tools/ghidra/ApplyNames.java`; all but 3 graph guesses; 59 handler
    functions created), symbols re-exported. Only ~1,200
    `.text` functions reference strings, so the rest is manual matching from these
-   anchors.
+   anchors (CoD2 Linux server 1.3 checked: stripped, not used).
+   Manual matching (`tools/data/manual_names.csv`, address/name/kind/confidence/
+   evidence; applied with ApplyNames.java): Cvar, Cmd/Cbuf, Com_Frame/event loop,
+   FS - 48 functions + 33 globals (2026-10-17). Notes: Com_Error/G_Error calls
+   compile to `__break(code, message)` here; cvar_t is Q3's (0x2c bytes);
+   CM_LoadMap only registers cm_noCurves/cm_playerCurveClip (collision lives
+   elsewhere); G_RunThink calls ent->think through an index table at 0x008da788.
+   Next: the client (cl_input/cl_keys/cl_cgame), then cgame and game.
 2. Decompile in batches by subsystem (leaf functions first), `--compare` runs per
    batch, then mark tested ones `Replaced`.
 3. Stand-ins for common pure kernel calls in test processes (critical sections), so
