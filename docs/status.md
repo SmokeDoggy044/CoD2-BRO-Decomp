@@ -41,7 +41,9 @@ both. Scope: the NGL scene code (~0x0005d000-0x00066000), the RE_* refexport sid
 inlined render-state code. Start: measure its size and list its entry points, then
 name -> decompile -> --compare (screenshots), replaced as one module.
 Started 2026-10-18: the tr_* layer, NGL (frame, scenes, quads, meshes, textures, fonts,
-states) and the 23 shader classes are named; open items in naming.md (Renderer).
+states), the 23 shader classes, lighting, models, effects, NGL's matrices, fog pass, light sets and
+mesh builder are named (third pass 2026-10-18); open items in naming.md (Renderer). Next: decompile
+the renderer's leaf functions (matrix builders, setters) under --compare, or the client/UI naming.
 Each batch: CSV rows -> ApplyNames -> save -> ExportSymbols ->
 tools/smoke_test.sh -> commit. User decision 2026-10-17: decompilation only, no
 static recompilation.
