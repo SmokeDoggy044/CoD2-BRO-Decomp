@@ -10,7 +10,7 @@ loader builds) and the level-script string class (game/code/script_string.cpp,
 (57 to 9,669 tests each); Find, FindLast and SetChar are not reached from `--level`
 runs (only a front-end text dialog calls them). Next:
 1. Name engine functions after their Quake 3 / RTCW counterparts (Ghidra): in
-   progress, 783 functions + 392 globals so far - workflow, findings and next steps in
+   progress, 804 functions + 395 globals so far - workflow, findings and next steps in
    [naming.md](naming.md). Decision (user, 2026-10-17): keep naming before step 2,
    including CoD-specific code (AI, script, anim trees, vehicles) named from its
    bodies, so the decompilation and --compare work covers both CoD-specific and
