@@ -4,7 +4,9 @@
 Linux + Windows): 60 fps by default and system-link multiplayer from the campaign's
 Multiplayer item or the launcher's button, with mouse look, style remap, 60 fps,
 widescreen menus and aim assist in MP too (user-tested on one PC; design and open
-items in [multiplayer.md](multiplayer.md)). Next candidates:
+items in [multiplayer.md](multiplayer.md)). Since then: sharper text (all four game
+fonts redrawn from bundled OFL fonts; launcher toggle), not yet in a release or a
+user playtest. Next candidates:
 1. Multiplayer between two PCs, and v0.1.1 on real Windows (firewall prompt).
 2. The full native build plan + a list of every game-code patch and its intent (asked for).
 3. Heavy fights at 60 fps (mission 5 town), missions 7-13 playtests.
@@ -12,6 +14,21 @@ items in [multiplayer.md](multiplayer.md)). Next candidates:
    sample read 30 fps in-match once (not reproduced; log not kept).
 
 ## Current state (2026-10-16)
+
+- Sharper text (2026-10-17): `--sharp-text on|off` (default on; launcher "Sharper
+  text"). The game's text is four bitmap fonts, each a DDS atlas + a plain-text
+  `.fdf` glyph table in the packs (sp/global.cod: garamond 512x256 DXT1,
+  GemFontOne 256x256 DXT5, arialblack_14 256x256 DXT1 (a bold Times); sp/frontend.cod:
+  impact 256x256 DXT1 with mipmaps; mp/ has identical copies). All are white with
+  on/off alpha; all but impact have a 1-pixel dark shadow to the lower right inside
+  the glyph box. `text/` reads the packs (format in text/kapf.h), redraws each atlas
+  at max(2, ceil(render scale)) from the OFL stand-ins in fonts/, every glyph scaled
+  into its original ink box (the game's spacing stays), and the renderer swaps it in
+  by content hash (BackendConfig::replace_texture). GARA.TTF is a regular weight and
+  only feeds XFONT (Xbox Live UI), so it is not used. Checked in screenshots at
+  render scale 3: menus, dialogs, mission title cards, briefing hints; all four fonts
+  are replaced in a menu-to-mission run (Linux, and Wine for the Windows build).
+  Not swapped: the button icon fonts, the legal screen (an image).
 
 - **Prototype release:** private GitHub pre-release v0.1.0 (2026-10-16), Linux
   tar.gz + Windows zip; license GPL-2.0-or-later. Before going public:
@@ -193,12 +210,6 @@ Xbox Live is unavailable: no network, no accounts.
 
 ## Later
 
-- Sharper game text: the menus/HUD use pre-rendered bitmap fonts ("garamond" in
-  frontend.cod, GemFontOne, nglSysFont), not GARA.TTF (that one is XFONT for the
-  UIX Xbox Live screens, see games notes). Plan: find the font texture + glyph
-  table, rasterize the player's own media/GARA.TTF at 2-4x into the same layout
-  (reproduce any baked glow) and substitute it; fallback: an alpha edge-sharpening
-  pixel shader for font draws. Check first that the bitmap font is that Garamond.
 - Multiplayer (outline, unverified): system link needs no server software (a
   player's game hosts, Q3-style listen server). Steps: run codmp_xboxf.xbe (own
   symbols/patches), replace XNet with host UDP sockets, LAN discovery + join by IP;
