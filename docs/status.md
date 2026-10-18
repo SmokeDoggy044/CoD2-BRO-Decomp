@@ -43,22 +43,27 @@ name -> decompile -> --compare (screenshots), replaced as one module.
 Started 2026-10-18: the tr_* layer, NGL (frame, scenes, quads, meshes, textures, fonts,
 states), the 23 shader classes, lighting, models, effects, NGL's matrices, fog pass, light sets and
 mesh builder are named (third pass 2026-10-18); open items in naming.md (Renderer).
-Decompiling began 2026-10-18 (second session): 50 renderer leaf functions in
-game/code/ngl.cpp (quad/scene setters, matrix builders, nglDepthToZValue, light sets,
-frame allocators, texture helpers) and game/code/tr_main.cpp (myGLMultMatrix,
-RE_ClearScene, R_ClearFrameLists, far cull); 53 functions matched in total, none
+Decompiling began 2026-10-18: 62 renderer leaf functions in game/code/ngl.cpp (quad
+setters and rotate/scale, scene setters, matrix builders, nglDepthToZValue, light sets,
+frame allocators, texture helpers, mesh-builder bounds), game/code/tr_main.cpp
+(myGLMultMatrix, RE_ClearScene, R_ClearFrameLists, far cull, GLimp_Init, Q_PrintStrlen,
+RE_LoadWorldMap, R_AddViewModelRefEntity), game/code/dobj.cpp (bone base pose / parent /
+index) and game/code/fx.cpp (FX_AllocEffect); 61 functions matched in total, none
 mismatched. Not reached by --level 1/4 runs: nglColorToVec4, nglAllocFrameGpu,
-nglLightVectorWorld, nglPaletteSetEntry, RE_GetFarCullDist. `--compare` now runs
-without the PC features (`--pc-patches off`), so nglSetVBlankMode (hooked by the 60 fps
-pacing) is compared too. Skipped on purpose: nglSetAspect /
-nglSetViewMatrix / nglDynamicVB_EndFrame (tail calls into undecompiled code).
-Next batch (read, not written yet): nglRotateQuadVerts/nglRotateQuad (fsin/fcos on
-x87 - check results bit for bit), nglMeshBuilder_SetBounds, Q_PrintStrlen,
-DObj_GetBoneBasePose/Parent/Index, DObj_AnyModelHasFlags (EDI argument),
-FX_AllocEffect, R_AddViewModelRefEntity, RE_LoadWorldMap, GLimp_Init; then the
-bigger leaves (nglEvalPointLight, nglSelectMeshLightSet, R_SetupProjection,
-R_CopyFrustumPlanes, CM_CellForPoint, R_ClipPolygonToPlane, the std_* sort helpers),
-then functions that call others (title_function pointer or our own versions).
+nglLightVectorWorld, nglPaletteSetEntry, RE_GetFarCullDist, Q_PrintStrlen (one caller,
+0x00241a9b), DObj_GetBoneBasePose/Parent (XAnim callers at 0x0022xxxx), and
+nglScaleQuadVerts / nglRotateQuad (rotates the UVs; neither has direct callers).
+x87 sin/cos go through platform_x87_sin/cos (compiler.h; FSIN/FCOS under the title's
+precision control - nglRotateQuadVerts matched bit for bit). `--compare` runs without
+the PC features (`--pc-patches off`), so nglSetVBlankMode is compared too. Skipped on
+purpose: nglSetAspect / nglSetViewMatrix / nglDynamicVB_EndFrame (tail calls into
+undecompiled code), DObj_AnyModelHasFlags (flags in EDI - no C convention; needs an asm
+entry shim, which compiler.h does not have yet).
+Next batch: the bigger leaves (nglEvalPointLight, nglSelectMeshLightSet,
+R_SetupProjection, R_CopyFrustumPlanes, CM_CellForPoint, R_ClipPolygonToPlane, the std_*
+sort helpers; list more with SmallLeaves.java over 0x0005d000-0x0007c000 and
+0x00234000-0x0023c000), then functions that call others (title_function pointer or our
+own versions).
 Each batch: CSV rows -> ApplyNames -> save -> ExportSymbols ->
 tools/smoke_test.sh -> commit. User decision 2026-10-17: decompilation only, no
 static recompilation.
