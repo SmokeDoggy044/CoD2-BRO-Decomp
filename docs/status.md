@@ -19,7 +19,9 @@ loader builds) and the first three functions (level-script strings, 0x0011d5e0 /
    Manual matching (`tools/data/manual_names.csv`, address/name/kind/confidence/
    evidence; applied with ApplyNames.java): Cvar, Cmd/Cbuf, Com_Frame/event loop,
    FS, client input (CL_CreateCmd parts, IN_KeyDown/Up, CL_KeyState), Com_Init,
-   SV_Init - 60 functions + 40 globals (2026-10-17); plus 75 cvar_t* globals named
+   SV_Init, q_shared (Q_stricmp/strcat/strncmp, Info_*, Swap_Init + byte-order
+   helpers, COM_ParseExt), MSG_Read/WriteLong, CM area/PVS/leaf helpers, CL_GetSnapshot/
+   GetUserCmd, PM_DropTimers - 104 functions + 51 globals (2026-10-17); plus 75 cvar_t* globals named
    after their cvars by `tools/ghidra/CvarGlobals.java` (`tools/data/cvar_globals.csv`;
    Q3 global names win where they differ, e.g. com_sv_running for "sv_running"). Notes: Com_Error/G_Error calls
    compile to `__break(code, message)` here; cvar_t is Q3's (0x2c bytes);
