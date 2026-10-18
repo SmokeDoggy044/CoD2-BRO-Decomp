@@ -48,8 +48,9 @@ game/code/ngl.cpp (quad/scene setters, matrix builders, nglDepthToZValue, light 
 frame allocators, texture helpers) and game/code/tr_main.cpp (myGLMultMatrix,
 RE_ClearScene, R_ClearFrameLists, far cull); 53 functions matched in total, none
 mismatched. Not reached by --level 1/4 runs: nglColorToVec4, nglAllocFrameGpu,
-nglLightVectorWorld, nglPaletteSetEntry, RE_GetFarCullDist. Skipped on purpose:
-nglSetVBlankMode (the loader's frame-pacing patch hooks it), nglSetAspect /
+nglLightVectorWorld, nglPaletteSetEntry, RE_GetFarCullDist. `--compare` now runs
+without the PC features (`--pc-patches off`), so nglSetVBlankMode (hooked by the 60 fps
+pacing) is compared too. Skipped on purpose: nglSetAspect /
 nglSetViewMatrix / nglDynamicVB_EndFrame (tail calls into undecompiled code).
 Next batch (read, not written yet): nglRotateQuadVerts/nglRotateQuad (fsin/fcos on
 x87 - check results bit for bit), nglMeshBuilder_SetBounds, Q_PrintStrlen,
