@@ -7,8 +7,8 @@ widescreen menus and aim assist in MP too (user-tested on one PC; design and ope
 items in [multiplayer.md](multiplayer.md)). Since then: v0.1.2 (private test pre-release)
 adds sharper text (all four game fonts redrawn from bundled OFL fonts; launcher
 toggle, default on); not yet user-playtested. v0.1.3 (private test pre-release) adds
-the mouse in the menus (campaign and multiplayer); since then "Press A to start the
-game" after loading takes a click too (in-game screen 5, ready flag +0x38;
+the mouse in the menus (campaign and multiplayer); v0.1.4 (private test pre-release):
+"Press A to start the game" after loading takes a click too (in-game screen 5, ready flag +0x38;
 user-tested). Next candidates:
 1. Multiplayer between two PCs, and v0.1.1 on real Windows (firewall prompt).
 2. The full native build plan + a list of every game-code patch and its intent (asked for).
