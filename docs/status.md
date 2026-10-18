@@ -8,7 +8,7 @@ Done: the [comparison harness](comparison-harness.md) (`--compare`,
 loader builds) and the first three functions (level-script strings, 0x0011d5e0 /
 0x0011d7c0 / 0x0011db70: 2,263 tests in mission 1, all matched). Next:
 1. Name engine functions after their Quake 3 / RTCW counterparts (Ghidra): in
-   progress, 466 functions + 302 globals so far - workflow, findings and next steps in
+   progress, 498 functions + 303 globals so far - workflow, findings and next steps in
    [naming.md](naming.md). Decision (user, 2026-10-17): keep naming before step 2,
    including CoD-specific code (AI, script, anim trees, vehicles) named from its
    bodies, so the decompilation and --compare work covers both CoD-specific and
