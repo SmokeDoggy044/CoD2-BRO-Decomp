@@ -142,6 +142,22 @@ inconclusive; 197 matched in all). nglSetPaletteCached is not reached (no palett
 textures there). Next: the shader classes' Draw slots (0x00046900-0x00054ad0, 22
 classes, 490-2,800 bytes; they inline the state cache's tests and call the helpers
 above), then their Register slots (startup only).
+Eleventh batch (2026-10-19): the first shader Draw slots in
+game/code/shaders.cpp with shared helpers (cull mode, scene fog colour/enable, WVP
+constants 6..9, object lights 6..17, stage-0 texture, blend-cache reset): cdWorldVertexLit,
+cdBackground, cdSimplePrelit, cdPrelit (fog off, optional stage-1 texture), ShaderPCUV
+(decal bias from the instance parameters), cdGunSight/cdGun/cdSimple (one lit template),
+plus nglSetTextureAnimFrame (0x000476b0, newly named); all reached ones matched in
+missions 1/4 (cdSimple 201, cdSimplePrelit 200, cdGunSight 143, cdBackground 42,
+ShaderPCUV 24); cdGun, cdPrelit, cdWorldVertexLit not reached there - try missions 2/3/5.
+**Resume here:** next Draws, already read in Ghidra: cdChar_Draw (0x0004bd00: cull 0,
+lit, nglSetTextureAnimFrame, then nglSetSkinningConstants(-0x4c, drawnode, section) at
+0x00076620 - title call, transform -0x4e, vs 0x902054, ps pick(0x902050, 0x90204c)) and
+cdSimpleUVAnim_Draw (0x0004d610: the lit template plus FUN_0004d560(out) filling 4 more
+constants after the lights (0x34 dwords), transform -0x4d, vs 0x902090, ps pick(0x902098,
+0x90208c)); then cdDebug, cdPropeller, cdDecal, cdOcean, cdWater, then the big ones
+(AirplaneMetal, Glass, Sky, SimpleAlpha, World, WorldBlend). Read the disassembly for each
+call order; Ghidra's C keeps it.
 Not reached by --level 1/4 runs (zlib unused there): inflate_fast. Left among the leaves:
 nglMatrixOrthoOffCenter, 0x000683a0 and 0x0006fb30 (no callers), nglInitRenderStates
 (tail call). Next batch: more callers, bottom-up: nglListAddMesh's callers (R_AddStaticModel
