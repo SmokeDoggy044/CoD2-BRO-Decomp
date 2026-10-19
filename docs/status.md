@@ -91,6 +91,18 @@ platform_rcp_estimate), nglNode_ViewDepth, nglNode_CalcWorldMatrix, nglListAddNo
 managers' find/add-ref/release wrappers (vtable slots 2/7/8); 143 matched in all.
 nglReleaseMeshFile is always inconclusive (the release reaches the replaced D3D code),
 nglFindFontAddRef not reached.
+Eighth batch (2026-10-18): nglListAddMesh (0x00068850; the per-instance NglMeshDrawNode in
+scene memory: world matrix, world * view_projection transposed, LOD, frustum cull, each
+section's shader slot 2), nglComputeObjectLights (0x00070200, four object lights in object
+space + colours + ambient), nglNode_GetWorldInverse (0x00049750, formerly misnamed
+GetWorldViewProj: the cached rigid inverse), nglSetDecalZBias (x87 unsigned-to-float:
+platform_x87_unsigned_to_float; inconclusive whenever it sends a render state, which
+reaches the replaced SetRenderState_Simple), nglMaterialFindTexture(OrDefault) and the
+eight nglMaterial_* load/release slots; 154 matched in all. Not tested yet:
+nglMaterial_LoadTextureRef, nglMaterial_ReleaseTwoTextures(Clear) (no tested calls in
+missions 1/4). functions.csv is now written under a lock with a per-process temporary
+file, so --compare runs of several missions can run at once (a shared .tmp had
+interleaved two runs' writes).
 Not reached by --level 1/2/4 runs: nglColorToVec4, nglPaletteSetEntry, RE_GetFarCullDist,
 Q_PrintStrlen, nglScaleQuadVerts, nglRotateQuad, std_PushHeap_* (heap sort fallback
 only), nglIndexBuffer_Clear, inflate_trees_fixed, FX_FindEvictableEffect (pool never
@@ -106,9 +118,9 @@ thread's counter),
 bytes), 1-4 byte functions (too short for the harness's jump).
 Not reached by --level 1/4 runs (zlib unused there): inflate_fast. Left among the leaves:
 nglMatrixOrthoOffCenter, 0x000683a0 and 0x0006fb30 (no callers), nglInitRenderStates
-(tail call). Next batch: more callers, bottom-up: nglListAddMesh (0x00068850, 1,812 bytes, all
-callees done), nglComputeObjectLights (0x00070200), nglSetDecalZBias, the nglMaterial_*
-load/release helpers (call nglLoadTexture/nglReleaseTexture), the tr_* callers of
+(tail call). Next batch: more callers, bottom-up: nglListAddMesh's callers (R_AddStaticModel
+0x002438b0 and the other R_* model adders), the shader classes' slot-2 "add section"
+methods it calls, nglSetTransformConstants (0x000776f0), the tr_* callers of
 R_SetupProjection; nglSetDefaultSceneParams (0x00062a70) stays untestable while it calls
 the replaced nglGetBackBufferTexture. ESI-argument functions (R_AddRefEntityToScene,
 R_ApplyCachedLighting) need an asm entry shim. Needs an asm
