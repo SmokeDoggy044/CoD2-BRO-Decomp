@@ -76,6 +76,13 @@ Sixth batch (2026-10-18): nglSetViewportNormalized, nglGetMatrix, nglProjectPoin
 R_ClearAlpha; 129 matched in all. nglProjectPoint (and the *Copy wrappers) not reached
 by --level 1/4; R_ClearAlpha always inconclusive (its last scene's nglSetDefaultSceneParams
 calls the replaced nglGetBackBufferTexture - host code); nglAddPointLight 23 of 23 so far.
+nglUpdateScene (2026-10-18, ~1,900 instructions): viewport mapping, the field of view's
+packed sine polynomial (cos/sin of half the angle), projection = base * viewport *
+target scale, the camera (rigid inverse of the view matrix), view * projection,
+clip-to-screen, the six world-space frustum planes (+0x270; x87 1/sqrt(v*v+1):
+platform_x87_rcp_sqrt_sq_plus_one) and screen-to-target; 280 matched in missions 1 and 4,
+none mismatched (130 matched in all). std::fabs is out of line at -O0 (the loader's copy
+runs: "called host code") - use abs_bits.
 Not reached by --level 1/2/4 runs: nglColorToVec4, nglPaletteSetEntry, RE_GetFarCullDist,
 Q_PrintStrlen, nglScaleQuadVerts, nglRotateQuad, std_PushHeap_* (heap sort fallback
 only), nglIndexBuffer_Clear, inflate_trees_fixed, FX_FindEvictableEffect (pool never
@@ -91,10 +98,9 @@ thread's counter),
 bytes), 1-4 byte functions (too short for the harness's jump).
 Not reached by --level 1/4 runs (zlib unused there): inflate_fast. Left among the leaves:
 nglMatrixOrthoOffCenter, 0x000683a0 and 0x0006fb30 (no callers), nglInitRenderStates
-(tail call). Next batch: more callers, bottom-up: nglUpdateScene (0x0005fc90, the
-matrix rebuild every setter calls; uses FUN_00073e90 and FUN_00073ad0, a polynomial tan
-with constants at 0x008a1e30), nglSetDefaultSceneParams (0x00062a70), the
-nglMaterial_* texture helpers and the tr_* callers of R_SetupProjection. Needs an asm
+(tail call). Next batch: more callers, bottom-up: the target scale matrix
+(0x00073e90 -> 0x00073ce0), nglSetDefaultSceneParams (0x00062a70; untestable while it
+calls the replaced nglGetBackBufferTexture), the nglMaterial_* texture helpers and the tr_* callers of R_SetupProjection. Needs an asm
 shim: R_SetupEntityOrientation (EAX/ECX/EDX in, calls R_RotateForEntity with ESI/EDI),
 R_DrawFilledRect (colour pointer in ESI).
 Each batch: CSV rows -> ApplyNames -> save -> ExportSymbols ->
