@@ -150,14 +150,31 @@ cdBackground, cdSimplePrelit, cdPrelit (fog off, optional stage-1 texture), Shad
 plus nglSetTextureAnimFrame (0x000476b0, newly named); all reached ones matched in
 missions 1/4 (cdSimple 201, cdSimplePrelit 200, cdGunSight 143, cdBackground 42,
 ShaderPCUV 24); cdGun, cdPrelit, cdWorldVertexLit not reached there - try missions 2/3/5.
-**Resume here:** next Draws, already read in Ghidra: cdChar_Draw (0x0004bd00: cull 0,
-lit, nglSetTextureAnimFrame, then nglSetSkinningConstants(-0x4c, drawnode, section) at
-0x00076620 - title call, transform -0x4e, vs 0x902054, ps pick(0x902050, 0x90204c)) and
-cdSimpleUVAnim_Draw (0x0004d610: the lit template plus FUN_0004d560(out) filling 4 more
-constants after the lights (0x34 dwords), transform -0x4d, vs 0x902090, ps pick(0x902098,
-0x90208c)); then cdDebug, cdPropeller, cdDecal, cdOcean, cdWater, then the big ones
-(AirplaneMetal, Glass, Sky, SimpleAlpha, World, WorldBlend). Read the disassembly for each
-call order; Ghidra's C keeps it.
+Twelfth batch (2026-10-19), the remaining shader Draw slots (read with the skill's
+`xbefunc.py`, no Ghidra session): cdChar (skinning constants through the title's
+nglSetSkinningConstants), cdSimpleUVAnim (+ cdSimpleUVAnim_GetUVParams 0x0004d560, newly
+named), cdDebug, cdDecal, cdWater, cdOcean (shaders from the node class's vtable;
+cdOcean_SetWaveConstants 0x0004f810 newly named, called through title_function),
+cdPropeller, cdWorld and cdWorldBlend (one draw_world with per-class textures: lights,
+the first shadow projector, the dynamic-light passes), cdAirplaneMetal, cdSky (x87
+angle: platform_x87_sin_cos_of_product), cdGlass (nglNode_GetWorldViewRotation
+0x00049280, newly named) and nglDebugShader_Draw; packed lane math moved to
+game/code/lanes.h. Several Draws send constant lanes the title never sets: test
+processes now zero the dead stack below the entry ESP ([comparison
+harness](comparison-harness.md)), and the decomp writes zeros there (planted check: without
+it cdWorld_Draw mismatched 839 of 1,344). Missions 1-12: 16 of 21 Draws reached, all
+matched, none mismatched (cdWorld 1,081, cdChar 645, cdSky 608, cdWorldBlend 535, cdDecal
+514, cdGlass 349, cdSimpleUVAnim 287, cdPropeller 203, cdAirplaneMetal 124, cdOcean 100);
+219 matched in all. Not reached in 1-12: cdGun, cdWater, cdDebug, cdWorldVertexLit,
+nglDebugShader (their AddToList slots are not reached either). The three new names are
+in tools/data/manual_names.csv only: run ApplyNames + ExportSymbols in the next Ghidra
+session.
+**Resume here:** cdSimpleAlpha_Draw (0x00049e40) is the last Draw: it calls
+0x00049cd0 with EAX/ECX pointers and a float in XMM1 (needs an asm entry shim) and
+0x00049c30 under the debug override at 0x0089aff0. With the stack zeroed, the functions
+skipped for copying uninitialized stack slots (nglSelectMeshLightSet 0x0006fe00,
+0x0023be90, huft_build) may be testable now - retry them. Then the Register slots and
+the callers (R_AddStaticModel etc., below).
 Not reached by --level 1/4 runs (zlib unused there): inflate_fast. Left among the leaves:
 nglMatrixOrthoOffCenter, 0x000683a0 and 0x0006fb30 (no callers), nglInitRenderStates
 (tail call). Next batch: more callers, bottom-up: nglListAddMesh's callers (R_AddStaticModel
