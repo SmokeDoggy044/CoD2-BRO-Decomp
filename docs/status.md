@@ -83,6 +83,14 @@ clip-to-screen, the six world-space frustum planes (+0x270; x87 1/sqrt(v*v+1):
 platform_x87_rcp_sqrt_sq_plus_one) and screen-to-target; 280 matched in missions 1 and 4,
 none mismatched (130 matched in all). std::fabs is out of line at -O0 (the loader's copy
 runs: "called host code") - use abs_bits.
+Seventh batch (2026-10-18): the target scale matrix (nglMatrixTargetScale 0x00073ce0,
+nglGetSceneTargetScale 0x00073e90; nglUpdateScene now calls ours, re-checked with
+--compare-all: 1,229 matched), nglAddShadowProjector (0x000704f0, RCPPS + Newton step:
+platform_rcp_estimate), nglNode_ViewDepth, nglNode_CalcWorldMatrix, nglListAddNode (scene
++0x304..+0x310 opaque/translucent lists), nglMaterial_Relocate/Relocate2 and the resource
+managers' find/add-ref/release wrappers (vtable slots 2/7/8); 143 matched in all.
+nglReleaseMeshFile is always inconclusive (the release reaches the replaced D3D code),
+nglFindFontAddRef not reached.
 Not reached by --level 1/2/4 runs: nglColorToVec4, nglPaletteSetEntry, RE_GetFarCullDist,
 Q_PrintStrlen, nglScaleQuadVerts, nglRotateQuad, std_PushHeap_* (heap sort fallback
 only), nglIndexBuffer_Clear, inflate_trees_fixed, FX_FindEvictableEffect (pool never
@@ -98,9 +106,12 @@ thread's counter),
 bytes), 1-4 byte functions (too short for the harness's jump).
 Not reached by --level 1/4 runs (zlib unused there): inflate_fast. Left among the leaves:
 nglMatrixOrthoOffCenter, 0x000683a0 and 0x0006fb30 (no callers), nglInitRenderStates
-(tail call). Next batch: more callers, bottom-up: the target scale matrix
-(0x00073e90 -> 0x00073ce0), nglSetDefaultSceneParams (0x00062a70; untestable while it
-calls the replaced nglGetBackBufferTexture), the nglMaterial_* texture helpers and the tr_* callers of R_SetupProjection. Needs an asm
+(tail call). Next batch: more callers, bottom-up: nglListAddMesh (0x00068850, 1,812 bytes, all
+callees done), nglComputeObjectLights (0x00070200), nglSetDecalZBias, the nglMaterial_*
+load/release helpers (call nglLoadTexture/nglReleaseTexture), the tr_* callers of
+R_SetupProjection; nglSetDefaultSceneParams (0x00062a70) stays untestable while it calls
+the replaced nglGetBackBufferTexture. ESI-argument functions (R_AddRefEntityToScene,
+R_ApplyCachedLighting) need an asm entry shim. Needs an asm
 shim: R_SetupEntityOrientation (EAX/ECX/EDX in, calls R_RotateForEntity with ESI/EDI),
 R_DrawFilledRect (colour pointer in ESI).
 Each batch: CSV rows -> ApplyNames -> save -> ExportSymbols ->
