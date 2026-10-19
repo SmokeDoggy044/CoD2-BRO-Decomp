@@ -225,8 +225,23 @@ fills with permuted rotation values - most likely matrix lanes it never sets and
 stale stack (in the original, what nglGetMatrix left there). Expected to go away once
 R_AddEntityModel / R_AddDObjSurfaces are ours (zero those lanes); until then R_RenderView
 stays Compare with these mismatches on record.
-**Resume here:** next, R_AddEntityModel 0x00245a20 (EAX entry) and R_AddDObjSurfaces
-0x00244020 (they explain R_RenderView's mismatches), then more renderer callers bottom-up
+DObj batch (2026-10-19, tr_main.cpp): R_AddDObjSurfaces (0x00244020, 6.4 KB: lighting,
+LOD limits, rigid/skinned meshes, far-distance pull-in, entity scale, shadow copies) and
+R_AddEntityModel (0x00245a20, EAX). Both entries rebuild the original's frame:
+R_AddDObjSurfaces' two instance blocks (frame +0xf0 rigid, +0x130 skinned) are only partly
+written and nglListAddMesh copies all 0x30 bytes, so they stay at the original addresses
+with whatever is there; R_AddEntityModel calls it at the original's position
+(title_call_at). Mission 4: R_AddDObjSurfaces 5,593, R_AddEntityModel 5,602,
+R_AddEntitySurfaces (now calling both) 204 matched, none mismatched. Newly named:
+DObj_SetMinLod, DObj_SetForcedLod, DObj_GetCoarsestLod, XModel_GetLodParts,
+R_DrawDObjSkeleton. R_RenderView's remaining mismatches are only those unset block
+fields (copied stack garbage): R_AddEntitySurfaces calls R_AddDObjSurfaces at two depths
+0x120 apart (directly, and via R_AddEntityModel), so the direct call's unset fields hold
+the via call's spilled matrix rows (frame +0x210..+0x27f), and the rest comes from
+whatever else ran at that depth. Matching that needs every function in the subtree to
+leave the same stack garbage (our C bodies and the 16 KB scrub after our calls do not):
+left as known, R_RenderView stays Compare with them on record.
+**Resume here:** next, more renderer callers bottom-up
 (`tools/progress.py --module renderer --state named`), then the shader classes'
 Register slots. Start parallel --compare runs ~5 s apart: three at once once
 crashed DXVK at startup (VK_INCOMPLETE querying surface formats).
