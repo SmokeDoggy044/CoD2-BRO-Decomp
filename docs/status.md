@@ -184,10 +184,20 @@ speed was caught (helper and Draw). Not reached: cdSimpleAlpha_ClampDebugPulse (
 override only), R_CullPointAndRadius (its only caller 0x00235910 has no callers),
 R_SetInstanceColor (the mesh-builder draw 0x002d0680, behind the jump stub 0x0001d0d6).
 huft_build stays skipped (zlib is not used in --level runs).
-**Resume here:** with entry shims available, the ESI/EDI callers listed below
-(R_AddRefEntityToScene, R_ApplyCachedLighting, R_AddStaticModel, R_AddCellEntityLink,
-R_LayoutTextWithIcons, R_SetupEntityOrientation - this one also calls R_RotateForEntity
-with ESI/EDI, which needs an outgoing shim the other way) are next, then the Register slots.
+Fourteenth batch (2026-10-19), the ESI/EDI callers in game/code/tr_main.cpp:
+R_ApplyCachedLighting (ESI; RCachedLighting: ambient, three colours, three directions,
+count), R_AddRefEntityToScene (ESI = refEntity, record starts 0x80 before it),
+R_AddCellEntityLink (EDI/ECX/EDX; RCellEntityLink), R_AddStaticModel (EAX; RStaticModel:
+cached lighting, light-grid lookup at the origin then raised twice, scale block, bone
+matrices times the model's in packed lanes, nglListAddMesh per bone), R_RotateForEntity
+(EAX/ESI/EDI; ROrientation), R_SetupEntityOrientation, R_LayoutTextWithIcons (EAX/EBX + 3
+stack args). Missions 1-5: R_AddRefEntityToScene, R_AddCellEntityLink,
+R_ApplyCachedLighting 300 matched each, R_AddStaticModel 108, none mismatched; 233 matched
+in all. Not reached: R_SetupEntityOrientation and R_RotateForEntity (no callers at all -
+dead code), R_LayoutTextWithIcons (only RE_DrawTextWithIcons/RE_TextWidthWithIcons through
+the refexport table; not reached in missions 1-5 or the front end).
+**Resume here:** more renderer callers bottom-up (`tools/progress.py --module renderer
+--state named` lists them), then the shader classes' Register slots.
 Not reached by --level 1/4 runs (zlib unused there): inflate_fast. Left among the leaves:
 nglMatrixOrthoOffCenter, 0x000683a0 and 0x0006fb30 (no callers), nglInitRenderStates
 (tail call). Next batch: more callers, bottom-up: nglListAddMesh's callers (R_AddStaticModel
