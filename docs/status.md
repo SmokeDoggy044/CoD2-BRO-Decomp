@@ -203,17 +203,14 @@ _Sort as nglSortOpaqueNodes_r/nglSortTranslucentNodes_r; 14 functions). Missions
 two sorts, both insertion sorts, both medians and both partitions matched (50-300 tests
 each), none mismatched; 241 matched in all. The heap fallback (std_MakeHeap/SortHeap/
 AdjustHeap/PushHeap) never runs: _Sort only takes it when `ideal` runs out.
-**Resume here:** next batch, the cell/lighting helpers (read, not written yet):
-R_CellForViewOrigin 0x0023cd30 (CM_CellForPoint with EDX = (view origin 0x0095e240..48,
-x again), ERR_DROP when no world 0x0095e608), R_UnlinkEntityFromCells 0x00236d30 (stack arg
-entity; frees each cell link whose entity +0xe0 matches via thiscall 0x00044910 on
-0x0095f6d4), R_AddCellModels 0x00243fd0 (EAX = cell; models list +0x34, frame-stamp +0xe4 as
-float vs int 0x0095e39c, then R_AddStaticModel, count 0x0095c190), R_SetDefaultLighting
-0x0023cda0 (static direction/colour 0x0098bc60/70, guards 0x0098bc80; colour * 0x0083ef60
-light, ambient = colour * 0x008db118), then R_GetCellLighting 0x0023e510 (EAX pos, ECX
-out), R_LinkEntityToCells_r, R_AddCellSurfaces, R_VisitCell_r. After that more renderer
-callers bottom-up (`tools/progress.py --module renderer --state named`), then the shader
-classes' Register slots. Start parallel --compare runs ~5 s apart: three at once once
+Cell/lighting batch done (2026-10-19, tr_main.cpp): CM_CellForPoint, R_CellForViewOrigin,
+R_SetDefaultLighting, R_GetCellLighting (R_AddStaticModel now calls ours), R_UnlinkEntityFromCells,
+R_LinkEntityToCell (EDI entry), R_LinkEntityToCells_r, R_AddCellModels, R_AddCellSurfaces (ESI
+entry), R_VisitCell_r; all 10 matched in missions 1/4/5, none mismatched.
+**Resume here:** next, R_ClipFrustumToPortal 0x0023cb30 (EAX = &count out, EDX = portal, ECX =
+planes, stack: from_portal, count; returns planes the caller Z_Frees) and R_VisitCell_r's caller, then
+more renderer callers bottom-up (`tools/progress.py --module renderer --state named`), then the
+shader classes' Register slots. Start parallel --compare runs ~5 s apart: three at once once
 crashed DXVK at startup (VK_INCOMPLETE querying surface formats).
 Not reached by --level 1/4 runs (zlib unused there): inflate_fast. Left among the leaves:
 nglMatrixOrthoOffCenter, 0x000683a0 and 0x0006fb30 (no callers), nglInitRenderStates
