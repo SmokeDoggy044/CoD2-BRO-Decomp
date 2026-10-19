@@ -166,9 +166,7 @@ it cdWorld_Draw mismatched 839 of 1,344). Missions 1-12: 16 of 21 Draws reached,
 matched, none mismatched (cdWorld 1,081, cdChar 645, cdSky 608, cdWorldBlend 535, cdDecal
 514, cdGlass 349, cdSimpleUVAnim 287, cdPropeller 203, cdAirplaneMetal 124, cdOcean 100);
 219 matched in all. Not reached in 1-12: cdGun, cdWater, cdDebug, cdWorldVertexLit,
-nglDebugShader (their AddToList slots are not reached either). The three new names are
-in tools/data/manual_names.csv only: run ApplyNames + ExportSymbols in the next Ghidra
-session.
+nglDebugShader (their AddToList slots are not reached either). The three new names are applied in Ghidra and exported.
 **Resume here:** cdSimpleAlpha_Draw (0x00049e40) is the last Draw: it calls
 0x00049cd0 with EAX/ECX pointers and a float in XMM1 (needs an asm entry shim) and
 0x00049c30 under the debug override at 0x0089aff0. With the stack zeroed, the functions
