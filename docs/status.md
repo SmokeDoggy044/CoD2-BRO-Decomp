@@ -207,10 +207,14 @@ Cell/lighting batch done (2026-10-19, tr_main.cpp): CM_CellForPoint, R_CellForVi
 R_SetDefaultLighting, R_GetCellLighting (R_AddStaticModel now calls ours), R_UnlinkEntityFromCells,
 R_LinkEntityToCell (EDI entry), R_LinkEntityToCells_r, R_AddCellModels, R_AddCellSurfaces (ESI
 entry), R_VisitCell_r; all 10 matched in missions 1/4/5, none mismatched.
-**Resume here:** next, R_ClipFrustumToPortal 0x0023cb30 (EAX = &count out, EDX = portal, ECX =
-planes, stack: from_portal, count; returns planes the caller Z_Frees) and R_VisitCell_r's caller, then
-more renderer callers bottom-up (`tools/progress.py --module renderer --state named`), then the
-shader classes' Register slots. Start parallel --compare runs ~5 s apart: three at once once
+Then R_ClipFrustumToPortal and R_ClipPortalWinding (the portal frustum: edge planes
+through Q_rsqrt, bevels from the projected bounds with r_portalbevels 0.7; MSVC's 4x
+unrolled loops sum in a different order in the first copy of each group, see
+`unrolled_first`): both matched (200 tests), R_VisitCell_r calls ours.
+**Resume here:** next, R_VisitCell_r's caller R_AddWorldSurfaces 0x00246fa0 and
+R_SetupCullPlanes 0x002388c0, then more renderer callers bottom-up
+(`tools/progress.py --module renderer --state named`), then the shader classes'
+Register slots. Start parallel --compare runs ~5 s apart: three at once once
 crashed DXVK at startup (VK_INCOMPLETE querying surface formats).
 Not reached by --level 1/4 runs (zlib unused there): inflate_fast. Left among the leaves:
 nglMatrixOrthoOffCenter, 0x000683a0 and 0x0006fb30 (no callers), nglInitRenderStates
