@@ -196,6 +196,13 @@ R_ApplyCachedLighting 300 matched each, R_AddStaticModel 108, none mismatched; 2
 in all. Not reached: R_SetupEntityOrientation and R_RotateForEntity (no callers at all -
 dead code), R_LayoutTextWithIcons (only RE_DrawTextWithIcons/RE_TextWidthWithIcons through
 the refexport table; not reached in missions 1-5 or the front end).
+Fifteenth batch (2026-10-19): the rest of the draw lists' std::sort in game/code/ngl.cpp, one
+template set over both node types (MSVC VC7 Dinkumware: _Adjust_heap, _Make_heap, sort_heap,
+_Insertion_sort with _Rotate, _Median, _Unguarded_partition with its hidden-pointer pair,
+_Sort as nglSortOpaqueNodes_r/nglSortTranslucentNodes_r; 14 functions). Missions 1/4/5: the
+two sorts, both insertion sorts, both medians and both partitions matched (50-300 tests
+each), none mismatched; 241 matched in all. The heap fallback (std_MakeHeap/SortHeap/
+AdjustHeap/PushHeap) never runs: _Sort only takes it when `ideal` runs out.
 **Resume here:** more renderer callers bottom-up (`tools/progress.py --module renderer
 --state named` lists them), then the shader classes' Register slots.
 Not reached by --level 1/4 runs (zlib unused there): inflate_fast. Left among the leaves:
