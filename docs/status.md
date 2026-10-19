@@ -61,12 +61,21 @@ DObj_TraceBoneBoxes (0x0023a590, bullet traces against bone hit boxes; its sqrt 
 runs on the x87: platform_x87_sub_sqrt_ge), nglBuildProjectorPlanes (0x00070b00),
 nglMatrixSceneClipToScreen (packed DIVPS lanes kept for MXCSR's invalid flag:
 platform_keep), inflate_fast; 103 matched in all.
+Fifth batch (2026-10-18), the first callers: the scene camera/viewport setters
+(nglSetSceneViewportRect, nglSetViewportRect, nglSetAspect/Perspective/Orthographic,
+nglSetViewMatrix, nglSetCameraMatrix, nglGetViewMatrix), nglListAddQuad,
+nglAddDirectionalLight, nglEvalFirstObjectLight, R_SetupFog, RE_SetColor (MSVC _ftol:
+platform_ftol), RE_StretchPic, RE_DrawQuadPic, RE_TextHeight; title functions not
+decompiled yet are called through `title_function<F>(address)` (title_data.h), and a
+hooked function reached inside a test process now runs its original straight from the
+stub. 123 matched in all (recounted from functions.csv). Not reached: nglGetMatrixCopy,
+nglProjectPointCopy, nglEvalLight, R_DrawPic.
 Not reached by --level 1/2/4 runs: nglColorToVec4, nglPaletteSetEntry, RE_GetFarCullDist,
 Q_PrintStrlen, nglScaleQuadVerts, nglRotateQuad, std_PushHeap_* (heap sort fallback
 only), nglIndexBuffer_Clear, inflate_trees_fixed, FX_FindEvictableEffect (pool never
 full), XModel_GetBoneCount. x87 sin/cos/tan go through platform_x87_* and RSQRTSS through
 platform_rsqrt_estimate (compiler.h). `--compare` runs without the PC features
-(`--pc-patches off`). Skipped on purpose: nglSetAspect / nglSetViewMatrix /
+(`--pc-patches off`). Skipped on purpose:
 nglDynamicVB_EndFrame (tail calls into undecompiled code), DObj_AnyModelHasFlags (flags
 in EDI - needs an asm entry shim; also R_AddCellEntityLink, 0x0023b2e0 in ESI),
 nglSelectMeshLightSet, 0x0023be90 and huft_build (paths copy uninitialized stack
@@ -76,9 +85,12 @@ thread's counter),
 bytes), 1-4 byte functions (too short for the harness's jump).
 Not reached by --level 1/4 runs (zlib unused there): inflate_fast. Left among the leaves:
 nglMatrixOrthoOffCenter, 0x000683a0 and 0x0006fb30 (no callers), nglInitRenderStates
-(tail call). Next batch: functions that call others, bottom-up from the leaves done
-(our own versions or the title's through a function pointer), starting with the NGL
-scene/matrix setters (nglSetAspect, nglSetViewMatrix) and the tr_* callers of R_SetupProjection.
+(tail call). Next batch: more callers, bottom-up: nglUpdateScene (0x0005fc90, the
+matrix rebuild every setter calls), nglSetViewportNormalized (0x000619a0), nglGetMatrix /
+nglProjectPoint, nglPushScene/nglInitScene, nglAddPointLight, R_ClearAlpha, the
+nglMaterial_* texture helpers and the tr_* callers of R_SetupProjection. Needs an asm
+shim: R_SetupEntityOrientation (EAX/ECX/EDX in, calls R_RotateForEntity with ESI/EDI),
+R_DrawFilledRect (colour pointer in ESI).
 Each batch: CSV rows -> ApplyNames -> save -> ExportSymbols ->
 tools/smoke_test.sh -> commit. User decision 2026-10-17: decompilation only, no
 static recompilation.
