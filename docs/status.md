@@ -56,7 +56,11 @@ none mismatched. Third batch (2026-10-18): nglSkipList_Find, nglMeshFileFindMesh
 nglVideoMode_Init/Copy, nglResetFrameStats, nglTextureSetPixel, nglSetTextureAddressMode,
 nglLightSetAddProjector, nglGetTargetSampleScale, nglInitShaderConstantTable,
 R_AddCellEntities, FX_FindEvictableEffect, XModel_GetBoneCount, nglSelectMeshLod,
-nglScaleMeshMatrix; 101 matched in all.
+nglScaleMeshMatrix; 101 matched in all. Fourth batch (2026-10-18): the big leaves -
+DObj_TraceBoneBoxes (0x0023a590, bullet traces against bone hit boxes; its sqrt test
+runs on the x87: platform_x87_sub_sqrt_ge), nglBuildProjectorPlanes (0x00070b00),
+nglMatrixSceneClipToScreen (packed DIVPS lanes kept for MXCSR's invalid flag:
+platform_keep), inflate_fast; 103 matched in all.
 Not reached by --level 1/2/4 runs: nglColorToVec4, nglPaletteSetEntry, RE_GetFarCullDist,
 Q_PrintStrlen, nglScaleQuadVerts, nglRotateQuad, std_PushHeap_* (heap sort fallback
 only), nglIndexBuffer_Clear, inflate_trees_fixed, FX_FindEvictableEffect (pool never
@@ -65,16 +69,16 @@ platform_rsqrt_estimate (compiler.h). `--compare` runs without the PC features
 (`--pc-patches off`). Skipped on purpose: nglSetAspect / nglSetViewMatrix /
 nglDynamicVB_EndFrame (tail calls into undecompiled code), DObj_AnyModelHasFlags (flags
 in EDI - needs an asm entry shim; also R_AddCellEntityLink, 0x0023b2e0 in ESI),
-nglSelectMeshLightSet and 0x0023be90 (paths copy uninitialized stack slots),
+nglSelectMeshLightSet, 0x0023be90 and huft_build (paths copy uninitialized stack
+slots; huft_build also takes EAX/ECX), nglWaitFrameInterval (busy-waits on the vblank
+thread's counter),
 0x00235890 (radius in XMM2), R_LayoutTextWithIcons (colour out-pointer in EBX), nglResourceManager_Find (its tail JMP sits in the first 5
 bytes), 1-4 byte functions (too short for the harness's jump).
-Next batch: the remaining leaves over 0x0005d000-0x0007c000 and 0x00234000-0x0023c000
-(nglInitRenderStates (tail call to nglSetDefaultRenderStates), nglMatrixOrthoOffCenter
-(no callers), nglMatrixSceneClipToScreen, 0x000683a0/0x0006fb30 (no callers), 0x00070b00
-(packed-SSE box planes for nglAddShadowProjector: follow the disassembly lane by lane),
-0x0023a590, inflate's 0x0005d190/
-0x0005da20), then functions that call others (our own versions or the title's through
-a function pointer).
+Not reached by --level 1/4 runs (zlib unused there): inflate_fast. Left among the leaves:
+nglMatrixOrthoOffCenter, 0x000683a0 and 0x0006fb30 (no callers), nglInitRenderStates
+(tail call). Next batch: functions that call others, bottom-up from the leaves done
+(our own versions or the title's through a function pointer), starting with the NGL
+scene/matrix setters (nglSetAspect, nglSetViewMatrix) and the tr_* callers of R_SetupProjection.
 Each batch: CSV rows -> ApplyNames -> save -> ExportSymbols ->
 tools/smoke_test.sh -> commit. User decision 2026-10-17: decompilation only, no
 static recompilation.
