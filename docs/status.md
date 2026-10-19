@@ -116,12 +116,24 @@ slots; huft_build also takes EAX/ECX), nglWaitFrameInterval (busy-waits on the v
 thread's counter),
 0x00235890 (radius in XMM2), R_LayoutTextWithIcons (colour out-pointer in EBX), nglResourceManager_Find (its tail JMP sits in the first 5
 bytes), 1-4 byte functions (too short for the harness's jump).
+Ninth batch (2026-10-19): the shader classes' small slots, game/code/shaders.cpp - Toggle,
+Init, GetName and AddToList of all 22 classes (AddToList: a 0x18-byte NglMeshNode in scene
+memory onto the opaque list keyed by the class id, or the translucent list by
+nglNode_ViewDepth; decal ids | bit 31, water/ocean/river fixed keys, sky 1000 - layer,
+cdWorld/cdWorldBlend cull the section's sphere first), Register's 15 shader-table loops
+(newly named cd*_InitVertex/PixelShaders) and cdWorldBlend_Load/ReleaseTextures,
+cdGlass_LoadTextures (107 functions). Missions 1-5: 26 tested, all matched (181 matched in
+all). The Init functions cannot be hooked (CALL in the first 5 bytes; startup only); the
+other startup calls (GetName, the loops) mostly hit "all busy" in the startup burst; Toggle
+only runs from nglToggleShaderByName. Not reached in missions 1-5: the AddToList of cdGun,
+cdDebug, cdRiver, cdOcean, cdWater, cdWorldVertexLit.
 Not reached by --level 1/4 runs (zlib unused there): inflate_fast. Left among the leaves:
 nglMatrixOrthoOffCenter, 0x000683a0 and 0x0006fb30 (no callers), nglInitRenderStates
 (tail call). Next batch: more callers, bottom-up: nglListAddMesh's callers (R_AddStaticModel
-0x002438b0 and the other R_* model adders), the shader classes' slot-2 "add section"
-methods it calls, nglSetTransformConstants (0x000776f0), the tr_* callers of
-R_SetupProjection; nglSetDefaultSceneParams (0x00062a70) stays untestable while it calls
+0x002438b0 - EAX argument, calls R_ApplyCachedLighting (ESI) - and the other R_* model
+adders; the debug shape draws 0x0006cb80/cc50/cd30 are reached only from nglDebugDrawLine/Axes),
+the shader classes' Register and Draw slots, the tr_* callers of R_SetupProjection;
+nglSetTransformConstants (0x000776f0) ends in the replaced SetVertexShaderConstant; nglSetDefaultSceneParams (0x00062a70) stays untestable while it calls
 the replaced nglGetBackBufferTexture. ESI-argument functions (R_AddRefEntityToScene,
 R_ApplyCachedLighting) need an asm entry shim. Needs an asm
 shim: R_SetupEntityOrientation (EAX/ECX/EDX in, calls R_RotateForEntity with ESI/EDI),
