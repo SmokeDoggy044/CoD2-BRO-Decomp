@@ -241,6 +241,30 @@ the via call's spilled matrix rows (frame +0x210..+0x27f), and the rest comes fr
 whatever else ran at that depth. Matching that needs every function in the subtree to
 leave the same stack garbage (our C bodies and the 16 KB scrub after our calls do not):
 left as known, R_RenderView stays Compare with them on record.
+Lighting/draw-list batch (2026-10-19): R_SampleLightGrid (0x00242e90: bilinear 5-bit grid
+colours on the x87, light references merged with x87 + _ftol weights -
+platform_x87_mul_add_ftol -, the three strongest as directional lights; point lights
+normalized with RSQRTSS + a Newton step) and R_SetupEntityLighting (EAX/EDI entry; timer
+from the title's LCG on the x87: platform_x87_mul_div_add), both now called by ours
+(R_AddStaticModel, R_AddDObjSurfaces); the LOD setters DObj_SetForcedLod/SetMinLod/SetLod
+(EDI/ESI entry)/GetCoarsestLod and XModel_GetLodParts; NGL's draw-list walk
+nglRenderOpaqueList/TranslucentList, nglRenderSceneTree, nglSetObjectLightConstants,
+nglSetSkinningConstants (0x00076620, the packed A*B*W per bone, lifted with the skill's new
+scripts/psssym.py), nglListAddText with nglAllocSceneMemory and nglListAddTranslucent
+(newly named), nglListAddCustomNode; FX_SortEffects_r, FX_FreeFinishedEffects, FX_FreeEffect
+(ESI entry; FX_ReleaseEffectHandle newly named). Missions 1/4/5/6, none mismatched:
+R_SampleLightGrid 304, R_SetupEntityLighting 369, the LOD helpers 99-315, nglRenderOpaqueList
+297, nglSetObjectLightConstants 300, nglSetSkinningConstants 291, nglListAddText 252,
+FX_SortEffects_r 382, FX_FreeFinishedEffects 345. Known: nglRenderTranslucentList matches
+except where a title shader Draw sends an uninitialized constant lane and picks up the
+walker's dead stack (the original's sort-call return address 0x0007553c, or a host stack
+address on our side) - unmatchable, left on record; nglRenderSceneTree is inconclusive
+(SetRenderTarget and the push-buffer quads reach host code); nglListAddCustomNode cannot be
+hooked (CALL in its first 5 bytes); FX_FreeEffect not reached. Then DObj_CalcBasePose (8
+matched; few calls) and DObj_CalcAnimatedSkeleton (not reached) with XModel_CalcBoneChildren
+newly named, RE_BeginFrame (always inconclusive: nglBeginFrame reaches a kernel call) with
+nglAdvanceShaderTime and nglGetSceneFogColor (both newly named, 341 matched). Mismatch
+reports now have their own cap of 5 (inconclusive ones no longer hide them).
 **Resume here:** next, more renderer callers bottom-up
 (`tools/progress.py --module renderer --state named`), then the shader classes'
 Register slots. Start parallel --compare runs ~5 s apart: three at once once
