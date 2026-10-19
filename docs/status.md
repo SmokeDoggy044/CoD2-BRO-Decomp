@@ -167,12 +167,27 @@ matched, none mismatched (cdWorld 1,081, cdChar 645, cdSky 608, cdWorldBlend 535
 514, cdGlass 349, cdSimpleUVAnim 287, cdPropeller 203, cdAirplaneMetal 124, cdOcean 100);
 219 matched in all. Not reached in 1-12: cdGun, cdWater, cdDebug, cdWorldVertexLit,
 nglDebugShader (their AddToList slots are not reached either). The three new names are applied in Ghidra and exported.
-**Resume here:** cdSimpleAlpha_Draw (0x00049e40) is the last Draw: it calls
-0x00049cd0 with EAX/ECX pointers and a float in XMM1 (needs an asm entry shim) and
-0x00049c30 under the debug override at 0x0089aff0. With the stack zeroed, the functions
-skipped for copying uninitialized stack slots (nglSelectMeshLightSet 0x0006fe00,
-0x0023be90, huft_build) may be testable now - retry them. Then the Register slots and
-the callers (R_AddStaticModel etc., below).
+Thirteenth batch (2026-10-19): register-argument entries - `PLATFORM_ASM_ENTRY` (platform/compiler.h)
+defines a title-convention entry in assembly that moves ESI/EDI/EBX/XMM arguments to the
+stack and calls an extern "C" hidden C version ([comparison harness](comparison-harness.md),
+"Register arguments"). With it: cdSimpleAlpha_Draw (0x00049e40, the last Draw: material or
+instance colour, debug override 0x0089aff0, depth pre-pass, blend modes) with
+cdSimpleAlpha_PulseColor (0x00049cd0: EAX/ECX + XMM1, newly named) and
+cdSimpleAlpha_ClampDebugPulse (0x00049c30), nglStateCache_SetFogEnable (0x00046d50),
+DObj_AnyModelHasFlags (EDI), R_DrawFilledRect (ESI colour), R_CullPointAndRadius (XMM2,
+0x00235890), R_SetInstanceColor (ESI, 0x0023b2e0); with the zeroed dead stack:
+nglSelectMeshLightSet (0x0006fe00; the Draws call ours now) and DObj_GetBounds (0x0023be90).
+Missions 1-5: 7 matched (nglSelectMeshLightSet 404, DObj_AnyModelHasFlags 400,
+DObj_GetBounds 400, cdSimpleAlpha_Draw/PulseColor/SetFogEnable 139, R_DrawFilledRect 20
+with Back held), none mismatched; 226 matched in all. A planted bug in PulseColor's XMM1
+speed was caught (helper and Draw). Not reached: cdSimpleAlpha_ClampDebugPulse (debug
+override only), R_CullPointAndRadius (its only caller 0x00235910 has no callers),
+R_SetInstanceColor (the mesh-builder draw 0x002d0680, behind the jump stub 0x0001d0d6).
+huft_build stays skipped (zlib is not used in --level runs).
+**Resume here:** with entry shims available, the ESI/EDI callers listed below
+(R_AddRefEntityToScene, R_ApplyCachedLighting, R_AddStaticModel, R_AddCellEntityLink,
+R_LayoutTextWithIcons, R_SetupEntityOrientation - this one also calls R_RotateForEntity
+with ESI/EDI, which needs an outgoing shim the other way) are next, then the Register slots.
 Not reached by --level 1/4 runs (zlib unused there): inflate_fast. Left among the leaves:
 nglMatrixOrthoOffCenter, 0x000683a0 and 0x0006fb30 (no callers), nglInitRenderStates
 (tail call). Next batch: more callers, bottom-up: nglListAddMesh's callers (R_AddStaticModel
