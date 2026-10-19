@@ -52,21 +52,27 @@ helpers), game/code/tr_main.cpp (myGLMultMatrix, RE_ClearScene, R_ClearFrameList
 cull, GLimp_Init, Q_PrintStrlen, RE_LoadWorldMap, R_AddViewModelRefEntity, R_CullPortal,
 R_SetupProjection, R_CopyFrustumPlanes, R_ClipPolygonToPlane), game/code/dobj.cpp,
 game/code/fx.cpp and game/code/unzip.cpp (inflate_trees_fixed); 86 functions matched,
-none mismatched. Not reached by --level 1/2/4 runs: nglColorToVec4, nglAllocFrameGpu,
-nglLightVectorWorld, nglPaletteSetEntry, RE_GetFarCullDist, Q_PrintStrlen,
-DObj_GetBoneBasePose/Parent, nglScaleQuadVerts, nglRotateQuad, nglEvalPointLight (no
-point lights there), std_PushHeap_* (heap sort fallback only), nglIndexBuffer_Clear,
-inflate_trees_fixed. x87 sin/cos/tan go through platform_x87_* and RSQRTSS through
+none mismatched. Third batch (2026-10-18): nglSkipList_Find, nglMeshFileFindMesh,
+nglVideoMode_Init/Copy, nglResetFrameStats, nglTextureSetPixel, nglSetTextureAddressMode,
+nglLightSetAddProjector, nglGetTargetSampleScale, nglInitShaderConstantTable,
+R_AddCellEntities, FX_FindEvictableEffect, XModel_GetBoneCount; 99 matched in all.
+Not reached by --level 1/2/4 runs: nglColorToVec4, nglPaletteSetEntry, RE_GetFarCullDist,
+Q_PrintStrlen, nglScaleQuadVerts, nglRotateQuad, std_PushHeap_* (heap sort fallback
+only), nglIndexBuffer_Clear, inflate_trees_fixed, FX_FindEvictableEffect (pool never
+full), XModel_GetBoneCount. x87 sin/cos/tan go through platform_x87_* and RSQRTSS through
 platform_rsqrt_estimate (compiler.h). `--compare` runs without the PC features
 (`--pc-patches off`). Skipped on purpose: nglSetAspect / nglSetViewMatrix /
 nglDynamicVB_EndFrame (tail calls into undecompiled code), DObj_AnyModelHasFlags (flags
-in EDI - needs an asm entry shim), nglSelectMeshLightSet (one path reads an
-uninitialized stack slot), 1-4 byte functions (too short for the harness's jump).
+in EDI - needs an asm entry shim; also R_AddCellEntityLink, 0x0023b2e0 in ESI),
+nglSelectMeshLightSet and 0x0023be90 (paths copy uninitialized stack slots),
+0x00235890 (radius in XMM2), nglResourceManager_Find (its tail JMP sits in the first 5
+bytes), 1-4 byte functions (too short for the harness's jump).
 Next batch: the remaining leaves over 0x0005d000-0x0007c000 and 0x00234000-0x0023c000
-(R_AddCellEntities, R_LayoutTextWithIcons, nglTextureSetPixel, nglLightSetAddProjector,
-the unnamed FP leaves 0x00068560/0x00068680/0x00073c20/0x0023be90/0x0023b2e0, std_*
-insertion sorts and partitions), then functions that call others (our own versions
-or the title's through a function pointer).
+(R_LayoutTextWithIcons, nglInitRenderStates, nglMatrixOrthoOffCenter (no callers),
+nglMatrixSceneClipToScreen, the unnamed FP leaves 0x00068560/0x00068680 (nglListAddMesh),
+0x000683a0/0x0006fb30 (no callers), 0x00070b00, 0x0023a590, inflate's 0x0005d190/
+0x0005da20), then functions that call others (our own versions or the title's through
+a function pointer).
 Each batch: CSV rows -> ApplyNames -> save -> ExportSymbols ->
 tools/smoke_test.sh -> commit. User decision 2026-10-17: decompilation only, no
 static recompilation.
