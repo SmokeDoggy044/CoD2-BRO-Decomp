@@ -127,6 +127,21 @@ all). The Init functions cannot be hooked (CALL in the first 5 bytes; startup on
 other startup calls (GetName, the loops) mostly hit "all busy" in the startup burst; Toggle
 only runs from nglToggleShaderByName. Not reached in missions 1-5: the AddToList of cdGun,
 cdDebug, cdRiver, cdOcean, cdWater, cdWorldVertexLit.
+Tenth batch (2026-10-19): test processes now record the D3D replacements' calls
+instead of stopping there ([comparison harness](comparison-harness.md), "Recorded SDK
+calls"; 39 state setters and draws), so code that draws is testable - nglSetDecalZBias,
+inconclusive in 2,018 tests before, matched 80 of 80 at once. Then NGL's state layer:
+the render-state cache's eight setters (0x00902f08: alpha test/function/reference,
+blend enable/source/destination/equation/colour; newly named nglStateCache_*),
+nglSetBlendMode (modes 0..8), nglSetPixelShaderProgramCached, nglSetVertexShaderCached,
+nglSetTexture (animated frames, references, SwitchTexture within a format, palette,
+address mode), nglUnbindTextures, nglSetPaletteCached, nglSetVertexStreams,
+nglDrawMeshSection, nglSetTransformConstants (fog parameters and the camera in object
+space); 16 of 17 matched in missions 1 and 4 (133-202 tests each, none mismatched or
+inconclusive; 197 matched in all). nglSetPaletteCached is not reached (no palettized
+textures there). Next: the shader classes' Draw slots (0x00046900-0x00054ad0, 22
+classes, 490-2,800 bytes; they inline the state cache's tests and call the helpers
+above), then their Register slots (startup only).
 Not reached by --level 1/4 runs (zlib unused there): inflate_fast. Left among the leaves:
 nglMatrixOrthoOffCenter, 0x000683a0 and 0x0006fb30 (no callers), nglInitRenderStates
 (tail call). Next batch: more callers, bottom-up: nglListAddMesh's callers (R_AddStaticModel
