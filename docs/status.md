@@ -265,7 +265,15 @@ matched; few calls) and DObj_CalcAnimatedSkeleton (not reached) with XModel_Calc
 newly named, RE_BeginFrame (always inconclusive: nglBeginFrame reaches a kernel call) with
 nglAdvanceShaderTime and nglGetSceneFogColor (both newly named, 341 matched). Mismatch
 reports now have their own cap of 5 (inconclusive ones no longer hide them).
-**Resume here:** next, more renderer callers bottom-up
+**Resume here (2026-10-19, end of session):** first fix the new mismatch in cdWorld_Draw
+(8 of 774 tests) and cdWorldBlend_Draw (5 of 216): only on rare calls (after call
+~18,000), always SDK call D3DDevice_SetVertexShaderConstantNotInlineFast word 54 =
+110.0 in the original vs 2.0 in ours - a path our Draw code misses. Seen in the first
+--compare-all that reached gameplay (earlier runs had no A presses and stayed on "Press
+A to start", so gameplay/AI code was never tested before; all else settled: 233).
+Workflow tools now: tools/fnpack.py (context per function), tools/scaffold.py
+(boilerplate), tools/compare_batch.py (runs + summary; `--report DIR` re-reads,
+`XBCMP_ONLY` via `--only`). Then: more renderer callers bottom-up
 (`tools/progress.py --module renderer --state named`), then the shader classes'
 Register slots. Start parallel --compare runs ~5 s apart: three at once once
 crashed DXVK at startup (VK_INCOMPLETE querying surface formats).
