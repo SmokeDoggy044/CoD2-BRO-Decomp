@@ -211,8 +211,22 @@ Then R_ClipFrustumToPortal and R_ClipPortalWinding (the portal frustum: edge pla
 through Q_rsqrt, bevels from the projected bounds with r_portalbevels 0.7; MSVC's 4x
 unrolled loops sum in a different order in the first copy of each group, see
 `unrolled_first`): both matched (200 tests), R_VisitCell_r calls ours.
-**Resume here:** next, R_VisitCell_r's caller R_AddWorldSurfaces 0x00246fa0 and
-R_SetupCullPlanes 0x002388c0, then more renderer callers bottom-up
+View batch (2026-10-19, tr_main.cpp): R_SetupCullPlanes, R_AddWorldSurfaces (asm entry: its
+0x2000-byte link buffer sits right below the return address and 0x0095e2d0 keeps that
+address), R_SetupPortalBevels with MatrixInverse4x4 (0x00294610, newly named; its cofactor
+sums lifted with the skill's scripts/ssesym.py), R_SetupFrustum, R_RotateForViewer,
+R_AddEntitiesToCells, R_AddEntityToCells_r, R_AddEntitySurfaces: all matched (139-313 tests),
+none mismatched. R_ClearAlpha is testable now (310 matched) through the harness's new
+reference-count/back-buffer stand-ins. R_RenderView (0x00247350, the 3D view pass) is
+decompiled and rebuilds the original's frame so that every callee runs at the original's
+stack position (title_call_at); it matches with R_AddEntitySurfaces original, but with ours
+~75% of its tests mismatch in mesh records that R_AddEntityModel's subtree (title code)
+fills with permuted rotation values - most likely matrix lanes it never sets and takes from
+stale stack (in the original, what nglGetMatrix left there). Expected to go away once
+R_AddEntityModel / R_AddDObjSurfaces are ours (zero those lanes); until then R_RenderView
+stays Compare with these mismatches on record.
+**Resume here:** next, R_AddEntityModel 0x00245a20 (EAX entry) and R_AddDObjSurfaces
+0x00244020 (they explain R_RenderView's mismatches), then more renderer callers bottom-up
 (`tools/progress.py --module renderer --state named`), then the shader classes'
 Register slots. Start parallel --compare runs ~5 s apart: three at once once
 crashed DXVK at startup (VK_INCOMPLETE querying surface formats).
@@ -224,8 +238,8 @@ nglMatrixOrthoOffCenter, 0x000683a0 and 0x0006fb30 (no callers), nglInitRenderSt
 0x002438b0 - EAX argument, calls R_ApplyCachedLighting (ESI) - and the other R_* model
 adders; the debug shape draws 0x0006cb80/cc50/cd30 are reached only from nglDebugDrawLine/Axes),
 the shader classes' Register and Draw slots, the tr_* callers of R_SetupProjection;
-nglSetTransformConstants (0x000776f0) ends in the replaced SetVertexShaderConstant; nglSetDefaultSceneParams (0x00062a70) stays untestable while it calls
-the replaced nglGetBackBufferTexture. ESI-argument functions (R_AddRefEntityToScene,
+nglSetTransformConstants (0x000776f0) ends in the replaced SetVertexShaderConstant; nglSetDefaultSceneParams (0x00062a70) is testable now that
+nglGetBackBufferTexture's D3D calls have stand-ins. ESI-argument functions (R_AddRefEntityToScene,
 R_ApplyCachedLighting) need an asm entry shim. Needs an asm
 shim: R_SetupEntityOrientation (EAX/ECX/EDX in, calls R_RotateForEntity with ESI/EDI),
 R_DrawFilledRect (colour pointer in ESI).
