@@ -170,7 +170,11 @@ R_ApplyCachedLighting) need an asm entry shim. Needs an asm
 shim: R_SetupEntityOrientation (EAX/ECX/EDX in, calls R_RotateForEntity with ESI/EDI),
 R_DrawFilledRect (colour pointer in ESI).
 Each batch: CSV rows -> ApplyNames -> save -> ExportSymbols ->
-tools/smoke_test.sh -> commit. User decision 2026-10-17: decompilation only, no
+tools/smoke_test.sh -> tools/progress.py (refreshes tools/data/progress.csv: every
+function's section, module and state; `--module renderer` lists what is left, e.g.
+`--state untested` for decompiled functions no run has reached yet; modules are name
+prefixes and address ranges in tools/data/modules.csv - add ranges as modules get
+mapped, 7,900 .text functions are still "unassigned") -> commit. User decision 2026-10-17: decompilation only, no
 static recompilation.
 
 **Resume here (loader, 2026-10-17, end of session):** v0.1.1 is out (private pre-release,
