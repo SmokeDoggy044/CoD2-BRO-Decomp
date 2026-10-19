@@ -70,6 +70,12 @@ decompiled yet are called through `title_function<F>(address)` (title_data.h), a
 hooked function reached inside a test process now runs its original straight from the
 stub. 123 matched in all (recounted from functions.csv). Not reached: nglGetMatrixCopy,
 nglProjectPointCopy, nglEvalLight, R_DrawPic.
+Sixth batch (2026-10-18): nglSetViewportNormalized, nglGetMatrix, nglProjectPoint
+(all four DIVPS/MULPS lanes kept), nglInitScene, nglPushScene (scene tree links +0x2d4..
++0x2dc, slot block +0x3d8), nglSphereInFrustum (0x00029200, newly named), nglAddPointLight,
+R_ClearAlpha; 129 matched in all. nglProjectPoint (and the *Copy wrappers) not reached
+by --level 1/4; R_ClearAlpha always inconclusive (its last scene's nglSetDefaultSceneParams
+calls the replaced nglGetBackBufferTexture - host code); nglAddPointLight 23 of 23 so far.
 Not reached by --level 1/2/4 runs: nglColorToVec4, nglPaletteSetEntry, RE_GetFarCullDist,
 Q_PrintStrlen, nglScaleQuadVerts, nglRotateQuad, std_PushHeap_* (heap sort fallback
 only), nglIndexBuffer_Clear, inflate_trees_fixed, FX_FindEvictableEffect (pool never
@@ -86,8 +92,8 @@ bytes), 1-4 byte functions (too short for the harness's jump).
 Not reached by --level 1/4 runs (zlib unused there): inflate_fast. Left among the leaves:
 nglMatrixOrthoOffCenter, 0x000683a0 and 0x0006fb30 (no callers), nglInitRenderStates
 (tail call). Next batch: more callers, bottom-up: nglUpdateScene (0x0005fc90, the
-matrix rebuild every setter calls), nglSetViewportNormalized (0x000619a0), nglGetMatrix /
-nglProjectPoint, nglPushScene/nglInitScene, nglAddPointLight, R_ClearAlpha, the
+matrix rebuild every setter calls; uses FUN_00073e90 and FUN_00073ad0, a polynomial tan
+with constants at 0x008a1e30), nglSetDefaultSceneParams (0x00062a70), the
 nglMaterial_* texture helpers and the tr_* callers of R_SetupProjection. Needs an asm
 shim: R_SetupEntityOrientation (EAX/ECX/EDX in, calls R_RotateForEntity with ESI/EDI),
 R_DrawFilledRect (colour pointer in ESI).
