@@ -216,6 +216,8 @@ R_SetupCullPlanes 0x002388c0, then more renderer callers bottom-up
 (`tools/progress.py --module renderer --state named`), then the shader classes'
 Register slots. Start parallel --compare runs ~5 s apart: three at once once
 crashed DXVK at startup (VK_INCOMPLETE querying surface formats).
+From now on (user, 2026-10-19), --compare batches run missions 1, 4, 5 and 6: mission 6
+(Operation Husky) covers the water-related code (cdWater/cdOcean/cdRiver shaders and the like).
 Not reached by --level 1/4 runs (zlib unused there): inflate_fast. Left among the leaves:
 nglMatrixOrthoOffCenter, 0x000683a0 and 0x0006fb30 (no callers), nglInitRenderStates
 (tail call). Next batch: more callers, bottom-up: nglListAddMesh's callers (R_AddStaticModel
