@@ -27,7 +27,7 @@ runs (only a front-end text dialog calls them). Next:
 
 **Resume here (decomp, 2026-10-20):** back on naming (step 1) before more rewriting
 (user, 2026-10-20). Microsoft library code is now named by signature (3008 functions,
-tools/data/library_names.csv) and left out of the counter's total; next: the engine range
+tools/data/library_names.csv; still counted in the total); next: the engine range
 0x1fa000-0x340000 in address order, then the Treyarch libraries and the front end; the
 compiled common scripts last (no bulk lever yet). Details in [naming.md](naming.md), "Next".
 
