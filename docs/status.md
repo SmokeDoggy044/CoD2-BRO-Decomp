@@ -28,7 +28,29 @@ user-tested). Next candidates:
   FUN_00321160 / MP FUN_0028e5d0) and selects through the screen's own vtable. Layout
   and offsets in loader/patches.cpp ("Menus with the mouse"). Checked unattended with
   scripted pointer positions (boxes on screenshots: profile manager, main menu, dialog,
-  pause menu in 16:9, MP menus); not yet played with a real mouse.
+  pause menu in 16:9, MP menus). Played with a real mouse (2026-10-20, issues #2/#3):
+  option rows take clicks right of their label too - left/right of the value's middle
+  (the texts on the row: value and front-end arrows; sliders: the other rows' values,
+  or halfway to the screen edge for a lone one) tap left/right; a click on a screen
+  that is still locked waits up to 30 frames. `--debug` logs every menu click and
+  what it hit.
+
+- Keyboard button prompts (2026-10-20, issue #4): `--button-prompts auto|keyboard|
+  controller` (launcher "Button prompts", default auto = the last used device). The
+  icon font i_button_icons_xb_<en|fr|it|sp> (.dds/.fdf, glyphs 33-49: RT A X Y B LT
+  white black, D-pad up/right/left/down, start, left-right, up-down, D-pad, back) and
+  Xbox_A/B/X/YButton.dds (menu footers) are redrawn as keycaps/mouse pictures
+  (text/key_prompts.cpp) with the keys of the active controller style (inverse of the
+  keyboard remap; in menus Enter/Bksp for A/B); BackendConfig::replacement_version
+  makes the renderer re-ask when the labels change. User-tested: switching between
+  keyboard and controller pictures works.
+
+- Language (2026-10-20, issue #1): `--language english|german|french|spanish|italian`
+  (launcher "Language") sets XC_LANGUAGE. The title takes its language from the console
+  and the disc (FUN_0028cbd0: a "de" disc is German, an "eu" disc French/Spanish/
+  Italian by console language, English console -> French); the US/world disc is English
+  only (a French console still shows English). The log lists the disc's text languages
+  (Global.<code>.stb).
 
 - Sharper text (2026-10-17): `--sharp-text on|off` (default on; launcher "Sharper
   text"). The game's text is four bitmap fonts, each a DDS atlas + a plain-text
