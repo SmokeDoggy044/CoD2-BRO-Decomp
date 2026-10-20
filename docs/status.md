@@ -25,11 +25,10 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-20, later):** naming the script engine interface's
-entity-field accessors next - the ~180 getter/setter slots in 0x00015000-0x0001c000 (see
-naming.md "Script engine interface"); generate names from the field tables, then the
-actor/sentient accessors and the remaining builtins by call-site strings
-(`SlotCallStrings.java`). Counter total is now 15171 (567 slot functions created).
+**Resume here (decomp, 2026-10-20, evening):** the script interface's field accessors
+are named (202, slots 590-827; naming.md "Script engine interface"). Next: the remaining
+unnamed builtin slots by call-site strings (`SlotCallStrings.java`), then the engine range
+0x1fa000-0x340000 in address order. Counter: named 2109/15171.
 
 **Earlier (decomp, 2026-10-20):** back on naming (step 1) before more rewriting
 (user, 2026-10-20). Microsoft library code is now named by signature (3008 functions,
