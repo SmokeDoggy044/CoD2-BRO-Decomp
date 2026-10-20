@@ -25,7 +25,13 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-20):** back on naming (step 1) before more rewriting
+**Resume here (decomp, 2026-10-20, later):** naming the script engine interface's
+entity-field accessors next - the ~180 getter/setter slots in 0x00015000-0x0001c000 (see
+naming.md "Script engine interface"); generate names from the field tables, then the
+actor/sentient accessors and the remaining builtins by call-site strings
+(`SlotCallStrings.java`). Counter total is now 15171 (567 slot functions created).
+
+**Earlier (decomp, 2026-10-20):** back on naming (step 1) before more rewriting
 (user, 2026-10-20). Microsoft library code is now named by signature (3008 functions,
 tools/data/library_names.csv; still counted in the total); next: the engine range
 0x1fa000-0x340000 in address order, then the Treyarch libraries and the front end; the
