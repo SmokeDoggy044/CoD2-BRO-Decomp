@@ -28,7 +28,7 @@ runs (only a front-end text dialog calls them). Next:
 **Resume here (decomp, 2026-10-20, late night):** address-order pass over the engine range
 0x1fa000-0x2f6d30 done (126 names; naming.md "Engine range, address-order pass"). Next: the
 script builtin bodies 0x2f4be0-0x30c000 by slot (SlotStores.java on the init functions), then
-the front end 0x30c000-0x340000 beyond its string-anchored functions (32 named: bonus screens, loading quote, hud setup, pause, profile settings). Counter: named 2625/15171.
+the front end 0x30c000-0x340000 beyond its string-anchored functions (32 named: bonus screens, loading quote, hud setup, pause, profile settings), then the streaming loader (77: one load handler per file extension, load/unload states, per-zone resource managers). Counter: named 2701/15191.
 
 **Earlier (decomp, 2026-10-20, night):** engine range 0x1fa000-0x30c000 named hub-first
 (the skill's `HubRank.java` ranks unnamed functions by distinct callers): every function with
