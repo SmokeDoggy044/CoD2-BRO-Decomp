@@ -25,7 +25,22 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-21, night): renderer decomp resumed** (naming is done for now: hubs
+**Resume here (decomp, 2026-10-21, late night): renderer bottom-up, second batch.** Ten more whose callees
+are all ours (bottom-up list rebuilt: 34 ready, 19 of them zlib/deflate - skipped, not used in --level runs):
+nglSetDefaultSceneParams, nglSetDefaultRenderStates / nglRestoreRenderStates (the state cache sent to D3D,
+inlined setters write D3D's shadow table and dirty bits in title memory), nglInitShaderConstants,
+nglBuildTextGlyphs (text -> runs of glyphs, control codes 1/2/3/9/10/32; new NglTextRun), nglQuadBatch_SetMaterial,
+nglNode_GetWorldViewRotation (cdGlass_Draw now calls ours), nglGenerateRenderTargetMips,
+nglReleaseTextureSurfaces, strcmpcasenosensitive_internal. 7 matched, none mismatched; not reached in
+missions 1/4/5/6: RestoreRenderStates, GenerateRenderTargetMips, strcmpcase; ReleaseTextureSurfaces only
+inconclusive (Release stand-in: count reaching 0). Harness: recorded-call sizes `:aK*aM` (count x stride),
+DrawVerticesUP recorded; compiler.h platform_x87_mul_add. Skipped: RE_RenderScene (drives R_RenderView,
+which still mismatches on stale stack), nglMatrixOrthoOffCenter and nglUnprojectPoint (no callers),
+nglWaitFrameInterval/nglReadBackBufferSize (frame pacing patch, GetDesc read-back). Next: the 85
+1-pending-callee renderer functions (rebuild the list: progress.py --module renderer --state named ->
+CalleeNames.java -> bottomup_rank.py), then the shader classes' startup slots.
+
+**Earlier (decomp, 2026-10-21, night): renderer decomp resumed** (naming is done for now: hubs
 dry, naming.md). Fixed the cdWorld_Draw/cdWorldBlend_Draw mismatch (word 54 = constant 18.w): the light
 vector's w is the light record's +0x24 (point-light range, 1e24 directional) that nglLightVectorWorld
 returns, not light->flags, and the record is 0x28 bytes (our out[4] overflowed); 30,390 tests since, none
