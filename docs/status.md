@@ -25,7 +25,21 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-21, evening):** script container templates (hash_map/list/vector/DynArray)
+**Resume here (decomp, 2026-10-21, night): renderer decomp resumed** (naming is done for now: hubs
+dry, naming.md). Fixed the cdWorld_Draw/cdWorldBlend_Draw mismatch (word 54 = constant 18.w): the light
+vector's w is the light record's +0x24 (point-light range, 1e24 directional) that nglLightVectorWorld
+returns, not light->flags, and the record is 0x28 bytes (our out[4] overflowed); 30,390 tests since, none
+mismatched, old rows reset to the post-fix counts. Then 30 renderer functions whose callees were all done
+(bottom-up list: CalleeNames.java over `progress.py --module renderer --state named`, then count callees
+still named/unnamed): NGL texture/vertex-buffer/palette/render-target wrappers, nglListAddTextf,
+nglQuadBatch_Draw, the FX by-id helpers and fading components, a new stream module (MemStream_*,
+Stream_Read*: a read that writes nothing returns the original's PUSH ECX slot = the stream pointer).
+22 matched, none mismatched. Recorded calls added (loader/patches.cpp): SetRenderTarget(Fast),
+BlockUntilIdle, BlockUntilNotBusy, D3DResource_Register. Still inconclusive: nglLockVertexBuffer,
+nglTexture_Lock (Lock calls need a stand-in), nglVertexBuffer_Free (XPhysicalProtect). Next: the
+renderer's 1-pending-callee list (170) bottom-up, and the shader classes' startup slots (109 untested).
+
+**Earlier (decomp, 2026-10-21, evening):** script container templates (hash_map/list/vector/DynArray)
 named in .text and their level-section copies by code shape, functor dtors, drone/mortar/scripted-anim clusters
 and ~120 small script leaves up to 0x1b4000 (naming.md "Containers and script-range pass"). Next: the rest of
 0x1b4000-0x1e4000, then the level sections. Counter: named 7005/16503.
