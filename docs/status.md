@@ -49,7 +49,7 @@ clickable option rows (arrows, sliders), a Language setting (issues #1-#4). Next
 - Language (2026-10-20, issue #1): `--language english|german|french|spanish|italian`
   (launcher "Language") sets XC_LANGUAGE. The title takes its language from the console
   and the disc (FUN_0028cbd0: a "de" disc is German, an "eu" disc French/Spanish/
-  Italian by console language, English console -> French); the US/world disc is English
+  Italian by console language, English console -> French); the North American Standard Edition disc is English
   only (a French console still shows English). The log lists the disc's text languages
   (Global.<code>.stb).
 
