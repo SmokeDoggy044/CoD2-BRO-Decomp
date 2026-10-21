@@ -25,7 +25,20 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-21, late night): renderer bottom-up, second batch.** Ten more whose callees
+**Resume here (decomp, 2026-10-21, late night): renderer bottom-up, third batch.** 33 more, all matched, none
+mismatched: ShaderCache_FindOrAdd (the shader cache 0x00902ac0 is a skip list keyed by NglHashedName, returns the
+existing node or null after inserting) + ShaderCache_RandomLevel (was FUN_00093c30), Mem_AlignedAlloc (new
+qcommon module), nglGetTextExtent, nglBeginSceneRender (SetViewport and Clear now recorded calls),
+nglInitRenderStates, nglFreeSceneRenderTargets, nglFreeFogTextures (mostly inconclusive: Release stand-in), and
+the 22 shader-class Register functions (vtable slot 0; GetName is slot 1). Register runs once at startup in a
+burst: test it with `compare_batch.py NAMES --only --every 1 --missions 1 --seconds 45` four names at a time
+(4 tests at once). Trivial stubs nglIndexBuffer_Unlock / nglShader_Nop cannot be hooked (ret in the first 5
+bytes), WaitTilOutputInst1_str_VFunc2 not reached. compiler.h: x87 helpers mul_mul_add, unsigned_mul_mul,
+add_mul_mul_add_ftol, round_to_int. Next: rebuild the bottom-up list (167 renderer functions left) - skipped so
+far: nglDrawFrameTimeBar (debug overlay), nglRenderTextNode (BeginPush/EndPush need a stand-in), nglDumpPrintf,
+nglAssemble*Shader.
+
+**Earlier (decomp, 2026-10-21, late night): renderer bottom-up, second batch.** Ten more whose callees
 are all ours (bottom-up list rebuilt: 34 ready, 19 of them zlib/deflate - skipped, not used in --level runs):
 nglSetDefaultSceneParams, nglSetDefaultRenderStates / nglRestoreRenderStates (the state cache sent to D3D,
 inlined setters write D3D's shadow table and dirty bits in title memory), nglInitShaderConstants,
