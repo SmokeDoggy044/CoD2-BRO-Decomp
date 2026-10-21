@@ -25,10 +25,13 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-21):** script builtin slot bodies named (137 functions + 100 slot
-pointers; naming.md "Slot bodies, third pass"). Next: the remaining unnamed functions in
-0x2f4be0-0x30c000 that are not slots (~125, `tools/namepack.py rank --range 0x2f4be0-0x30c000`),
-then the front end 0x30c000-0x340000 (g_hudManager's components are a start). Counter: named 2838/15191.
+**Resume here (decomp, 2026-10-21, later):** open script slots named (152 functions + 2 globals;
+naming.md "Slot bodies, fourth pass"; 69 slot targets created as functions). Next: the open slots
+listed there need their callees named first (or leave them), then the front end 0x30c000-0x340000
+(g_hudManager's components are a start). Counter: named 2990/15260.
+
+**Earlier (decomp, 2026-10-21):** script builtin slot bodies named (137 functions + 100 slot
+pointers; naming.md "Slot bodies, third pass"). Counter: named 2838/15191.
 
 **Earlier (decomp, 2026-10-20, late night):** address-order pass over the engine range
 0x1fa000-0x2f6d30 done (126 names; naming.md "Engine range, address-order pass"). Next: the
