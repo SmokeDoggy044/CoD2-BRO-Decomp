@@ -25,7 +25,14 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-20, late):** the script interface's field accessors
+**Resume here (decomp, 2026-10-20, night):** engine range 0x1fa000-0x30c000 named hub-first
+(the skill's `HubRank.java` ranks unnamed functions by distinct callers): every function with
+3+ callers that had a readable role, plus the string-anchored ones (95 names; naming.md
+"Engine hubs"). Next: the remaining ~1,450 unnamed in the range have 1-2 callers - read them
+in address order with DumpUnnamed (now that the hubs are named the dumps read better), then
+the front end 0x30c000-0x340000 (bonus screens, MEM_* dialogs). Counter: named 2384/15171.
+
+**Earlier (decomp, 2026-10-20, late):** the script interface's field accessors
 (slots 590-827) and 180 builtin slots by body are named (naming.md "Script engine
 interface"; the skill's `DecompToFile.java` dumps many decompiles to one file). Next: the
 engine range 0x1fa000-0x340000 in address order (it also covers the open builtin slots'
