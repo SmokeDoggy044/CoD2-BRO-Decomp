@@ -14,7 +14,7 @@ clickable option rows (arrows, sliders), a Language setting (issues #1-#4); v0.1
 (test pre-release, 2026-10-21): system Direct3D 9 diagnostics and a software vertex
 processing fallback (issue #6, Intel HD 3000: every CreateVertexShader failed, black
 menu), the player log capped at 8 MB, the launcher's update check (GitHub releases).
-Unreleased: the issue #6 cause (the vertex shader epilogue read c192 and c193 in one
+v0.1.7 (test pre-release, 2026-10-21): the issue #6 cause (the vertex shader epilogue read c192 and c193 in one
 mad; Windows' D3D9 runtime allows one constant register per vs_3_0 instruction, DXVK
 does not check), the launcher's Update now (issue #7, launcher/updater.h; tested
 against the v0.1.6 Linux archive, not yet on real Windows). Next candidates:
