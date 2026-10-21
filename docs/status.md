@@ -25,7 +25,12 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-21, night):** anim-script mains from their name hashes, 881 missing
+**Resume here (decomp, 2026-10-21, late night):** script functors named from their RTTI (thread-start
+helpers, ctors, invoke/dtor slots; 176 functions created) and the anim-handle tables (naming.md "Functor RTTI
+and anim handles"). Next: the rest of 0x120000-0x1e4000, the anim-handle globals, then accessor templates
+over the level sections. Counter: named 6032/16460.
+
+**Earlier (decomp, 2026-10-21, night):** anim-script mains from their name hashes, 881 missing
 functions created in the script range, 399 field accessors by body template (naming.md "Uncovered code and
 hash words"). Next: the rest of 0x120000-0x1e4000, then accessor templates over the level sections.
 Counter: named 5129/16284.
