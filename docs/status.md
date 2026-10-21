@@ -25,10 +25,11 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-21, later):** open script slots named (152 functions + 2 globals;
-naming.md "Slot bodies, fourth pass"; 69 slot targets created as functions). Next: the open slots
-listed there need their callees named first (or leave them), then the front end 0x30c000-0x340000
-(g_hudManager's components are a start). Counter: named 2990/15260.
+**Resume here (decomp, 2026-10-21, late):** compiled common scripts, named from their callers and
+cracked field/value hashes (naming.md "Anim-script helpers"). Next: the anim-script mains, then
+`namepack.py rank --range 00120000-001e4000`. Counter: named 4653/15399.
+
+**Earlier (decomp, 2026-10-21, later):** open script slots named (152 functions + 2 globals). Counter: named 2990/15260.
 
 **Earlier (decomp, 2026-10-21):** script builtin slot bodies named (137 functions + 100 slot
 pointers; naming.md "Slot bodies, third pass"). Counter: named 2838/15191.
