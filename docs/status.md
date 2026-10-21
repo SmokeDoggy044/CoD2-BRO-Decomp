@@ -10,7 +10,11 @@ toggle, default on); not yet user-playtested. v0.1.3 (private test pre-release) 
 the mouse in the menus (campaign and multiplayer); v0.1.4 (private test pre-release):
 "Press A to start the game" after loading takes a click too (in-game screen 5, ready flag +0x38;
 user-tested); v0.1.5 (test pre-release, 2026-10-20): keyboard/mouse button prompts,
-clickable option rows (arrows, sliders), a Language setting (issues #1-#4). Next candidates:
+clickable option rows (arrows, sliders), a Language setting (issues #1-#4); v0.1.6
+(test pre-release, 2026-10-21): system Direct3D 9 diagnostics and a software vertex
+processing fallback (issue #6, Intel HD 3000: every CreateVertexShader failed, black
+menu; cause not confirmed yet), the player log capped at 8 MB, the launcher's update
+check (GitHub releases). Next candidates:
 1. Multiplayer between two PCs, and v0.1.1 on real Windows (firewall prompt).
 2. The full native build plan + a list of every game-code patch and its intent (asked for).
 3. Heavy fights at 60 fps (mission 5 town), missions 7-13 playtests.
