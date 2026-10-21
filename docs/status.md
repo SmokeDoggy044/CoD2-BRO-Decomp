@@ -25,7 +25,12 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-21, late night):** script functors named from their RTTI (thread-start
+**Resume here (decomp, 2026-10-21, evening):** script container templates (hash_map/list/vector/DynArray)
+named in .text and their level-section copies by code shape, functor dtors, drone/mortar/scripted-anim clusters
+and ~120 small script leaves up to 0x1b4000 (naming.md "Containers and script-range pass"). Next: the rest of
+0x1b4000-0x1e4000, then the level sections. Counter: named 7005/16503.
+
+**Earlier (decomp, 2026-10-21, late night):** script functors named from their RTTI (thread-start
 helpers, ctors, invoke/dtor slots; 176 functions created) and the anim-handle tables (naming.md "Functor RTTI
 and anim handles"). Next: the rest of 0x120000-0x1e4000, the anim-handle globals, then accessor templates
 over the level sections. Counter: named 6032/16460.
