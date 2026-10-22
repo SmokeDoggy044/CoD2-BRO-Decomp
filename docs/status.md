@@ -25,14 +25,27 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, day 11): the particle pools and spawn actions.** 11 more, 6 matched, none
+**Resume here (decomp, 2026-10-22, day 11b): the particle action classes.** The action vtables (0x007c8df0-0x007c90a4,
+5 slots: Apply, type (four-character code, names the class), a4980 (returns 1.0), dtor a4d10, size 0x0009c370; the
+emitters SrcA/Brst/RSpn share Apply 0x000a2e40 and add slot 5 = particles to emit). Class list with addresses: fx.h.
+Particle field offsets (emitter +0x8d..+0xa0 bytes): fx.cpp "The particle actions". 22 more, 15 matched (13 settled),
+none mismatched: FxEmitter_QueueParticleKill, the counts of SrcA/Brst (RSpn not reached), Life, AlFd/AFIO/RFIO, LnSc/
+LScW/LScH, ExSc (EScW/EScH not reached; x87 FYL2X series = platform_x87_exp2_series), Move, PsMv, VlDr/AVDr (VAVD not
+reached), UVFr not reached, apsMemoryPool_FreeSlots/apsPoolSet_Clear not reached (shutdown). Renamed: 'SpDe' = spawn on
+death (apsActionSpawnOnDeath_Apply, apsElementList_SpawnDeathEffect; 0x00909f10 = the current element list). Names
+not applied in Ghidra yet (this and the previous batch). Next: the bigger actions - OMov 0x000a18f0, MFxV 0x000a39f0,
+Forc 0x000a3bb0, ClSh 0x000a1bc0, WPRf 0x000a1d20, AngT 0x000a4640, ATEX/Y/Z 0x000a1fa0/0x000a20c0/0x000a21e0, PAtr
+0x000a3d80, LAtr 0x000a3f00, DLAt 0x000a41c0, KTau 0x000a2300, Traj 0x000a2aa0, the emitter Apply 0x000a2e40; the 34
+type getters (mov eax,imm; ret) if worth registering.
+
+**Earlier (decomp, 2026-10-22, day 11): the particle pools and spawn actions.** 11 more, 6 matched, none
 mismatched: apsMemoryPool_AllocSlots (0x0009c210) / apsMemoryPool_Init (0x0009b9d0), apsPoolSet_AddPool (0x0009bf50) +
 apsAddPool (0x0009c050, global set), apsPtrVector_Resize (0x0009c620), apsPtrVector_PushFront (0x0009cb60: with room
 left the original only shifts the items, item not stored), apsElementList_Add (0x0009cb00, FX_LoadEffectFile; 'SpDe'
-element type 0x53704465 remembered at +8), apsEffectRef_Spawn (0x0009c9e0), the spawn actions
-apsActionSpawnTimed_Apply (0x000a1730, vtable 0x007c907c) / apsActionSpawnOnBirth_Apply (0x000a1850, 0x007c9090; birth
-pass = delta 8888.89), FxSystemList_DestroyAll (0x00095300, CG_Shutdown tail). Not reached: apsAddPool/AddPool (17 calls
-from 0x00234a00 at startup, before tests run; also with --only --every 1), apsEffectRef_Spawn (its caller 0x000a0970 is
+element type 0x53704465 remembered at +8), apsElementList_SpawnDeathEffect (0x0009c9e0), the spawn actions
+apsActionSpawnTimed_Apply (0x000a1730, vtable 0x007c907c) / apsActionSpawnOnDeath_Apply (0x000a1850, 0x007c9090; birth
+"SpDe" = spawn on death, pass = delta 8888.89), FxSystemList_DestroyAll (0x00095300, CG_Shutdown tail). Not reached: apsAddPool/AddPool (17 calls
+from 0x00234a00 at startup, before tests run; also with --only --every 1), apsElementList_SpawnDeathEffect (its caller 0x000a0970 is
 a vtable slot), OnBirth, DestroyAll. Dead code (no refs): 0x0009c3c0 (array compaction), 0x00095360 (an older
 apsEffect_Init). Names not applied in Ghidra yet. Next: the other Resize/Init callers (0x0009bee0, 0x0009bff0,
 0x0009c070 from Mem_InitSmallBlockPools, 0x000951c0, 0x0009f250), 0x000a0970, then the remaining action classes
