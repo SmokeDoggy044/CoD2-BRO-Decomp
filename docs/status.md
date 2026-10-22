@@ -25,8 +25,17 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, day 13c): DObj_UpdateSkeletons' whole animation subtree.** Matched 649 -> 672
-(+ the subagents' batches merged below). New modules: game/code/nal_pose.cpp (NAL_GenericAnim_EvaluatePose, the byte-code
+**Resume here (decomp, 2026-10-22, day 13c): DObj_UpdateSkeletons' whole animation subtree, a cgame batch, the
+game module started.** Matched 649 -> 828 so far (the renderer subagent's batch is merged separately, see below).
+Game module (subagent, merged ca925e7): game/code/g_scr_math, g_scr_runtime, g_utils, actor, bg_misc - 142 matched,
+30 not reached (script math, actor state callbacks, pmove ammo helpers, trivial SP_* spawns; list in that commit's
+branch report), none mismatched; Scr_GetEntObjectOrEmpty, Scr_Acos, Scr_Asin are unhookable (CALL in the first
+5 bytes). cgame (a012446): CG_AllocLocalEntity, CG_DrawHudElemAlignedText/Material, CG_StartShakeCamera,
+CG_CalcWeaponBob, CG_UpdateCvars, CG_DObjEnsureSkeleton, CG_GetHudElemText, CG_DrawScreenBlackout,
+CG_GetCurrentWeaponDef, CG_DrawDamageBlend matched; CG_Viewpos_f, CG_AddNearCulledLocalEntity, CG_ScoresDown_f not
+reached. NAL_EntropyReader_DecodeFloats + the entropy Float3 DecodeBlock/DecodeChannelBlock matched (the bit
+position needs 64 bits: byte address * 8). Next cgame: the ones with one title callee left (CG_AddLocalEntities,
+CG_CycleWeaponSlot, CG_DrawProgressBar, CG_Check*Events, CG_CopySaveState; rank with fnpack as in this session). New modules: game/code/nal_pose.cpp (NAL_GenericAnim_EvaluatePose, the byte-code
 pose evaluator: settled at the first run; its IK opcode 5 is written but never reached in missions 0-6, nor
 NAL_IK_TwoBoneAngles / Mat44_InverseRigid; 0x00093250 is still called at its title address), game/code/nal_anim.cpp
 (anim states, block cache, track sampling, AnimTree_CalcPose_r), game/code/nal_codec.cpp (stream readers + 17 small
