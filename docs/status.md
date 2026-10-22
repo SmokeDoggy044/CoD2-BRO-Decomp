@@ -25,7 +25,21 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-21, late night): renderer bottom-up, third batch.** 33 more, all matched, none
+**Resume here (decomp, 2026-10-21, night 2): renderer bottom-up, fourth batch.** 25 more: nglGetTextExtentf/
+SizeF, nglCreateVertexBuffer(Physical), nglInitTextureHeader, nglAllocTextureMemory, nglCreatePalette (palette
+size 32/64/128/256 -> 3/2/1/0, others 0), nglMeshBuilder_Begin/AddSection/End, nglDynamicVB_Begin/EndFrame,
+nglQuadBatch_Reserve, nglAllocSceneRenderTargets, nglAllocFogTextures, nglFontParseKeyInt (regparm(2)),
+nglIndexBuffer_Alloc, XModelParts_FindBone (EBX/ESI asm entry) + DObj_FindBoneIndex2 - all matched, none
+mismatched. Inconclusive only: nglTextureGetSurfaces and nglDynamicVB_BeginFrame (D3D getters/Lock are host code;
+no stand-in - GetSurfaceLevel allocates host surfaces). Not reached: nglCreateDDSPalette. Unhookable bare-ret
+stubs, newly named: nglVertexBuffer_Unlock, nglVertexBuffer_GetD3D, nglTexture_Unlock, nglBeginFrame_Nop.
+NglTexture now has format +8, width +0x10, height +0x14, levels +0x18, surfaces +0x34; XBoneInfo +0 = name text.
+Next: rebuild the bottom-up list (progress.py --module renderer --state named -> CalleeNames.java ->
+bottomup_rank.py FILE 1); ready-after-this: nglParseFontFile, nglParseDDSPalette, nglWriteTGA, nglUpdateFogTable,
+nglBeginFrame, RE_DrawText (RE_DrawTextExt first); still skipped: zlib/deflate, nglReadFile and
+nglSwizzleTextureLevels (file I/O / D3D getters), debug overlays.
+
+**Earlier (decomp, 2026-10-21, late night): renderer bottom-up, third batch.** 33 more, all matched, none
 mismatched: ShaderCache_FindOrAdd (the shader cache 0x00902ac0 is a skip list keyed by NglHashedName, returns the
 existing node or null after inserting) + ShaderCache_RandomLevel (was FUN_00093c30), Mem_AlignedAlloc (new
 qcommon module), nglGetTextExtent, nglBeginSceneRender (SetViewport and Clear now recorded calls),
