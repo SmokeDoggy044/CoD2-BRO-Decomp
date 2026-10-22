@@ -25,7 +25,23 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, night 8): big functions + the particle library.** FX_UpdateEffects fixed:
+**Resume here (decomp, 2026-10-22, night 9): the particle update tree.** FxSystem_Update (0x00094c60) and its whole
+subtree are ours: FxEmitterDef_Update/Finish (0x0009c7b0/0x0009c730: actions = vtable slot 0 Apply(begin, end,
+emitter, system, time, delta) inside +4 {start, end} windows; emitter-level ones have +0x14 clear; hidden emitters wait
++0xb4 from a depth curve, max step 0.3), FxEmitter_BeginParticles / AdvanceParticles (one range per pass; ages
+particles, grows the bounds accumulator 0x00909ee0/f0 by sprite or two-size extents) / EndParticles / CompactParticles
+/ UpdateVisibility / TransformBounds, FxBox_GetCorners, FxCurve_Evaluate, FxSystem_SwapParams, FxParamBlock_Set,
+FxSystemDef_IsEmitterVisible, FxEmitter_FreeParticles, apsMemoryPool_Free, FxEmitterList_Add/Remove, FxSystem_Destroy,
+FxSystemList_Update, FX_DrawGlobalSystems, FxRandom_Reset/Restore. compiler.h: platform_x87_mul,
+platform_x87_greater (FCOMIP, no MXCSR flags). Batches 1-2: 17 matched (all settled), none mismatched; batch 3:
+7 matched (all settled), none mismatched - 24 this session. Names are in manual_names.csv only: Ghidra was not running (this and night 8's names still need ApplyNames +
+ExportSymbols). Next: the rest of the particle library bottom-up - apsMemoryPool_Alloc (0x0009ba90), the emitter
+list's push_back (0x0009f570), Mat44_TransformPoint (0x00097ba0, packed), apsGroup_Create (0x00097a10),
+apsEffect_Create/Init, the particle action classes (Apply methods: find their vtables from apsParseActions
+0x00097cd0); the four FX_Add*Components still need the param-block writer tree (0x00023690/0x000237b0/0x00023b20 ->
+0x00024630/0x00024730 -> 0x00023710).
+
+**Earlier (decomp, 2026-10-22, night 8): big functions + the particle library.** FX_UpdateEffects fixed:
 0x0096d8f8/0x00971800 hold addresses of stack locals (FX_AddSoundComponents, FX_AddParticleComponents), so its
 callees must run at the original's ESP - FX_UpdateEffects_entry moves the C frame 128 KB down and calls each
 callee through the new `title_call_at_regs` (title_data.h; all six registers); old mismatches reset. New:
