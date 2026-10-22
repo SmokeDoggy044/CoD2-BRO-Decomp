@@ -25,7 +25,30 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, day 11d): the emitter Apply and the last particle actions.** 16 more, 10 matched,
+**Resume here (decomp, 2026-10-22, day 12): the FX component helpers under FX_Add*Components.** New module
+game/code/param_set.cpp: parameter sets (ParamList_Init/Clear/Add/Delete, ParamSet_Destruct/Delete/AddString/
+AddValue/AddFxOverrides, ParamChoice_GetValue; the stack object FX_Add*Components and the animscript event builders
+0x00200450/0x00203280 fill). In fx.cpp: ParamChoice_GetFlags, ParamChoiceList_PickRandom/PickPerGroup (weighted pick,
+particle LCG 0x008d5a70), FX_CollectTriggers, FXTriggerTable_Find, FixedStr32_Format, ZoneAliasList_NextVariant,
+FxComponent_GetEntity/GetEntityOrigin/GetPosition, DObjHandle_Resolve, WeaponModel_GetDObjHandle, FX_AxesFromForward,
+FX_RandomInOctaves, FX_AnglesToMatrix, the camera shake (CameraShake_Start/AllocSlot/InitSlot/SetAmplitude/
+SetDistanceScale), the rumble (Rumble_SetScale, ShakeRumble_Start, ShakeRumbleRecord_Init, ShakeRumbleDesc_Init/
+Destroy) and the shake/rumble component's Update (0x002a3570, vtable 0x008376d0 slot 1); UintMap_Find (ngl.cpp),
+AnglesToAxis and MatrixMultiply43To44 (qcommon.cpp). Harness: `Result::Xmm0` (float results in XMM0) and the hook's
+instruction decoder takes SSE arithmetic/compare opcodes (CameraShake_SetAmplitude starts with UCOMISS). Title CRT x87
+intrinsics (__CIsqrt/__CIsin/__CIcos/__CIpow) are called at their title addresses (fx.cpp title_ci_*), so error
+cases match. Gotcha: cdecl functions that reuse an argument slot as scratch (FX_RandomInOctaves, AnglesToAxis) get
+that slot compared - the asm entry hands the C version the slot's address. Not reached in missions 1/4/5/6: the
+ParamList/ParamSet destructors, FixedStr32_Format (only with a trigger prefix). Also: FX_PlayEffectWithAxis/
+AlongDir, the particle component's Update (FxParticleComponent_Update 0x002a46d0: reads the spawn parameters
+FX_AddParticleComponents leaves in 0x009717f4-0x00971838) and the first of the four, FX_AddLightComponents (settled
+at once; it calls the ParamSet resolver 0x0029b9f0 through the set's vtable). FX_PlayEffectAt now returns
+FX_SpawnEffect's result (registered Eax; it was None, so the dropped return value went unnoticed). 45 functions
+this session, all reached ones matching. Next: the ParamSet resolver 0x0029b9f0 (952 bytes: a decision tree over the
+definition's nodes; callees 0x00296e50, 0x00299310, 0x002994f0), the sound component 0x0029d7c0/0x0029df60, then
+FX_AddShakeRumble/Particle/SoundComponents; 0x00293310 cannot be hooked (CALL in its first 5 bytes).
+
+**Earlier (decomp, 2026-10-22, day 11d): the emitter Apply and the last particle actions.** 16 more, 10 matched,
 6 not reached, none mismatched: apsActionEmitter_Apply (0x000a2e40, SrcA/Brst/RSpn: the 16 generators at self +0xc,
 vtable slot 1, called in a fixed order; settled), FxEmitter_AddParticle, FxBox_Expand, apsSinCos (0x000a06e0 =
 scene_sine_poly), Quat_FromAxisAngle, Quat_FromEuler, Mat44_TransformVector, AngT (apsActionAngleToVelocity_Apply),
