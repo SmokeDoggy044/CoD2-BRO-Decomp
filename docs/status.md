@@ -25,7 +25,24 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, day 13b): cgame batch + NAL math leaves.** Matched 637 -> 649. cgame: CG_Fade_f,
+**Resume here (decomp, 2026-10-22, day 13c): DObj_UpdateSkeletons' whole animation subtree.** Matched 649 -> 672
+(+ the subagents' batches merged below). New modules: game/code/nal_pose.cpp (NAL_GenericAnim_EvaluatePose, the byte-code
+pose evaluator: settled at the first run; its IK opcode 5 is written but never reached in missions 0-6, nor
+NAL_IK_TwoBoneAngles / Mat44_InverseRigid; 0x00093250 is still called at its title address), game/code/nal_anim.cpp
+(anim states, block cache, track sampling, AnimTree_CalcPose_r), game/code/nal_codec.cpp (stream readers + 17 small
+channel-class methods; only the Float3/Entropy ones are reached here), DObj_UpdateSkeletons / DObj_GetAnimRootTransform /
+XModel_TransformBones in dobj.cpp (dobj_call_regs: one thunk for the EAX/ECX/EDX game callees). 21 of the subtree
+matched (20 settled); DObj_UpdateSkeletons, AnimTree_CalcPose_r and NAL_AnimTrack_Sample differ from the original
+only in the w word (+0x1c) of PositionOrientation records, which the title never sets (stale stack in 0x0008d3f0):
+leave them on record until that channel class is C code (docs/nal_animation.md). Not reached: NAL_FindSkeleton,
+NAL_RleReader_ReadBytes and 14 codec methods of classes these clips don't use; untested: Packed8Float1 Skip/DecodeBlock,
+SignalCounter Decode/SkipBlock, EntropyFloat1_Evaluate. (The e4a0e9a commit message's "27 matched / 19 not reached /
+6 untested" is off: 21 / 16 / 5.) Next: the entropy mode decoders (table 0x008bb4a0, 32 prefix-code readers, reached
+every frame) and NAL_EntropyReader_DecodeFloats (0x0007cb10), then the used channel classes - most of their methods
+(vtables 0x007c2a30 quaternion, 0x007c2620 position, 0x007c2bd0 position+orientation) are uncreated gap functions in
+Ghidra: ask before creating them. Also 0x0001e150 (2.5 KB vtable method, "camera", calls the anim-state functions).
+
+**Earlier (decomp, 2026-10-22, day 13b): cgame batch + NAL math leaves.** Matched 637 -> 649. cgame: CG_Fade_f,
 CG_DrawFlashFade, CG_DrawCenterString, CG_DrawRotatedQuadPic (ESI/XMM0 entry), CG_ShareWeaponTagBModels (ESI) matched;
 CG_DrawTextScaled (EAX/EDX/ECX/XMM1) and CG_DrawRotatedPic (XMM0) not reached in level runs. New module
 game/code/nal_math.cpp (DObj_UpdateSkeletons' math): Mat44_MultiplyInPlace, Quat_ToMat33, Vec3_MulMat44,
