@@ -33,9 +33,10 @@ Traj (apsActionTrajectory_Apply, path lookup 0x00909940) + apsPath_FindSegment -
 in missions 0-7: LAtr/DLAt (line attract), KTau (apsActionFrenetMove_Apply; particle fields +0x9b-0x9f) and AngT's
 flag-0x20 subtree (apsOrientToVelocity, Mat44_FromDirection, Quat_FromMat44); grep of the level .cod files: Traj in
 prologue/gela/omaha, WPRf in oran, AngT in many; LAtr/DLAt/KTau/PAtr/ATEX not found (maybe packed). New x87 helpers:
-platform_x87_add_sqrt, platform_x87_sub_sub_add_sqrt. Names still not applied in Ghidra (day 11 batches). Next:
-missions 8-13 for the not-reached actions, then apply the day-11 names in Ghidra, then the rest of the particle
-library (FX_Add*Components and their param-block writer tree).
+platform_x87_add_sqrt, platform_x87_sub_sub_add_sqrt. Missions 8-11 reach none of them either (start-of-level
+runs): they need a played --compare run (XBCMP_ONLY = these + ATEX/Y/Z, PAtr, WPRf). Day-11 names (60) applied in
+Ghidra (13 functions created: total 16517), symbols exported. Next: the rest of the particle library
+(FX_Add*Components and their param-block writer tree).
 
 **Earlier (decomp, 2026-10-22, day 11c): more particle actions.** 11 more, 6 matched, 5 not reached, none mismatched (commit 8ac7562 says 12/8 by mistake):
 apsAtan2 (0x000a4ac0, reuses FxSystem_SetView's asin series), ClSh, MFxV, Forc, OMov + Quat_RotateVector (0x0009f6c0),
