@@ -31,10 +31,16 @@ table). New test tests/nal_entropy_test.cpp maps default.xbe's decoder bytes (pu
 them against ours on random streams: 64/64 modes identical (skipped without the XBE). In game (missions 1/4/5/6):
 modes 0x00-0x1d reached, 1,351 tests matched, none mismatched; the negative-scale-only decoders 0x2f-0x3d and
 0x1e are not reached in these levels (covered by the offline test). Only 11 of the 46 are created functions in
-Ghidra; the 35 gap ones stay uncreated (names in manual_names.csv, not applied yet). Next: the used channel classes
-(vtables 0x007c2a30 quaternion, 0x007c2620 position, 0x007c2bd0 position+orientation; most methods are uncreated gap
-functions - ask before creating them), 0x0001e150 (2.5 KB vtable method, "camera"), and the cgame ones with one title
-callee left (CG_AddLocalEntities, CG_Check*Events, CG_CopySaveState).
+Ghidra; the 35 gap ones stay uncreated (names in manual_names.csv, not applied yet). Next (agreed with the user, 2026-10-22):
+1. The PositionOrientation channel class (vtable 0x007c2bd0) and 0x0008d3f0 (root-motion delta, its slot 11) - then
+   re-test NAL_AnimTrack_Sample, AnimTree_CalcPose_r and DObj_UpdateSkeletons (the stale w word +0x1c should match
+   once 0x0008d3f0 is ours).
+2. The quaternion (0x007c2a30) and position (0x007c2620) classes.
+3. 0x0001e150 (2.5 KB vtable method, "camera"), then the cgame ones with one title callee left (CG_AddLocalEntities,
+   CG_Check*Events, CG_CopySaveState).
+Gap functions (user, 2026-10-22): decompile them uncreated - register by address, bound each at the next
+table/vtable entry (fnpack overstates their sizes); do not create them in Ghidra. Later one CreateGapFunctions.java
+pass over the NAL range 0x0007c2b0-0x00093090 + ApplyNames, when the user wants the counter complete.
 
 **Earlier (decomp, 2026-10-22, day 13c): DObj_UpdateSkeletons' whole animation subtree, a cgame batch, the
 game module started.** Matched 649 -> 907 with both subagents' batches. Renderer/stream (subagent, merged 9283f88): the texture/mesh load chain, nglParseMesh, the stream zone searches and file-type handlers, MemContext_Push/Pop - 73 matched, 11 not reached, Stream_LoadStb inconclusive only (LIBCMT _clock); harness gained a D3DSurface_GetDesc stand-in and MmSetAddressProtect as a recorded kernel call. Skipped there: nglBeginFrame/EndFrame (RDTSC), FX_LoadEffectFromStream (needs Stream_LoadBpe's frame rebuild). Names from this session are applied in Ghidra (2918bd8) except 0x0007c360 NAL_SignalCounter_SkipBlock, an uncreated gap function.
