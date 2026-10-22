@@ -32,8 +32,11 @@ differs from particles: a source with its own aliased sound (ZoneAliasList_NextV
 triggers; only the first trigger with choices is used; only single-choice lists are cached; weapon cache at +0xac.
 0x0096d8f8 = the name's stack address in the original (((ESP - 4) & ~7) - 0x6b0); S_FindSoundByHash compares
 strings (bsearch + stricmp), so our own buffer gives the same result. Names for FxSoundComponent_Update's callees are
-in manual_names.csv (15 rows, not applied in Ghidra yet). Next: those leaves (Entity_EndSoundNotify, SoundRef_*,
-S_PlaySoundAlias2, FX_LimitSoundComponents), then FxSoundComponent_Update 0x0029d7c0 (1.9 KB).
+in manual_names.csv (15 rows, not applied in Ghidra yet). Then those leaves (new module game/code/snd.cpp: SoundRef_* {voice, alias, flag +8, ..., +0x28
+source; 0x30 bytes}, S_PlaySoundAlias2 - S_StartAliasVoice2 takes EAX/EBX(out)/ESI/EDI, asm thunk; the voice
+helpers moved there; fx.cpp: FX_LimitSoundComponents, Entity_EndSoundNotify with a Scr_Notify ESI thunk): 10 matched
+(S_PlaySoundAlias2 14 tests), none mismatched. Next: FxSoundComponent_Update 0x0029d7c0 (1.9 KB; its callees are
+now ours except S_PlaySoundAlias, SoundHandle_Resolve, G_EntHandleToEnt, Scr_Notify).
 
 **Earlier (decomp, 2026-10-22, day 12b): three of the four FX_Add*Components done.** Since 14ba77a: the
 ParamSet resolver (ParamSet_Resolve 0x0029b9f0 with ParamNode_CollectChoices, ParamSet_CompareValue,
