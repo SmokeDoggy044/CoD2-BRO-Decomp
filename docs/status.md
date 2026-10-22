@@ -25,7 +25,19 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, day 11c): more particle actions.** 11 more, 6 matched, 5 not reached, none mismatched (commit 8ac7562 says 12/8 by mistake):
+**Resume here (decomp, 2026-10-22, day 11d): the emitter Apply and the last particle actions.** 16 more, 10 matched,
+6 not reached, none mismatched: apsActionEmitter_Apply (0x000a2e40, SrcA/Brst/RSpn: the 16 generators at self +0xc,
+vtable slot 1, called in a fixed order; settled), FxEmitter_AddParticle, FxBox_Expand, apsSinCos (0x000a06e0 =
+scene_sine_poly), Quat_FromAxisAngle, Quat_FromEuler, Mat44_TransformVector, AngT (apsActionAngleToVelocity_Apply),
+Traj (apsActionTrajectory_Apply, path lookup 0x00909940) + apsPath_FindSegment - all settled or matching. Not reached
+in missions 0-7: LAtr/DLAt (line attract), KTau (apsActionFrenetMove_Apply; particle fields +0x9b-0x9f) and AngT's
+flag-0x20 subtree (apsOrientToVelocity, Mat44_FromDirection, Quat_FromMat44); grep of the level .cod files: Traj in
+prologue/gela/omaha, WPRf in oran, AngT in many; LAtr/DLAt/KTau/PAtr/ATEX not found (maybe packed). New x87 helpers:
+platform_x87_add_sqrt, platform_x87_sub_sub_add_sqrt. Names still not applied in Ghidra (day 11 batches). Next:
+missions 8-13 for the not-reached actions, then apply the day-11 names in Ghidra, then the rest of the particle
+library (FX_Add*Components and their param-block writer tree).
+
+**Earlier (decomp, 2026-10-22, day 11c): more particle actions.** 11 more, 6 matched, 5 not reached, none mismatched (commit 8ac7562 says 12/8 by mistake):
 apsAtan2 (0x000a4ac0, reuses FxSystem_SetView's asin series), ClSh, MFxV, Forc, OMov + Quat_RotateVector (0x0009f6c0),
 all settled or matching; not reached in missions 1/4/5/6: ATEX/ATEY/ATEZ, PAtr, WPRf (need a played --compare run or
 other missions). New x87 helpers: platform_x87_add_mul, platform_x87_rcp_norm4 (and the portable fallbacks, also for
