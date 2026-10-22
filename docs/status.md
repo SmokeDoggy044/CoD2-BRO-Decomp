@@ -25,7 +25,18 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, day 13): renderer runtime nearly done, cgame started, harness stand-ins.**
+**Resume here (decomp, 2026-10-22, day 13b): cgame batch + NAL math leaves.** Matched 637 -> 649. cgame: CG_Fade_f,
+CG_DrawFlashFade, CG_DrawCenterString, CG_DrawRotatedQuadPic (ESI/XMM0 entry), CG_ShareWeaponTagBModels (ESI) matched;
+CG_DrawTextScaled (EAX/EDX/ECX/XMM1) and CG_DrawRotatedPic (XMM0) not reached in level runs. New module
+game/code/nal_math.cpp (DObj_UpdateSkeletons' math): Mat44_MultiplyInPlace, Quat_ToMat33, Vec3_MulMat44,
+QuatTrans_Concat, QuatTrans_ToMat44, Quat_Slerp, Quat_FromAxis3 all settled at the first run; Mat44_InverseRigid not
+reached (IK opcodes only). Lifting: psssym.py handles the shuffles (start after the `mov reg,[ebp+N]` argument loads,
+pass --in for the pointers; it ignores `xorps` with a mask - here 0x0082e0b0 = all sign bits - and x87 code: the
+"radicand" factor it prints is really the x87 0.5/sqrt). New compiler.h helpers: platform_x87_half_over_sqrt,
+platform_x87_sqrt_sub_mul. Next: the rest of DObj_UpdateSkeletons bottom-up (NAL_IK_TwoBoneAngles, 0x00093250, then
+the pose evaluator), the earlier list below otherwise unchanged.
+
+**Earlier (decomp, 2026-10-22, day 13): renderer runtime nearly done, cgame started, harness stand-ins.**
 Matched 576 -> 637 this session (subagents in worktrees for part of it; all merged). Renderer: FX spawn path
 (FX_SpawnQueuedEffect, FX_UpdateEffect, FX_SpawnEffect, FX_KillEffectsOnEntity, FX_ReleaseEffectHandle),
 RE_RenderScene, RE_StretchPicRotate, RE_AddPolyToScene + mesh-builder helpers, R_DrawFogPass, R_RenderTestShadow,
