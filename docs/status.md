@@ -25,7 +25,7 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, day 11c): more particle actions.** 12 more, 8 matched, none mismatched:
+**Resume here (decomp, 2026-10-22, day 11c): more particle actions.** 11 more, 6 matched, 5 not reached, none mismatched (commit 8ac7562 says 12/8 by mistake):
 apsAtan2 (0x000a4ac0, reuses FxSystem_SetView's asin series), ClSh, MFxV, Forc, OMov + Quat_RotateVector (0x0009f6c0),
 all settled or matching; not reached in missions 1/4/5/6: ATEX/ATEY/ATEZ, PAtr, WPRf (need a played --compare run or
 other missions). New x87 helpers: platform_x87_add_mul, platform_x87_rcp_norm4 (and the portable fallbacks, also for
