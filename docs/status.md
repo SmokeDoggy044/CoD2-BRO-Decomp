@@ -25,7 +25,18 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-21, night 3): renderer bottom-up, fifth batch.** 14 more: nglParseFontFile (EDI
+**Resume here (decomp, 2026-10-21, night 4): renderer bottom-up, sixth batch.** 11 more: the pack relocation
+chain (Pack_RelocateTable, Pack_RelocateChain (EAX chain, EBX bits; asm entry), Pack_DecodeRelocWord - new names),
+nglCreateTexture (NglTexture +0x38 companion surface, +0x54 name), nglCreateWhiteTexture, nglCreateFogTextures,
+RE_DrawTextExt (^N colours, {button} icons through RE_ParseButtonToken: stdcall + EBX out buffer, called with an asm
+thunk), R_FindFont, Q_strncpyLen, Q_strncpySubLen (new name). 9 matched (RE_DrawTextExt 124, R_FindFont 332, the
+Q_ copies and Pack_DecodeRelocWord settled), none mismatched. nglCreateTexture/WhiteTexture/FogTextures mostly
+inconclusive: nglTextureGetSurfaces calls host D3D getters (no stand-in). Not reached / no callers:
+RE_StretchPicRotate, RE_TextWidthWithIcons, nglDrawFogPass, RE_EndFrame (skipped). Next: rebuild the bottom-up
+list; candidates nglEndFrame (1201 bytes, x87; unblocks RE_EndFrame, nglDrawSingleQuadFrame), R_DrawTextWithShadow
+(debug callers only), nglLoadTexture chain (file I/O), RE_BeginRegistration/R_Init/R_Register (startup).
+
+**Earlier (decomp, 2026-10-21, night 3): renderer bottom-up, fifth batch.** 14 more: nglParseFontFile (EDI
 entry; new NglFont/NglFontGlyph), nglLoadFontFile, nglLoadFont, nglUpdateFogTable (takes over only the first
 changed fog value per call), nglParseDDSPalette, MemStream_Destroy/DeletingDestroy, DObj_GetTagIndex (obj EAX,
 hash ESI) + Com_HashKeyNoCase, FX_FreeEffectsById, R_CheckCvarRange, FastSinCos (= scene_sine_poly lanes),
