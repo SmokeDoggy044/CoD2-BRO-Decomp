@@ -25,7 +25,27 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, day 12c): all four FX_Add*Components done.** FX_AddSoundComponents
+**Resume here (decomp, 2026-10-22, day 13): the FX spawn path, scene entry points, fog/ocean, DObj lifetime.**
+Work split with subagents (worktree branches merged into main). Matched: FX_SpawnQueuedEffect (callees at the
+original's ESP, as FX_UpdateEffects), FX_UpdateEffect, FX_SpawnEffect (+ FX_HasParticleRoom, apsPool_HasRoom),
+FX_ReleaseEffectHandle, FX_KillEffectsOnEntity, DObj_GetOwnerPlacement, DObj_Free + AnimTree_Free, RE_RenderScene
+(view parameters at the original's frame offset, every call at the original's ESP, R_RenderView by title address -
+ours still mismatches on stale-stack lanes), RE_StretchPicRotate, RE_AddPolyToScene + nglMeshBuilder_AddIndexRun/
+AddStrip/nglPolyBuilder_SetVertex, R_DrawFogPass, R_RenderTestShadow (forced r_testshadow for the test only),
+cdOcean_SetWaveConstants + nglNode_GetScaledWorldInverse (missions 6/9). Not reached: the icon text
+(R_ParseTextIcon, RE_TextWidthWithIcons, RE_DrawTextWithIcons - refexport only, no hint text in 200 s runs),
+FX_FlushSpawnQueue, FX_PruneComponents. Inconclusive only: nglDrawFogPass (fog textures get surfaces every call:
+D3DBaseTexture_GetLevelCount / D3DTexture_GetSurfaceLevel2 have no stand-ins - a subagent is adding them).
+Harness: the RDTSC trampolines' pages stay executable in test processes (Config::host_code) and title_rdtsc is a
+recorded call (EAX 0 on both sides), so Sys_Milliseconds callers are testable. 100 renderer names applied in
+Ghidra (87 from a naming pass: per-class vertex iterators of the cd* materials, cdSimpleInstance batcher, resource
+managers, debug meshes). 0x0007bac0-0x00080070 is an animation codec (26-slot vtables 0x007c2418-0x007c2828):
+naming pass in progress. Left in the renderer: load/startup paths (nglLoadDDS & co. need the surface stand-ins),
+nglBeginFrame/EndFrame (RDTSC site inside: needs a title-clock hook for game/code), DObj_UpdateSkeletons,
+R_RegisterModel (fixed-string helpers), debug draws. Next: DObj_Create result, the stand-ins merge, then the
+texture load chain.
+
+**Earlier (decomp, 2026-10-22, day 12c): all four FX_Add*Components done.** FX_AddSoundComponents
 (0x0029eea0), FxSoundComponent_Create (0x0029df60, ESI), SndVoice_GetCount/SndVoice_Get - all settled at the first
 run (784 tests). Snd_CountBusyVoices (0x00293310, CALL in its first 5 bytes) is a C helper, not registered. Sound
 differs from particles: a source with its own aliased sound (ZoneAliasList_NextVariant) makes one component without
