@@ -38,9 +38,8 @@ helpers moved there; fx.cpp: FX_LimitSoundComponents, Entity_EndSoundNotify with
 (S_PlaySoundAlias2 14 tests), none mismatched. Then FxSoundComponent_Update 0x0029d7c0 (1.9 KB): settled at
 the first run (347 tests); its asm entry passes the caller's EBX (the original pushes EBX with only its low bytes
 replaced as an S_PlaySoundAlias argument); FxSoundComponent_Create now calls it with EBX 0 (as the original). The
-whole FX component tree under FX_SpawnQueuedEffect is now ours except 0x00293310 (unhookable, C helper). Names of
-this day (15 rows in manual_names.csv) not applied in Ghidra yet. Next: apply them, then the next renderer/FX
-callers bottom-up (tools/progress.py --module renderer --state untested).
+whole FX component tree under FX_SpawnQueuedEffect is now ours except 0x00293310 (unhookable, C helper). The day's
+15 names are applied in Ghidra (symbols exported, smoke test clean). Next: the next renderer/FX callers bottom-up (tools/progress.py --module renderer --state untested).
 
 **Earlier (decomp, 2026-10-22, day 12b): three of the four FX_Add*Components done.** Since 14ba77a: the
 ParamSet resolver (ParamSet_Resolve 0x0029b9f0 with ParamNode_CollectChoices, ParamSet_CompareValue,
