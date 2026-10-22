@@ -35,8 +35,12 @@ strings (bsearch + stricmp), so our own buffer gives the same result. Names for 
 in manual_names.csv (15 rows, not applied in Ghidra yet). Then those leaves (new module game/code/snd.cpp: SoundRef_* {voice, alias, flag +8, ..., +0x28
 source; 0x30 bytes}, S_PlaySoundAlias2 - S_StartAliasVoice2 takes EAX/EBX(out)/ESI/EDI, asm thunk; the voice
 helpers moved there; fx.cpp: FX_LimitSoundComponents, Entity_EndSoundNotify with a Scr_Notify ESI thunk): 10 matched
-(S_PlaySoundAlias2 14 tests), none mismatched. Next: FxSoundComponent_Update 0x0029d7c0 (1.9 KB; its callees are
-now ours except S_PlaySoundAlias, SoundHandle_Resolve, G_EntHandleToEnt, Scr_Notify).
+(S_PlaySoundAlias2 14 tests), none mismatched. Then FxSoundComponent_Update 0x0029d7c0 (1.9 KB): settled at
+the first run (347 tests); its asm entry passes the caller's EBX (the original pushes EBX with only its low bytes
+replaced as an S_PlaySoundAlias argument); FxSoundComponent_Create now calls it with EBX 0 (as the original). The
+whole FX component tree under FX_SpawnQueuedEffect is now ours except 0x00293310 (unhookable, C helper). Names of
+this day (15 rows in manual_names.csv) not applied in Ghidra yet. Next: apply them, then the next renderer/FX
+callers bottom-up (tools/progress.py --module renderer --state untested).
 
 **Earlier (decomp, 2026-10-22, day 12b): three of the four FX_Add*Components done.** Since 14ba77a: the
 ParamSet resolver (ParamSet_Resolve 0x0029b9f0 with ParamNode_CollectChoices, ParamSet_CompareValue,
