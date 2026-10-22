@@ -25,7 +25,18 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, day 13c): DObj_UpdateSkeletons' whole animation subtree, a cgame batch, the
+**Resume here (decomp, 2026-10-22, day 13d): the entropy mode decoders.** All 46 distinct decoders behind the
+64-entry table 0x008bb4a0 are C code (game/code/nal_entropy.cpp; NAL_EntropyReader_Decode dispatches through our
+table). New test tests/nal_entropy_test.cpp maps default.xbe's decoder bytes (pure, relative jumps only) and runs
+them against ours on random streams: 64/64 modes identical (skipped without the XBE). In game (missions 1/4/5/6):
+modes 0x00-0x1d reached, 1,351 tests matched, none mismatched; the negative-scale-only decoders 0x2f-0x3d and
+0x1e are not reached in these levels (covered by the offline test). Only 11 of the 46 are created functions in
+Ghidra; the 35 gap ones stay uncreated (names in manual_names.csv, not applied yet). Next: the used channel classes
+(vtables 0x007c2a30 quaternion, 0x007c2620 position, 0x007c2bd0 position+orientation; most methods are uncreated gap
+functions - ask before creating them), 0x0001e150 (2.5 KB vtable method, "camera"), and the cgame ones with one title
+callee left (CG_AddLocalEntities, CG_Check*Events, CG_CopySaveState).
+
+**Earlier (decomp, 2026-10-22, day 13c): DObj_UpdateSkeletons' whole animation subtree, a cgame batch, the
 game module started.** Matched 649 -> 907 with both subagents' batches. Renderer/stream (subagent, merged 9283f88): the texture/mesh load chain, nglParseMesh, the stream zone searches and file-type handlers, MemContext_Push/Pop - 73 matched, 11 not reached, Stream_LoadStb inconclusive only (LIBCMT _clock); harness gained a D3DSurface_GetDesc stand-in and MmSetAddressProtect as a recorded kernel call. Skipped there: nglBeginFrame/EndFrame (RDTSC), FX_LoadEffectFromStream (needs Stream_LoadBpe's frame rebuild). Names from this session are applied in Ghidra (2918bd8) except 0x0007c360 NAL_SignalCounter_SkipBlock, an uncreated gap function.
 Game module (subagent, merged ca925e7): game/code/g_scr_math, g_scr_runtime, g_utils, actor, bg_misc - 142 matched,
 30 not reached (script math, actor state callbacks, pmove ammo helpers, trivial SP_* spawns; list in that commit's
