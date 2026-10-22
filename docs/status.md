@@ -25,7 +25,21 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-21, night 5): renderer bottom-up, seventh batch.** 7 more: nglRenderTextNode
+**Resume here (decomp, 2026-10-21, night 6): renderer bottom-up, eighth batch.** 16 more: FX_SortEffects,
+FX_ClearEffects, FX_FreeAllEffects (ESI entry), FX_FreeAllEffectLights (0x00236aa0, was also named FX_FreeAllEffects),
+DObj_CreateSkeleton (DObj +0x2f = bone_count), XModel_ResolveBoneNames (ESI entry), and 10 newly named leaves:
+R_Set/GetDebugViewMode (0x00901e94), R_AddFogPass (+ R_DrawFogPass 0x00045850 named only), ShaderPCUV_InitMaterial,
+Map_EmptyKey, nglSkipList_RandomLevel/InitHead (NglSkipList +0 random_bits, +4 bits_left - were seed/max_level),
+nglFlushDebugLineBatch, nglTexture_FreeHeaders, nglIndexBuffer_Free. PtrVector_Resize/PushBack (ESI/EBX) called
+through asm thunks in fx.cpp. 14 matched (6 settled), none mismatched; not reached: R_SetDebugViewMode (console
+toggles only), nglIndexBuffer_Free. Ready-list notes: most remaining zero-pending renderer FUN_s have no direct
+callers - 22 shader-class pairs (45/47 bytes: a functor {vtable, this, 0} cloned with Z_Malloc; vtables next to
+each class name string, e.g. 0x007b441c) and a 0x7c000-0x80000 cluster of size-counting/serializer methods; the
+skip-list inserts (0x00063f10, 0x00069e00, 0x00083db0, 0x00083f70) sit behind unrecognised gap code. Next: rebuild
+the list; candidates FX_PlayBoltedEffect, FX_InitEffectPool, R_LoadCellMeshes, nglInitTextureManager,
+RE_TextWidth, the cdOcean helpers (0x0004ef90, 0x0004f370, 0x00050910), 0x0007cb10 (54 callers).
+
+**Earlier (decomp, 2026-10-21, night 5): renderer bottom-up, seventh batch.** 7 more: nglRenderTextNode
 (the text node's Draw: one raw pushbuffer of quads; new NglTextNode, NglFont +0x40..+0x48 named), FX_StopEffect,
 nglMatrixOrthoOffCenter, nglUnprojectPoint, FX_PlayEffectAt (ESI origin), RE_ParseButtonToken (EBX out, stdcall),
 nglPalette_Unlock (bare ret, called from nglCreateTexture). Harness: BeginPush/EndPush stand-ins (the pushbuffer's
