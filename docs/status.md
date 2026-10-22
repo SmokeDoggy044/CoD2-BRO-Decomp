@@ -25,7 +25,20 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, day 10): particle allocation and effect creation.** 19 more, all matched,
+**Resume here (decomp, 2026-10-22, day 11): the particle pools and spawn actions.** 11 more, 6 matched, none
+mismatched: apsMemoryPool_AllocSlots (0x0009c210) / apsMemoryPool_Init (0x0009b9d0), apsPoolSet_AddPool (0x0009bf50) +
+apsAddPool (0x0009c050, global set), apsPtrVector_Resize (0x0009c620), apsPtrVector_PushFront (0x0009cb60: with room
+left the original only shifts the items, item not stored), apsElementList_Add (0x0009cb00, FX_LoadEffectFile; 'SpDe'
+element type 0x53704465 remembered at +8), apsEffectRef_Spawn (0x0009c9e0), the spawn actions
+apsActionSpawnTimed_Apply (0x000a1730, vtable 0x007c907c) / apsActionSpawnOnBirth_Apply (0x000a1850, 0x007c9090; birth
+pass = delta 8888.89), FxSystemList_DestroyAll (0x00095300, CG_Shutdown tail). Not reached: apsAddPool/AddPool (17 calls
+from 0x00234a00 at startup, before tests run; also with --only --every 1), apsEffectRef_Spawn (its caller 0x000a0970 is
+a vtable slot), OnBirth, DestroyAll. Dead code (no refs): 0x0009c3c0 (array compaction), 0x00095360 (an older
+apsEffect_Init). Names not applied in Ghidra yet. Next: the other Resize/Init callers (0x0009bee0, 0x0009bff0,
+0x0009c070 from Mem_InitSmallBlockPools, 0x000951c0, 0x0009f250), 0x000a0970, then the remaining action classes
+(apsParseActions 0x00097cd0 vtables) and the FX_Add*Components tree.
+
+**Earlier (decomp, 2026-10-22, day 10): particle allocation and effect creation.** 19 more, all matched,
 none mismatched: apsMemoryPool_Alloc, apsPoolSet_Alloc (best-fit pool set, 0x0009bba0) + apsAlloc (global set
 0x00909f08), apsGroup_Create (emitter setup), apsEffect_Init/Create/Spawn (active list 0x009099ac, at most 0x78;
 the definition's created count +0xac is raised twice), Mat44_TransformPoint, Mat44_FromQuatTranslation (quaternion
