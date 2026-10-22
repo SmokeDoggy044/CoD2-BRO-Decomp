@@ -25,7 +25,21 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, night 9): the particle update tree.** FxSystem_Update (0x00094c60) and its whole
+**Resume here (decomp, 2026-10-22, day 10): particle allocation and effect creation.** 19 more, all matched,
+none mismatched: apsMemoryPool_Alloc, apsPoolSet_Alloc (best-fit pool set, 0x0009bba0) + apsAlloc (global set
+0x00909f08), apsGroup_Create (emitter setup), apsEffect_Init/Create/Spawn (active list 0x009099ac, at most 0x78;
+the definition's created count +0xac is raised twice), Mat44_TransformPoint, Mat44_FromQuatTranslation (quaternion
+scaled by sqrt 2; each row's 4th lane repeats its first), apsPtrVector_PushBack (0x0009f570, seeded flag 0 around
+the heap calls) and the effect arrays (new ApsArray {data, int16 capacity, count}: apsArray_Free, apsPtrArray_* and
+apsParamArray_* Alloc/Resize/Reserve/PushBack - heap calls with effect id -1, seeded flag 1). FxEmitterList_Add and
+FxEmitter_TransformBounds now call ours. Not reached: apsParamArray_Alloc/Resize/PushBack (only effects with
+parameter overrides); Mat44_FromQuatTranslation 4 tests. ApplyNames.java skips the CSV's first row (header): start
+name files with one. Next: the other callers of the new helpers - 0x0009bf50 (-> 0x0009b9d0), 0x0009c3c0
+(-> 0x0009c620), 0x0009cb00 (-> 0x0009cb60, from FX_LoadEffectFile), 0x0009c9e0 / 0x000a1730 / 0x000a1850
+(apsEffect_Spawn callers), 0x00095300 (CG_Shutdown tail); then the particle action classes (Apply methods: vtables
+from apsParseActions 0x00097cd0) and the FX_Add*Components param-block writer tree (see below).
+
+**Earlier (decomp, 2026-10-22, night 9): the particle update tree.** FxSystem_Update (0x00094c60) and its whole
 subtree are ours: FxEmitterDef_Update/Finish (0x0009c7b0/0x0009c730: actions = vtable slot 0 Apply(begin, end,
 emitter, system, time, delta) inside +4 {start, end} windows; emitter-level ones have +0x14 clear; hidden emitters wait
 +0xb4 from a depth curve, max step 0.3), FxEmitter_BeginParticles / AdvanceParticles (one range per pass; ages
