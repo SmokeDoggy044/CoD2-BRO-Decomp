@@ -26,7 +26,7 @@ runs (only a front-end text dialog calls them). Next:
    not function-by-function decompilation.
 
 **Resume here (decomp, 2026-10-22, day 13c): DObj_UpdateSkeletons' whole animation subtree, a cgame batch, the
-game module started.** Matched 649 -> 828 so far (the renderer subagent's batch is merged separately, see below).
+game module started.** Matched 649 -> 907 with both subagents' batches. Renderer/stream (subagent, merged 9283f88): the texture/mesh load chain, nglParseMesh, the stream zone searches and file-type handlers, MemContext_Push/Pop - 73 matched, 11 not reached, Stream_LoadStb inconclusive only (LIBCMT _clock); harness gained a D3DSurface_GetDesc stand-in and MmSetAddressProtect as a recorded kernel call. Skipped there: nglBeginFrame/EndFrame (RDTSC), FX_LoadEffectFromStream (needs Stream_LoadBpe's frame rebuild). Names from this session are in tools/data/manual_names.csv, not applied in Ghidra yet.
 Game module (subagent, merged ca925e7): game/code/g_scr_math, g_scr_runtime, g_utils, actor, bg_misc - 142 matched,
 30 not reached (script math, actor state callbacks, pmove ammo helpers, trivial SP_* spawns; list in that commit's
 branch report), none mismatched; Scr_GetEntObjectOrEmpty, Scr_Acos, Scr_Asin are unhookable (CALL in the first
