@@ -25,7 +25,19 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-21, night 4): renderer bottom-up, sixth batch.** 11 more: the pack relocation
+**Resume here (decomp, 2026-10-21, night 5): renderer bottom-up, seventh batch.** 7 more: nglRenderTextNode
+(the text node's Draw: one raw pushbuffer of quads; new NglTextNode, NglFont +0x40..+0x48 named), FX_StopEffect,
+nglMatrixOrthoOffCenter, nglUnprojectPoint, FX_PlayEffectAt (ESI origin), RE_ParseButtonToken (EBX out, stdcall),
+nglPalette_Unlock (bare ret, called from nglCreateTexture). Harness: BeginPush/EndPush stand-ins (the pushbuffer's
+dwords are compared; planted-bug check caught). compiler.h: platform_x87_unsigned_mul_add. nglRenderTextNode 301
+and FX_StopEffect 156 matched (settled), none mismatched; not reached: the two matrix functions (no callers),
+FX_PlayEffectAt, RE_ParseButtonToken (only text with "{"). Skipped: RE_RenderScene (calls R_RenderView, which
+mismatches on stale stack), nglEndFrame (D3D Swap/fences not recorded), debug overlays, zlib. Callees outside
+the module (_ftol, HashStr_Init, PtrVector_*) do not block: call them by address. Next: rebuild the bottom-up list;
+candidates FX_SortEffects, XModel_ResolveBoneNames, FX_ParseEffectTexture, DObj_CreateSkeleton, FX_ClearEffects,
+FX_PlayBoltedEffect; RE_ParseButtonToken needs a "{button}" text run (XBCMP_ONLY).
+
+**Earlier (decomp, 2026-10-21, night 4): renderer bottom-up, sixth batch.** 11 more: the pack relocation
 chain (Pack_RelocateTable, Pack_RelocateChain (EAX chain, EBX bits; asm entry), Pack_DecodeRelocWord - new names),
 nglCreateTexture (NglTexture +0x38 companion surface, +0x54 name), nglCreateWhiteTexture, nglCreateFogTextures,
 RE_DrawTextExt (^N colours, {button} icons through RE_ParseButtonToken: stdcall + EBX out buffer, called with an asm
