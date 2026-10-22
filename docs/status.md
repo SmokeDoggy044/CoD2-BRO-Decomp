@@ -25,7 +25,17 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, day 12b): three of the four FX_Add*Components done.** Since 14ba77a: the
+**Resume here (decomp, 2026-10-22, day 12c): all four FX_Add*Components done.** FX_AddSoundComponents
+(0x0029eea0), FxSoundComponent_Create (0x0029df60, ESI), SndVoice_GetCount/SndVoice_Get - all settled at the first
+run (784 tests). Snd_CountBusyVoices (0x00293310, CALL in its first 5 bytes) is a C helper, not registered. Sound
+differs from particles: a source with its own aliased sound (ZoneAliasList_NextVariant) makes one component without
+triggers; only the first trigger with choices is used; only single-choice lists are cached; weapon cache at +0xac.
+0x0096d8f8 = the name's stack address in the original (((ESP - 4) & ~7) - 0x6b0); S_FindSoundByHash compares
+strings (bsearch + stricmp), so our own buffer gives the same result. Names for FxSoundComponent_Update's callees are
+in manual_names.csv (15 rows, not applied in Ghidra yet). Next: those leaves (Entity_EndSoundNotify, SoundRef_*,
+S_PlaySoundAlias2, FX_LimitSoundComponents), then FxSoundComponent_Update 0x0029d7c0 (1.9 KB).
+
+**Earlier (decomp, 2026-10-22, day 12b): three of the four FX_Add*Components done.** Since 14ba77a: the
 ParamSet resolver (ParamSet_Resolve 0x0029b9f0 with ParamNode_CollectChoices, ParamSet_CompareValue,
 ParamSet_TestCondition), FX_AddShakeRumbleComponents and FX_AddParticleComponents - all settled at the first run
 (TestCondition not reached: these levels only branch on kind 0/9 parameters, which use the binary search). Light and
