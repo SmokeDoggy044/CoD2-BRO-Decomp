@@ -25,7 +25,16 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, day 11b): the particle action classes.** The action vtables (0x007c8df0-0x007c90a4,
+**Resume here (decomp, 2026-10-22, day 11c): more particle actions.** 12 more, 8 matched, none mismatched:
+apsAtan2 (0x000a4ac0, reuses FxSystem_SetView's asin series), ClSh, MFxV, Forc, OMov + Quat_RotateVector (0x0009f6c0),
+all settled or matching; not reached in missions 1/4/5/6: ATEX/ATEY/ATEZ, PAtr, WPRf (need a played --compare run or
+other missions). New x87 helpers: platform_x87_add_mul, platform_x87_rcp_norm4 (and the portable fallbacks, also for
+exp2_series). Never-set stack lanes in ClSh/WPRf are taken as 0 (test processes zero dead stack). Names still not
+applied in Ghidra (day 11 batches). Next: AngT 0x000a4640 (callees 0x000a4460, 0x000a4d30), LAtr 0x000a3f00, DLAt
+0x000a41c0, KTau 0x000a2300, Traj 0x000a2aa0, the emitter Apply 0x000a2e40; then a played run over effect-heavy
+levels for the not-reached actions.
+
+**Earlier (decomp, 2026-10-22, day 11b): the particle action classes.** The action vtables (0x007c8df0-0x007c90a4,
 5 slots: Apply, type (four-character code, names the class), a4980 (returns 1.0), dtor a4d10, size 0x0009c370; the
 emitters SrcA/Brst/RSpn share Apply 0x000a2e40 and add slot 5 = particles to emit). Class list with addresses: fx.h.
 Particle field offsets (emitter +0x8d..+0xa0 bytes): fx.cpp "The particle actions". 22 more, 15 matched (13 settled),
