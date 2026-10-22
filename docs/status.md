@@ -34,8 +34,7 @@ particles, grows the bounds accumulator 0x00909ee0/f0 by sprite or two-size exte
 FxSystemDef_IsEmitterVisible, FxEmitter_FreeParticles, apsMemoryPool_Free, FxEmitterList_Add/Remove, FxSystem_Destroy,
 FxSystemList_Update, FX_DrawGlobalSystems, FxRandom_Reset/Restore. compiler.h: platform_x87_mul,
 platform_x87_greater (FCOMIP, no MXCSR flags). Batches 1-2: 17 matched (all settled), none mismatched; batch 3:
-7 matched (all settled), none mismatched - 24 this session. Names are in manual_names.csv only: Ghidra was not running (this and night 8's names still need ApplyNames +
-ExportSymbols). Next: the rest of the particle library bottom-up - apsMemoryPool_Alloc (0x0009ba90), the emitter
+7 matched (all settled), none mismatched - 24 this session. Names applied in Ghidra (also night 8's), symbols exported. Next: the rest of the particle library bottom-up - apsMemoryPool_Alloc (0x0009ba90), the emitter
 list's push_back (0x0009f570), Mat44_TransformPoint (0x00097ba0, packed), apsGroup_Create (0x00097a10),
 apsEffect_Create/Init, the particle action classes (Apply methods: find their vtables from apsParseActions
 0x00097cd0); the four FX_Add*Components still need the param-block writer tree (0x00023690/0x000237b0/0x00023b20 ->
