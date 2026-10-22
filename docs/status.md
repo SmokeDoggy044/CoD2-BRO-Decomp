@@ -25,7 +25,19 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, day 12): the FX component helpers under FX_Add*Components.** New module
+**Resume here (decomp, 2026-10-22, day 12b): three of the four FX_Add*Components done.** Since 14ba77a: the
+ParamSet resolver (ParamSet_Resolve 0x0029b9f0 with ParamNode_CollectChoices, ParamSet_CompareValue,
+ParamSet_TestCondition), FX_AddShakeRumbleComponents and FX_AddParticleComponents - all settled at the first run
+(TestCondition not reached: these levels only branch on kind 0/9 parameters, which use the binary search). Light and
+shake/rumble use list 1 of the resolver's output (highest priority), particles list 0 (every choice). Byte-sized
+parameters (0x18, 0x3a, 0x3b) index their value arrays without the * 4 (fx.cpp choice_byte). FX_AddParticleComponents
+stores the address of its stack copy of the effect file name in 0x00971800: the C version writes the original's
+address, computed from the entry ESP (((ESP - 4) & ~7) - 0x770), and uses its own buffer - no frame rebuild needed
+because nothing reads the global after the function's own hash loop. Next: FX_AddSoundComponents (3.4 KB, stack
+address in 0x0096d8f8) and its sound tree (0x0029df60 -> 0x0029d7c0, 1.9 KB, 18 callees); 0x00293310 cannot be
+hooked (CALL in its first 5 bytes).
+
+**Earlier (decomp, 2026-10-22, day 12): the FX component helpers under FX_Add*Components.** New module
 game/code/param_set.cpp: parameter sets (ParamList_Init/Clear/Add/Delete, ParamSet_Destruct/Delete/AddString/
 AddValue/AddFxOverrides, ParamChoice_GetValue; the stack object FX_Add*Components and the animscript event builders
 0x00200450/0x00203280 fill). In fx.cpp: ParamChoice_GetFlags, ParamChoiceList_PickRandom/PickPerGroup (weighted pick,
@@ -43,8 +55,8 @@ ParamList/ParamSet destructors, FixedStr32_Format (only with a trigger prefix). 
 AlongDir, the particle component's Update (FxParticleComponent_Update 0x002a46d0: reads the spawn parameters
 FX_AddParticleComponents leaves in 0x009717f4-0x00971838) and the first of the four, FX_AddLightComponents (settled
 at once; it calls the ParamSet resolver 0x0029b9f0 through the set's vtable). FX_PlayEffectAt now returns
-FX_SpawnEffect's result (registered Eax; it was None, so the dropped return value went unnoticed). 45 functions
-this session, all reached ones matching. Next: the ParamSet resolver 0x0029b9f0 (952 bytes: a decision tree over the
+FX_SpawnEffect's result (registered Eax; it was None, so the dropped return value went unnoticed). 44 new functions
+this session (commit 14ba77a says 45/41 by mistake: 44 new, 40 matched, 4 not reached), none mismatched. Next: the ParamSet resolver 0x0029b9f0 (952 bytes: a decision tree over the
 definition's nodes; callees 0x00296e50, 0x00299310, 0x002994f0), the sound component 0x0029d7c0/0x0029df60, then
 FX_AddShakeRumble/Particle/SoundComponents; 0x00293310 cannot be hooked (CALL in its first 5 bytes).
 
