@@ -25,7 +25,26 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-21, night 7): renderer bottom-up, ninth batch.** 14 more: FX_PlayBoltedEffect
+**Resume here (decomp, 2026-10-22, night 8): big functions + the particle library.** FX_UpdateEffects fixed:
+0x0096d8f8/0x00971800 hold addresses of stack locals (FX_AddSoundComponents, FX_AddParticleComponents), so its
+callees must run at the original's ESP - FX_UpdateEffects_entry moves the C frame 128 KB down and calls each
+callee through the new `title_call_at_regs` (title_data.h; all six registers); old mismatches reset. New:
+XModel_CalcSkeleton, XModel_CalcBoneChildren, BoneMatrix_Load/Store (0x0029c790/0x0029c9e0), FX_GetBoltMatrix,
+FX_DrawEffects (FxSystem_SetView takes a 2nd argument, -1.0f, left on the stack from nglGetMatrix's pushes), and
+the start of the particle library ("aps", 0x94000-0xa0000, 217 unnamed): FxSystem_SetView (atan2 series, x87
+helpers platform_x87_rcp_hypot / platform_x87_sqrt_abs_sub_mul), FxBuffers_Flip, FxMatrix_Multiply, FxSystem_SetMatrix,
+FxEmitter_SetMatrix, FxSystem_IsFinished/Stop/UpdateSortKey, FxSystem_Draw, FxEmitter_Draw, FxBox_Center/Radius/Sphere
+- 22 matched (all settled), none mismatched; XModel_CalcBoneChildren not reached (only DObj_CalcAnimatedSkeleton
+calls it). Next: FxSystem_Update (0x00094c60) bottom-up - leaves read and understood:
+0x000965a0 (def +0x50 [i*0x3c +0xc] & 1), 0x0009c330 (obj+4 [i] = value, ret 8), 0x00094990 (swap the +0x5c param
+list {obj, index, value} 0xc each into the objects), 0x000971a0 (free +0xbc via (*0x008bb760) slot 2, 0x00909ec0 -=
++0xc0; ret 4 with an unread argument), 0x0009b770 (pool free: index (ptr - +0x18) / +0x14, free list +0x20),
+0x0009c6e0 (curve: 4 keys {time +8, value +0xc}, first time > t, else +4 * +0 on the x87); then 0x00097200,
+0x00097580 (642 bytes packed SSE), 0x000979d0, 0x000973b0, 0x0009c7b0, 0x0009c730, 0x0009f2d0/0x0009f350; then
+FX_DrawGlobalSystems (0x00236ae0, needs 0x00095250). Also open: the four FX_Add*Components (7.7 KB) need the
+param-block writer tree (0x00023690/0x000237b0/0x00023b20 -> 0x00024630/0x00024730 -> 0x00023710) first.
+
+**Earlier (decomp, 2026-10-21, night 7): renderer bottom-up, ninth batch.** 14 more: FX_PlayBoltedEffect
 (EAX origin; FX_GetBoltMatrix EDI thunk; bolt rows rotated axes-first), FX_ParseEffectTexture (EDI stream, ESI out),
 FX_InitEffectPool, FX_UpdateEffects (EAX list; FX_UpdateEffect EBX and FX_SpawnQueuedEffect EDI thunks), RE_TextWidth,
 RE_RegisterShader (EDX name; StringMap_Find EBX thunk; "FrontEnd" zone bank then +0x34, else white texture),
