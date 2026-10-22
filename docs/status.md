@@ -25,7 +25,23 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-21, night 6): renderer bottom-up, eighth batch.** 16 more: FX_SortEffects,
+**Resume here (decomp, 2026-10-21, night 7): renderer bottom-up, ninth batch.** 14 more: FX_PlayBoltedEffect
+(EAX origin; FX_GetBoltMatrix EDI thunk; bolt rows rotated axes-first), FX_ParseEffectTexture (EDI stream, ESI out),
+FX_InitEffectPool, FX_UpdateEffects (EAX list; FX_UpdateEffect EBX and FX_SpawnQueuedEffect EDI thunks), RE_TextWidth,
+RE_RegisterShader (EDX name; StringMap_Find EBX thunk; "FrontEnd" zone bank then +0x34, else white texture),
+R_LoadCellMeshes (Stream_FindMeshFile EBX thunk, 5th push unread), RE_Shutdown, nglInitTextureManager,
+nglCreateSysFont, nglFreeTexture, and two new names cdOcean_LoadWaveSet/StoreWaveSet (0x0004ef90/0x0004f370:
+wave set rows <-> tweak globals). FX_ParseEffectTexture, RE_TextWidth, FX_PlayBoltedEffect settled; RE_RegisterShader,
+R_LoadCellMeshes, FX_InitEffectPool, RE_Shutdown (--only run) matching. Open: FX_UpdateEffects 73 of 463 mismatched,
+one byte each at 0x0096d8f8/0x00971800 (88 vs 40, c8 vs 80); not a register input (FX_UpdateEffect, 0x00296c90,
+FX_SpawnQueuedEffect checked) and calling the title's FX_UpdateFadingComponents changes nothing - probably stale
+stack read by a component vtable method; find the writer of those bytes next. Inconclusive (SDK host code):
+nglInitTextureManager, nglCreateSysFont, nglFreeTexture. Not reached: the cdOcean wave-set pair (only when the ocean
+material is the tweak slot, cdOcean_SetWaveConstants). Next: FX_UpdateEffects' byte writer; then rebuild the list;
+candidates cdOcean helper 0x00050910 (packed matrix, psssym), cdOcean_SetWaveConstants, nglSelectVideoMode,
+nglInitFrameBuffers (SDK), 0x0007cb10.
+
+**Earlier (decomp, 2026-10-21, night 6): renderer bottom-up, eighth batch.** 16 more: FX_SortEffects,
 FX_ClearEffects, FX_FreeAllEffects (ESI entry), FX_FreeAllEffectLights (0x00236aa0, was also named FX_FreeAllEffects),
 DObj_CreateSkeleton (DObj +0x2f = bone_count), XModel_ResolveBoneNames (ESI entry), and 10 newly named leaves:
 R_Set/GetDebugViewMode (0x00901e94), R_AddFogPass (+ R_DrawFogPass 0x00045850 named only), ShaderPCUV_InitMaterial,
