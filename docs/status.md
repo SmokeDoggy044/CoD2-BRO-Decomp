@@ -25,7 +25,16 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-21, night 2): renderer bottom-up, fourth batch.** 25 more: nglGetTextExtentf/
+**Resume here (decomp, 2026-10-21, night 3): renderer bottom-up, fifth batch.** 14 more: nglParseFontFile (EDI
+entry; new NglFont/NglFontGlyph), nglLoadFontFile, nglLoadFont, nglUpdateFogTable (takes over only the first
+changed fog value per call), nglParseDDSPalette, MemStream_Destroy/DeletingDestroy, DObj_GetTagIndex (obj EAX,
+hash ESI) + Com_HashKeyNoCase, FX_FreeEffectsById, R_CheckCvarRange, FastSinCos (= scene_sine_poly lanes),
+RE_RegisterModel, RE_DrawText - 11 matched, none mismatched; not reached: MemStream_DeletingDestroy,
+nglParseDDSPalette, RE_RegisterModel. compiler.h: platform_x87_div_by_unsigned. Skipped: nglBeginFrame (RDTSC).
+Next: rebuild the bottom-up list; candidates RE_DrawTextExt (1333 bytes, x87), Pack_RelocateTable (name
+FUN_00055ab0/FUN_00055b40 first), nglLoadDDSTexture chain.
+
+**Earlier (decomp, 2026-10-21, night 2): renderer bottom-up, fourth batch.** 25 more: nglGetTextExtentf/
 SizeF, nglCreateVertexBuffer(Physical), nglInitTextureHeader, nglAllocTextureMemory, nglCreatePalette (palette
 size 32/64/128/256 -> 3/2/1/0, others 0), nglMeshBuilder_Begin/AddSection/End, nglDynamicVB_Begin/EndFrame,
 nglQuadBatch_Reserve, nglAllocSceneRenderTargets, nglAllocFogTextures, nglFontParseKeyInt (regparm(2)),
