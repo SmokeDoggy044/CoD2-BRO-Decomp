@@ -27,7 +27,98 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-23, day 16 later): client per-frame/input, matched 1402 -> 1419.** CL_KeyEvent
+**Resume here (decomp, 2026-10-23, day 17): matched 1419 -> 1538 (main session + two subagents, all merged).**
+Main session: CL_Frame and its per-frame callees, sound and streaming (paragraph below). Subagents: the collision
+sight-trace tree and movement collision, the server module (linking, SV_Trace, per-frame server and send path), the
+sound update leaves and game path-node/actor helpers (paragraphs below). Names of the day (~110) are in
+manual_names.csv only - apply them in Ghidra (ApplyNames, save, ExportSymbols, smoke test) next session.
+Next:
+1. Harness: record the DirectSound calls (audio::dsound_functions(), like kRecordedD3dCalls; GetStatus needs a stand-in
+   reading the replacement's buffer state). That makes CL_Frame, the sound update 0x000c3700 (SndVoice_ApplyParams,
+   Snd_UpdateListenerAxis are C but untested), S_StopAllSounds, CL_ClearState and CL_MapLoading testable.
+2. G_RunThink (0x0024ac50): 39 of 19299 tests mismatch on the merged build (one .data byte 0x0098a4fc, likely a stack
+   address stored by a think callback) - check the server subagent's last note below.
+3. Collision/physics leftovers: 0x0020da90, the 0x00231770 physics siblings, 0x002635c0; game rank.py rows.
+4. On record (dead-stack words only): SV_SectorSightTrace_r, SV_ClipMoveToEntities_r, SV_CapsuleTrace, SV_Trace,
+   the point/box sector walkers.
+
+**Earlier (decomp, 2026-10-23, day 17, main session): CL_Frame and its per-frame callees, sound and streaming.**
+- CL_Frame (0x002f2630) is C: gap entry (C frame 0x20000 below), every callee at the original's ESP with the
+  original's registers (`call_at`), the original's saved EBX/ESI and the float time written into the dead frame; the
+  screen update calls whatever the call at 0x002f27a4 targets (the loader's --level hook). Inconclusive only: the
+  per-frame sound update 0x000c3700 -> 0x000c7730 calls the DirectSound replacement (19 setters such as
+  IDirectSound_SetPosition/SynchPlayback, IDirectSoundBuffer_SetVolume/Play/StopEx, DirectSoundDoWork, and
+  IDirectSoundBuffer_GetStatus, a getter that would need a stand-in reading the replacement's buffer state). Recording
+  those (audio::dsound_functions(), like kRecordedD3dCalls) would make CL_Frame, S_StopAllChannels, S_StopAllSounds and
+  the whole sound update testable.
+- Harness: KeQuerySystemTime is a recorded kernel call (SdkStandIn::SystemTime: zero time on both sides), so the CRT
+  _clock path (Snd_UpdateTime 0x000cb200, file request timers) no longer ends tests.
+- Loader: the --level thunk restores the original `call 0x002f1e60` at 0x002f27a4 once the mission has started (tests
+  of CL_Frame reached host code on every frame before).
+- Matched (most settled): streaming view position (Stream_SetViewPosition, Stream_UpdateZoneDistances,
+  Stream_SetZoneDistancesFromMask, Stream_PickVolumePoint, Stream_NearestPoint, Stream_PointInAnyBox,
+  Stream_BoundsContainPoint, Zone_SetDistance_r, Pak_ResetZoneDistances), S_UpdateAmbientEmitters (jump table states
+  0-4 at 0x002ea80c), S_UpdateCrossfade, SoundHandle_Resolve/Free, the voice pool (HandlePool_First/Next/Resolve,
+  SndVoice_ForEach/ClearAttenuation/GetState/SetParam/SetOrigin/Resolve), S_StopChannel, S_StopSoundHandle,
+  S_FindSoundByHash (the argument is a name pointer), SndGroup_FindByName, SndSource_CommitDirty, SndHw_ReleaseSlot,
+  S_SetMasterAttenuation, Snd_GetAliasName, Zone_AddRef_r/Release_r/FindUnloadedChild/FindByHash,
+  StreamMem_CountUsed/CountFree/GetBlock, G_EntityList_Compact, Subtitle_Draw.
+- Register contracts: StreamMem_Alloc keeps XMM3 across StreamMem_CountFree (the entry saves it).
+- C only: S_ClearVoiceAttenuation (0x000c53b0) and Snd_UpdateTime (CALL in the first 5 bytes). Not reached:
+  FX_FindEffectById (the ambient replay path).
+Next: DirectSound recorded calls (above); the rest of the sound update (0x000c4af0 voice parameter apply, 1.5 KB;
+0x000c6080, 0x000c85c0); Zone_UpdatePriority (two-level jump table at 0x0028c8fc/0x0028c904); CL_UpdateRumble and
+S_CheckWaveBankNotifies.
+
+**Earlier (decomp, 2026-10-23, day 17, collision subagent; branch day17-collision, merged): matched 1419 -> 1441 on
+its branch.** The sight-trace tree is C: CM_SightTrace (0x002e4c00, the root) with CM_ModelBrushesBlockSight,
+CM_TempBoxBlocksSight, CM_CapsuleBlocksSight, CM_SphereBlocksSight and CM_VerticalCylinderBlocksSight (x87 nudge
+(b * 0.125) / length, kept in asm); CM_TransformedSightTrace calls the C root and is Result::Eax. Also C: the
+candidate-list traces under actor/player movement (CM_CandidateCapsuleTrace, CM_TraceThroughCandidates,
+CM_TestInCandidates, CM_PushPointOutOfBrush, CM_PushSphereOutOfTriangle, G_PushCapsuleOutOfSolids), CM_RayHitsTriangle,
+SV_EntityVisibleFromPoint (Q3's lastCluster off-by-one kept) and the G_SightTrace entity clips (SV_SightClipToEntity,
+SV_BoxSightClipToEntity, SV_SectorBoxSightTrace_r, SV_EntitySightTrace); all settled (`--only --every 1`, missions
+1/3/4/7). On record: SV_SectorSightTrace_r (0x002e8350) differs only in 1-2 dead-stack words (a value 0xb0 apart),
+also with its callees at title addresses. Rarely reached (1-3 tests): CM_TraceRayThroughCandidates,
+CM_CandidateRayTrace, G_RayTraceCachedCandidates; not reached: CM_RayHitsWorldMeshes (0x002d27c0). 0x002e80b0 and
+0x002e88d0 were done on both branches; the merge kept the server versions.
+
+**Earlier (decomp, 2026-10-23, day 17, server subagent; branch day17-server, merged): matched 1419 -> 1445 on its
+branch.** sv.cpp covers entity linking (SV_LinkEntity with SV_LinkToSector, SV_SplitSector, SV_AllocSector; sectors
+also hold static models at +0x14), the SV_Trace tree (SV_ClipToEntity, SV_ClipMoveToEntity, SV_PointTraceToEntity (DObj
+hit boxes), SV_TraceStaticModels(_r) with SV_TraceStaticModel, SegmentMissesBounds, the box and point sector walkers,
+SV_CapsuleTrace, SV_LocationalTrace), the per-frame server (SV_Frame, SV_PacketEvent, SV_ExecuteClientMessage,
+SV_UserMove) and the send path (SV_SendMessages, SV_SendClientMessages, SV_BuildClientSnapshot,
+SV_AddEntitiesVisibleFromPoint, SV_WriteSnapshotToClient, SV_UpdateServerCommandsToClient), SV_SetConfigstring,
+SV_SetBrushModel. SV_PacketEvent, SV_ExecuteClientMessage, SV_UserMove and SV_Frame run their title callees at the
+original's ESP (ClientThink stores a stack address at 0x00929b40). On record (mismatch only on trace words the code
+never writes, stale stack in the original): the three sector walkers, SV_Trace, SV_CapsuleTrace; the box walker and
+SV_CapsuleTrace also differ on fixed words 0x804fff2c and 0x81e23c5c/6c (possibly per-thread data below the Xbox
+StackBase, written by title collision code - unconfirmed). SV_UpdateInfoConfigstrings is C only (unhookable).
+SV_ClientCommand and SV_LocationalTrace not reached. XMM4 is a register input of SegmentMissesBounds: check the
+title's xmodel caller 0x0023d070 before Replaced. Left in the module: load-time/menu functions only (SV_InitGameProgs,
+SV_RestartGameProgs, SV_ShutdownServer, SV_SpawnServer, SV_Map_f, SV_ConnectionlessPacket).
+
+**Earlier (decomp, 2026-10-23, day 17, server subagent, sound batch; merged): callees of the per-frame sound update
+0x000c3700 (snd.cpp).** Settled: Snd_PopCount64, Snd_GetMixState, Snd_GetGroups, Snd_NormalizeVector (x87 length; ECX
+restored), SndHw_AllocSlot, SndBank_UpdateLoads. Matching: SndBank_PollLoad (bank loads through File_QueueRequest),
+Snd_InitRequest, SndVoice_ReleaseHwSlot. Not reached: SndBank_Free. C only and untested (CALL in the first 5 bytes, and
+their caller 0x000c3700 ends in the DirectSound path): SndVoice_ApplyParams (0x000c4af0, 1.5 KB),
+Snd_UpdateListenerAxis (0x000c85c0). Still title code: 0x000c8250, 0x000c8380, 0x000c8de0, 0x000c9db0, 0x000c91e0,
+0x000c6fb0, the qsort comparator 0x000c5790.
+
+**Earlier (decomp, 2026-10-23, day 17, collision subagent, batches 2-3; merged): movement collision, game side.**
+G_PushAwayFromEntities (0x002d5d50; compares p.x against the entity's x + 72 where a z test would be expected - kept),
+G_SeparateFromSolids (0x002e6260, PmoveSingle's separation step), G_FilterCachedCandidates (0x00203f60),
+CM_ClipSegmentToBrush (0x002cc0e0), CM_RayHitsListedObjects / CM_PushSphereOutOfListedObjects (lists 0x008fcee0 /
+0x008fd3f0 / 0x008fd680), Phys_MoveAttachedPoint / Phys_UndoAttachedPushes (0x0002a340 / 0x0002ab10; the original adds a
+never-written stack word to a w lane, the C adds 0 as tests see), CM_TraceSegmentThroughCandidates (0x002d2b50, vehicle
+physics), Vec3_PitchDegrees (0x002a11f0: the title's own arcsine series, __CIsqrt by address, XMM0 result) - all
+settled. Next near this tree: 0x0020da90 (four corner traces through G_FilterCachedCandidates and SV_CapsuleTrace /
+SV_Trace), the 0x00231770 physics siblings (0x0002a620, 0x00229d20 / 0x00227290, 0x0022d7d0, unnamed physics
+callees), 0x00228bf0 (only via the never-reached CM_RayHitsWorldMeshes), the turret test 0x002635c0.
+
+**Earlier (decomp, 2026-10-23, day 16 later): client per-frame/input, matched 1402 -> 1419.** CL_KeyEvent
 (299 tests, settled), SCR_UpdateScreen (5954 matched, rest inconclusive: _clock / SDK log full), CL_TogglePause (4),
 14 of 37 button commands (IN_*Up/Down: lean, reload, activate, button0, speed, UpUp/UpDown) matched with a wider
 press script (rt/b/x/y/lt/black/white/ls/rs/dpad/start/back after 100 s; scratchpad press list = default A presses
