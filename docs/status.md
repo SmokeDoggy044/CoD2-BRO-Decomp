@@ -25,7 +25,25 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, day 14, closed): matched 935 -> 1116.** All work merged and pushed; the
+**Resume here (decomp, 2026-10-23, day 15, in progress): renderer + engine (user: "focus on the renderer and
+engine"). matched 1116 -> 1285+.** Mine: qcommon (game/code/qcommon.cpp: string/path helpers, va/Com_sprintf,
+command list/tokenizer/Cbuf, cvars incl. Cvar_Get/Cvar_Set2, info strings, MSG byte/usercmd readers+writers,
+NET helpers, COM_ParseExt, memset, aligned free) and the collision module (new game/code/cm.cpp: leafs/areas/PVS,
+CM_BoxLeafnums(_r), CM_TempBoxModel, CM_PointContents + quad tree, the trace start tests CM_TestBoxInBrush /
+CM_TestInBrushes / capsule tests / CM_TestInWorldTrees, the box-tree walk stack, ClosestPointOnTriangle); the
+renderer subagent (branch day15-renderer, worktree wt/renderer, rounds 1-3) did the renderer ready list and the
+effect loader tree (fx_load.cpp). Unnamed functions get neutral names in manual_names.csv (not applied in Ghidra).
+- Never reached in level runs even with --only --every 1: Cmd_Argv/Argc/ArgsFrom/ArgsBuffer, the FS path/list
+  helpers, Q_strcat/Q_stricmp, COM_ParseExt (+ comma helper), Com_PushEvent, NET_AdrToString, the cvar console
+  commands, CM_FloodArea*, CM_AdjustAreaPortalState, CM_TestCapsuleInTempBox. Capsule tests: missions 3/7/9.
+- Skipped: the zone heap (Z_Free -> Heap_Free: dlmalloc-style, odd Ghidra bounds), FS file I/O (CRT FILE).
+- CM_BoxTreeStack_Next returns AX only (upper EAX = caller garbage): registered Result::None.
+Next: the rest of CM_BoxTrace's tree bottom-up - 0x002d4f80 (needs ClosestPointOnTriangle), 0x002da4d0 (leaf
+objects; needs 0x002d4f80 + CM_BoxTreeStack_Next), 0x002cb890 / 0x002cbca0 (trace through brush), 0x002d4360,
+0x002d4f10, 0x002dab20, 0x002e4980, then CM_BoxTrace / CM_TransformedBoxTrace; CM_FilterBoxCandidates,
+CM_GatherBoxCandidates.
+
+**Earlier (decomp, 2026-10-22, day 14, closed): matched 935 -> 1116.** All work merged and pushed; the
 subagent worktrees are removed (cod_bro/wt/ keeps only the `unpacked` symlink worktree tools need).
 - Mine: NAL quaternion decoders and channel-class slots (nal_codec.cpp; most classes are never used in missions 0-7,
   docs/nal_animation.md), anim managers (nal_anim.cpp), AI paths and the actor state machine (actor.cpp: Path_*,
