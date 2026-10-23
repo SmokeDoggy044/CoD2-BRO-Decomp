@@ -25,21 +25,30 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, day 14): quaternion decoders, anim managers, AI paths/actor states, cgame (subagents).**
-Matched 935 -> 1063. Mine: game/code/nal_codec.cpp + nal_anim.cpp (docs/nal_animation.md "Quaternion frames and the
-int16 position + orientation class"; most NAL channel classes are never used in missions 0-7, only slot 7 of the
-used ones runs), actor.cpp (Path_StepBack/AdvanceAlong/AccumulateTrim/RefreshForwardLookahead/IsPointNearPath,
-Actor_ApplyStateTransitions with the state callbacks at the original's ESP, PopBlockingStates, RotateOrient,
-AdvanceMoveHistory, AskActorsToMoveAside, cover/noncombat callbacks ...), g_utils.cpp (G_MissileTrace,
-Bullet_RandomSpread), bg_misc.cpp (BG_EvaluateTrajectoryDelta), 21 vertex iterator Clones (never called).
-EAX rule: functions that never write EAX hand their EAX argument back and callers use it (Actor_MergeStateTransitions
-broke Actor_PopBlockingStates' assumption): tools/eax_check.py lists Result::None entries that keep an EAX input;
-actor.cpp and the cgame ones are fixed, the camera agent is fixing the rest.
-Subagents (worktrees cod_bro/wt/camera, wt/cgame; resumed per batch after `git merge main`): AnimScript_Update and
-the NAL anim range (streamed anim player, track constructor ...), four cgame batches (cg_ents.cpp etc.). Running at
-the time of writing: cgame batch 5, camera agent on the eax fixes + vehicles/turrets (new module).
-Next for me: Actor_IsCoverValidAgainst (1.3 KB, x87 atan series), G_TryPushingEntity if the agent leaves it, then
-the next game-module ranking (rank script: scratch rank.py = build/naming/meta col 3 x progress.csv).
+**Resume here (decomp, 2026-10-22, day 14, closed): matched 935 -> 1116.** All work merged and pushed; the
+subagent worktrees are removed (cod_bro/wt/ keeps only the `unpacked` symlink worktree tools need).
+- Mine: NAL quaternion decoders and channel-class slots (nal_codec.cpp; most classes are never used in missions 0-7,
+  docs/nal_animation.md), anim managers (nal_anim.cpp), AI paths and the actor state machine (actor.cpp: Path_*,
+  Actor_ApplyStateTransitions/ThinkStateMachine/CallStateSlot5 with callbacks at the original's ESP, Start/Finish
+  callbacks, cover validity, move history, FindNearbyActor ...), G_MissileTrace / Bullet_RandomSpread (g_utils.cpp),
+  BG_EvaluateTrajectoryDelta (bg_misc.cpp).
+- Subagents: AnimScript_Update (anim_script.cpp), the rest of the NAL anim range, six cgame batches (cg_ents.cpp,
+  cgame.cpp, cg_view.cpp), vehicles/turrets (g_vehicle.cpp), entity/script helpers (g_script.cpp).
+- EAX rule: tools/eax_check.py lists Result::None entries whose original keeps an EAX input - now none.
+- Open: CG_ClipMoveToEntities mismatches only in dead-stack words (callers match); unhookable C-only functions:
+  Actor_PushState, the Scr_StartThread_* wrappers (`push imm8; call [mem]`; harness could accept FF /2 with an
+  absolute operand), three deleting destructors.
+- Names: ~90 new rows in tools/data/manual_names.csv (plus the agents' renames of unnamed functions) are not applied
+  in Ghidra yet - apply with ApplyNames + ExportSymbols when the user agrees.
+Next:
+1. cgame: CG_CalculateWeaponAngles + its six unnamed callees (0x002782a0, 0x00278400, 0x00278790, 0x002788b0,
+   0x002789f0, 0x00282ef0), CG_DrawHudElem/CG_DrawHudElemText, CG_UpdateViewWeaponAnim, CG_CalcVehicleViewAngles,
+   CG_ConfigStringModified, CG_ClearState, CG_UpdateShellShockSound.
+2. game: Path_TrimAtGoal / Actor_TrimPathAtGoal, Actor_IsAtGoal (callee 0x00201e90), Actor_RegisterSuppression /
+   EventBullet / SendLineEvent, Actor_AnimStationary + Grenade_Recover/Cower, Actor_ForgetSentient,
+   Sentient_SetGoalNode, Actor_DropClaimedNode, Actor_GatherCoverCandidates, Actor_Exposed_Finish; Scr_Atan2,
+   BG_CanItemBeGrabbed, G_InitAnimScripts.
+3. Ranking: game/code bottom-up via build/naming/meta col 3 x progress.csv (scratch rank.py; worth adding to tools/).
 
 **Earlier (decomp, 2026-10-22, day 13f): Float3 + quaternion class methods.** 31 functions in C
 (game/code/nal_codec.cpp; docs/nal_animation.md "Float3 and quaternion classes"): the shared Float3 / quaternion slots
