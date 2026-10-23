@@ -17,7 +17,15 @@ menu), the player log capped at 8 MB, the launcher's update check (GitHub releas
 v0.1.7 (test pre-release, 2026-10-21): the issue #6 cause (the vertex shader epilogue read c192 and c193 in one
 mad; Windows' D3D9 runtime allows one constant register per vs_3_0 instruction, DXVK
 does not check), the launcher's Update now (issue #7, launcher/updater.h; tested
-against the v0.1.6 Linux archive, not yet on real Windows). Next candidates:
+against the v0.1.6 Linux archive, not yet on real Windows). Unreleased (2026-10-23,
+issue #8, Intel HD 3000, drops from 30 to 20 fps): pixel shaders also keep one
+constant register per instruction (C0/C1 inputs failed CreatePixelShader on Windows'
+D3D9); the profiler works on Windows (loader/profiler_win32.cpp: SuspendThread +
+GetThreadContext on threads whose QueryThreadCycleTime moved; Wine lacks that call, so
+there every thread is sampled), `--profile` and the launcher's "Measure performance";
+tools/resolve_profile.py names our offsets from the unstripped build - keep each
+release's build directory binaries for that. Windows side tested under Wine only.
+Next candidates:
 1. Multiplayer between two PCs, and v0.1.1 on real Windows (firewall prompt).
 2. The full native build plan + a list of every game-code patch and its intent (asked for).
 3. Heavy fights at 60 fps (mission 5 town), missions 7-13 playtests.
