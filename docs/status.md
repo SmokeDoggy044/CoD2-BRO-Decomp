@@ -38,8 +38,8 @@ subagent worktrees are removed (cod_bro/wt/ keeps only the `unpacked` symlink wo
 - Open: CG_ClipMoveToEntities mismatches only in dead-stack words (callers match); unhookable C-only functions:
   Actor_PushState, the Scr_StartThread_* wrappers (`push imm8; call [mem]`; harness could accept FF /2 with an
   absolute operand), three deleting destructors.
-- Names: ~90 new rows in tools/data/manual_names.csv (plus the agents' renames of unnamed functions) are not applied
-  in Ghidra yet - apply with ApplyNames + ExportSymbols when the user agrees.
+- Names: all 152 of the day's names for existing functions are applied in Ghidra (2026-10-22 23:40, symbols
+  exported, smoke test clean); the 19 gap-function names in manual_names.csv stay unapplied (gap functions uncreated).
 Next:
 1. cgame: CG_CalculateWeaponAngles + its six unnamed callees (0x002782a0, 0x00278400, 0x00278790, 0x002788b0,
    0x002789f0, 0x00282ef0), CG_DrawHudElem/CG_DrawHudElemText, CG_UpdateViewWeaponAnim, CG_CalcVehicleViewAngles,
