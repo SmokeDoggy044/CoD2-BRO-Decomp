@@ -27,7 +27,23 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-23, day 16): client module (cl.cpp) started, matched 1364 -> 1402.** Day 15's 224
+**Resume here (decomp, 2026-10-23, day 16 later): client per-frame/input, matched 1402 -> 1419.** CL_KeyEvent
+(299 tests, settled), SCR_UpdateScreen (5954 matched, rest inconclusive: _clock / SDK log full), CL_TogglePause (4),
+14 of 37 button commands (IN_*Up/Down: lean, reload, activate, button0, speed, UpUp/UpDown) matched with a wider
+press script (rt/b/x/y/lt/black/white/ls/rs/dpad/start/back after 100 s; scratchpad press list = default A presses
+plus those). C exists, not reached: the keyboard-only movement commands (forward/back/left/right/move*/look*/strafe,
+IN_DownUp/Down, IN_CenterView, IN_MLook*), CL_PauseForDialog (UI dialogs). CL_ClearState and CL_MapLoading end
+inconclusive only (_clock under the sound stop). SCR_DrawScreenField is a C helper (CALL in its first 5 bytes).
+- SCR_UpdateScreen runs its title callees at the original's ESP (asm entry 0x20000 below, title_call_at_regs):
+  the first version mismatched 5558 times because title code under CG_DrawActiveFrame stores a stack-local address
+  in 0x0095e2d0 (0x00246fca). Row reset to the post-fix counts.
+- std::initializer_list in game code: at -O0 its begin() is an out-of-line weak symbol bound to the loader's copy
+  ("new called host code" on every test); use plain arrays.
+- CL_Frame next: before it becomes Replaced, the loader's --level hook rewrites its call to SCR_UpdateScreen
+  (0x002f27a4, loader/patches.cpp kCallClientFrame) - the C must keep that hook. Its pushes are callee-popped
+  (S_StopAllChannels etc. are stdcall; check each callee's ret N).
+
+**Earlier (decomp, 2026-10-23, day 16): client module (cl.cpp) started, matched 1364 -> 1402.** Day 15's 224
 names applied in Ghidra (symbols exported, smoke test clean). cl.cpp: 46 functions, all matched over missions 1/4/5/6
 (most settled): the pad readers (IN_Pad*), key states (CL_KeyState, IN_KeyUp/Down), user commands (CL_CmdButtons,
 CL_KeyMove, CL_MouseMove, CL_JoystickMove, CL_AdjustAngles, CL_FinishMove, CL_CreateCmd, CL_CreateNewCommands),
