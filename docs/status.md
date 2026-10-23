@@ -68,6 +68,20 @@ Next:
    BG_CanItemBeGrabbed, G_InitAnimScripts.
 3. Ranking: `tools/rank.py MODULE [MAX_PENDING]` (bottom-up: naming meta callees x progress.csv).
 
+**Earlier (decomp, 2026-10-23, day 15 round 4, renderer subagent): particle runtime, NAL class check.** fx_load.cpp
+gained the particle runtime in 0x0009b000-0x000a0000: pool statistics/slot functions, FxAction_Compact/Destroy,
+apsPtrVector_DeleteAll/Reserve, apsLog_Printf, FxEmitters_FreeAll/Destroy, FxEffect_ViewDepth, object light selection
+and FxNode_ComputeObjectLights, FxOp_SetupNode + all ten render ops' AddToList, the fade / depth-range shader constants,
+FxParticleBuffers_Init, FxCamera_BillboardAxes (settled 7899/7899); ~25 matched, none mismatched. Left there:
+0x0009ddb0 (772 bytes packed SSE), 0x0009ff50, 0x0009f1d0/0x0009f250. NAL classes (probe: temporary registrations with a
+dummy body, `--only` over missions 0-9, rows removed afterwards - 0 calls each): the four Float4 classes (vtables
+0x007c2738/0x007c27a0/0x007c2808/0x007c2870: 0x0008c0c0, 0x0008c4a0, 0x00080140..0x00081840), the classes at 0x007c2a88
+(0x000823a0..0x00082580), 0x007c2af0 (0x00085170..0x000853b0, 0x00082680/0x00082750) and 0x007c2b58 (0x00082c30), the
+packed PosOri class (0x0008cc40, NAL_PackedPosOri_Blend) and 0x00093250 (from NAL_GenericAnim_EvaluatePose) never run
+in missions 0-9 - not decompiled. Note: `--only` runs do not count calls of the other functions (settled ones are not
+hooked), so a probe must be in the --only list itself. R_ range: R_LodDistanceForRadius, R_FindEffectByName (not reached);
+0x00240930, 0x00240f70, 0x00241ff0, 0x00242730 remain (large packed SSE / x87).
+
 **Earlier (decomp, 2026-10-23, day 15 round 3, renderer subagent): the clock in tests, frame begin/end, the whole
 effect loader.** Harness: the recorded title_rdtsc now sets EDX:EAX = 0 (new `Clock` stand-in; EDX used to keep the
 caller's value) and D3DDevice_InsertCallback/InsertFence/BlockOnFence/Swap are recorded calls (docs/comparison-harness.md).
