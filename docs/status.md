@@ -27,8 +27,10 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-23, day 17): matched 1419 -> 1538 (main session + two subagents, all merged).**
-Main session: CL_Frame and its per-frame callees, sound and streaming (paragraph below). Subagents: the collision
+**Resume here (decomp, 2026-10-23, day 17): matched 1419 -> 1539 (main session + two subagents, all merged).**
+Main session: CL_Frame and its per-frame callees, Key_TranslateButtonName / SCR_UpdateLoadingDots (C, not
+reached in --level runs), Actor_PopBlockingStates fixed to take its state in ECX (was declared REGS2 = EDX; it
+matched 114 tests anyway), sound and streaming (paragraph below). Subagents: the collision
 sight-trace tree and movement collision, the server module (linking, SV_Trace, per-frame server and send path), the
 sound update leaves and game path-node/actor helpers (paragraphs below). Names of the day (~110) are in
 manual_names.csv only - apply them in Ghidra (ApplyNames, save, ExportSymbols, smoke test) next session.
@@ -36,8 +38,8 @@ Next:
 1. Harness: record the DirectSound calls (audio::dsound_functions(), like kRecordedD3dCalls; GetStatus needs a stand-in
    reading the replacement's buffer state). That makes CL_Frame, the sound update 0x000c3700 (SndVoice_ApplyParams,
    Snd_UpdateListenerAxis are C but untested), S_StopAllSounds, CL_ClearState and CL_MapLoading testable.
-2. G_RunThink (0x0024ac50): 39 of 19299 tests mismatch on the merged build (one .data byte 0x0098a4fc, likely a stack
-   address stored by a think callback) - check the server subagent's last note below.
+2. Game: Water_GetHeight (0x00044ee0, 1.2 KB packed SSE), BG_FindItem (0x002b6a70), PathNode_First/Next, further
+   `rank.py game 1` rows.
 3. Collision/physics leftovers: 0x0020da90, the 0x00231770 physics siblings, 0x002635c0; game rank.py rows.
 4. On record (dead-stack words only): SV_SectorSightTrace_r, SV_ClipMoveToEntities_r, SV_CapsuleTrace, SV_Trace,
    the point/box sector walkers.
@@ -106,6 +108,13 @@ Snd_InitRequest, SndVoice_ReleaseHwSlot. Not reached: SndBank_Free. C only and u
 their caller 0x000c3700 ends in the DirectSound path): SndVoice_ApplyParams (0x000c4af0, 1.5 KB),
 Snd_UpdateListenerAxis (0x000c85c0). Still title code: 0x000c8250, 0x000c8380, 0x000c8de0, 0x000c9db0, 0x000c91e0,
 0x000c6fb0, the qsort comparator 0x000c5790.
+
+**Earlier (decomp, 2026-10-23, day 17, server subagent, game batch; merged): ready rows from `rank.py game 1`.**
+Settled: PathNode_Construct, Path_BaseName, ActorBlockList_RemoveEntity, PathNode_FromHandle / FromHandle2,
+PathNode_IsAvailableFor, PathNode_CanSee, ActorMove_AddTouchEnt, AddLeanToPosition, G_RunThink (the think callback
+runs at the original's ESP through a gap entry: a callback stores a stack address at 0x0098a4fc - 39 one-byte
+mismatches before, 28545/0 after). Matching: ActorBlockList_Bump. Not reached: Scr_Atan2 (script table only),
+PathNode_IsLinkInBadPlace. C only (CALL at byte 3): Actor_AnimStationary.
 
 **Earlier (decomp, 2026-10-23, day 17, collision subagent, batches 2-3; merged): movement collision, game side.**
 G_PushAwayFromEntities (0x002d5d50; compares p.x against the entity's x + 72 where a z test would be expected - kept),
