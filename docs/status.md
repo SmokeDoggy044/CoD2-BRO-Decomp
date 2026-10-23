@@ -50,6 +50,20 @@ Next:
    BG_CanItemBeGrabbed, G_InitAnimScripts.
 3. Ranking: `tools/rank.py MODULE [MAX_PENDING]` (bottom-up: naming meta callees x progress.csv).
 
+**Earlier (decomp, 2026-10-23, day 15 round 2, renderer subagent): the effect loader tree.** New game/code/fx_load.cpp,
+~120 functions named from their bodies (manual_names.csv, Fx* names): the effect object (FxEffect_Init/SetName/
+SetStageCount/SetStage/ComputeStageSizes/...), growable arrays (FxArray16, stage and emitter tables), the particle action
+base FxAction_Init + 35 fixed-argument action constructors (generated from the disassembly), render op constructors,
+FX_CreateRenderer (settled 429/429) and its ten creators (two families, one C routine each), the range/constant parameter
+objects, the ops' shader setup and small FxSystem helpers. Tested at level load with `--only --every 1` (missions
+1/4/5/6): ~55 matched, none mismatched. Not done: FUN_00098820 (the "domain" factory) with its two 813-byte SSE
+constructors 0x000a5a80/0x000a5f20, apsParseActions (2.3 KB), then FX_LoadEffectFile itself (stack-address callees,
+allocation context word 0x00909948) and FX_LoadEffectFromStream. RDTSC functions (nglBeginFrame/EndFrame/
+WaitFrameInterval/VBlankCallback) stay skipped: the recorded title_rdtsc returns EAX = 0 but leaves EDX as the caller had
+it, and these store EDX (the high word); a C version needs a clock entry point the loader provides plus EDX = 0 in the
+recording (harness change, not made). Still open in the range (rank.py unassigned 0-1): ~100, mostly the NAL classes at
+0x00080000-0x00093000 and effect runtime helpers 0x0009b000-0x000a0000.
+
 **Earlier (decomp, 2026-10-23, day 15, renderer subagent): the renderer's bottom-up ready list.** ~85 functions in C
 (ngl.cpp, shaders.cpp, nal_codec.cpp, nal_anim.cpp, tr_main.cpp, dobj.cpp, fx.cpp): the 18 shader NewVertexIter slots,
 cdDebug_GetSortInfo, the NGL managers' skip-list clears + 7 deleting destructors, nglResourceManager_Add/ForEachPass,
