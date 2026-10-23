@@ -50,6 +50,21 @@ Next:
    BG_CanItemBeGrabbed, G_InitAnimScripts.
 3. Ranking: `tools/rank.py MODULE [MAX_PENDING]` (bottom-up: naming meta callees x progress.csv).
 
+**Earlier (decomp, 2026-10-23, day 15 round 3, renderer subagent): the clock in tests, frame begin/end, the whole
+effect loader.** Harness: the recorded title_rdtsc now sets EDX:EAX = 0 (new `Clock` stand-in; EDX used to keep the
+caller's value) and D3DDevice_InsertCallback/InsertFence/BlockOnFence/Swap are recorded calls (docs/comparison-harness.md).
+Decompiled code reads the clock through the title's XAPI QueryPerformanceCounter (0x001ed6ca, a patched RDTSC site) - no
+loader export. nglBeginFrame / nglWaitFrameInterval match, nglEndFrame settled (132/132; it calls nglRenderSceneTree by
+its title address because the shader Draws read a stale constant lane; new platform_x87_int64_mul for MSVC's int64 to
+float); nglVBlankCallback is unhookable (its RDTSC trampoline jump is in the first 5 bytes). Effect loader complete:
+FxDomain_Create (was FUN_00098820) + the disc/circle domain SSE constructors, apsParseActions (dispatch tables walked
+by a script), FX_LoadEffectFile (its two parameter buffers persist across stages/actions like the original stack slots:
+FX_ParseEffectTexture fills only some words) and FX_LoadEffectFromStream (EAX = MemStream_Destroy's flag byte over the
+effect slot address) all settled at the first run. Then particle pool/runtime helpers (FxPool*, FxNode_AddToScene, ...)
+and 11 small NAL helpers (not reached: unused classes). Left in the range: the larger NAL class methods
+0x00080000-0x00086000, 0x0008c0c0/c4a0/cc40, 0x00093250, and effect runtime 0x0009b830, 0x0009c3c0/c470, 0x0009cf00,
+0x0009d840-0x0009e0c0, 0x0009f3c0, 0x0009ff50.
+
 **Earlier (decomp, 2026-10-23, day 15 round 2, renderer subagent): the effect loader tree.** New game/code/fx_load.cpp,
 ~120 functions named from their bodies (manual_names.csv, Fx* names): the effect object (FxEffect_Init/SetName/
 SetStageCount/SetStage/ComputeStageSizes/...), growable arrays (FxArray16, stage and emitter tables), the particle action
