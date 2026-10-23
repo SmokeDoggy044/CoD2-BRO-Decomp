@@ -28,15 +28,15 @@ runs (only a front-end text dialog calls them). Next:
    not function-by-function decompilation.
 
 **Resume here (decomp, 2026-10-23, day 17): matched 1419 -> 1544 (main session + two subagents, all merged).**
-Main session: CL_Frame and its per-frame callees, Key_TranslateButtonName / SCR_UpdateLoadingDots (C, not
-reached in --level runs), Actor_PopBlockingStates fixed to take its state in ECX (was declared REGS2 = EDX; it
-matched 114 tests anyway), Sentient_ClaimGoalNode (settled), multi_wait (matching), Entity_YawToForward and
-Phys_FindBodyForEntity (not reached), Sentient_SetGoalNode (settled), Actor_Exposed_Finish (matching), ActorMove_ProjectVelocity (settled), Actor_Noncombat_NodeClaimRevoked (not
-reached), sound and
-streaming (paragraph below). Subagents: the collision
-sight-trace tree and movement collision, the server module (linking, SV_Trace, per-frame server and send path), the
-sound update leaves and game path-node/actor helpers (paragraphs below). Names of the day (~110) are in
-manual_names.csv only - apply them in Ghidra (ApplyNames, save, ExportSymbols, smoke test) next session.
+Main session: CL_Frame and its per-frame callees, Key_TranslateButtonName / SCR_UpdateLoadingDots (C, not reached in
+--level runs), Actor_PopBlockingStates fixed to take its state in ECX (was declared REGS2 = EDX; it matched 114 tests
+anyway), Sentient_ClaimGoalNode (settled), multi_wait (matching), Entity_YawToForward and Phys_FindBodyForEntity (not
+reached), Sentient_SetGoalNode (settled), Actor_Exposed_Finish (matching), ActorMove_ProjectVelocity (settled),
+Actor_Noncombat_NodeClaimRevoked, hurt_use, Use_trigger_use, G_AddSpawnVarToken (not reached), sound and streaming
+(paragraph below). Subagents: the collision sight-trace tree and movement collision, the server module (linking,
+SV_Trace, per-frame server and send path), the sound update leaves and game path-node/actor helpers (paragraphs
+below). Names of the day (~110) are in manual_names.csv only - apply them in Ghidra (ApplyNames, save, ExportSymbols,
+smoke test) next session.
 Next:
 1. Harness: record the DirectSound calls (audio::dsound_functions(), like kRecordedD3dCalls; GetStatus needs a stand-in
    reading the replacement's buffer state). That makes CL_Frame, the sound update 0x000c3700 (SndVoice_ApplyParams,
