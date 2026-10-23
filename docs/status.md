@@ -47,7 +47,14 @@ IN_InitCvars, CL_RefPrintf, Key_* helpers, CL_DObj*.
   IN_SetRumbleMotor: XPP calls end inconclusive unless recorded), SCR_InitLoadingSpinner (Sys_Main, before tests),
   FE_LiberatorCreateCrossIcons (ESI-this constructor 0x00317050), CL_InitRef (refimport table + GetRefAPI).
   CL_ScaledMilliseconds starts with a CALL (unhookable).
-Next: CL_Frame and the rest of the per-frame client (rank.py client 1), then the collision/server items below.
+- Module sorting (later the same day): every named function is now in a module (tools/data/modules.csv: prefix
+  rules plus exact-name rules; new modules script, levelscript, sound, streaming, online, crt). Unassigned = only
+  the 1607 MS library functions and the 3102 unnamed ones. Level-section functions always stay with their mission
+  (progress.py). New names need a rule unless an existing prefix covers them (naming.md workflow step 4).
+- Completion rule (user): no module is finished, so none becomes Replaced, while any function is unnamed or
+  unsorted (the 3102 FUN_ and the ~3800 uncreated gap functions included).
+Next: CL_Frame and the rest of the per-frame client (rank.py client 1), then the collision/server items below;
+the XInput recorded calls / stand-ins in the harness if the user wants the pad functions testable.
 
 **Earlier (decomp, 2026-10-23, day 15, closed): renderer + engine (user: "focus on the renderer and
 engine"). matched 1116 -> 1364.** All work merged and pushed; the subagent worktrees are removed (cod_bro/wt/
