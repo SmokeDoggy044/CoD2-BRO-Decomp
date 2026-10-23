@@ -25,7 +25,29 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-23, day 15, closed): renderer + engine (user: "focus on the renderer and
+**Resume here (decomp, 2026-10-23, day 16): client module (cl.cpp) started, matched 1364 -> 1402.** Day 15's 224
+names applied in Ghidra (symbols exported, smoke test clean). cl.cpp: 46 functions, all matched over missions 1/4/5/6
+(most settled): the pad readers (IN_Pad*), key states (CL_KeyState, IN_KeyUp/Down), user commands (CL_CmdButtons,
+CL_KeyMove, CL_MouseMove, CL_JoystickMove, CL_AdjustAngles, CL_FinishMove, CL_CreateCmd, CL_CreateNewCommands),
+CL_GetSnapshot/GetUserCmd, CL_WritePacket, CL_PacketEvent, CL_ParseServerMessage/ParseSnapshot, CL_GetServerCommand,
+CL_ConfigstringModified, CL_SystemInfoChanged, CL_ResetLocalConnection, CL_ShutdownCGame, CL_InitRenderer/InitInput,
+IN_InitCvars, CL_RefPrintf, Key_* helpers, CL_DObj*.
+- Register contracts the harness does not check (title callers read them; found by scanning each call site's next
+  instructions): CL_KeyMove/CL_AdjustAngles keep constants in XMM2-6 across CL_KeyState (its entry saves XMM1-7),
+  CL_CreateCmd reads EAX after CL_CmdButtons and EDX after CL_FinishMove, CG_InterpolatePlayerState EDX after
+  CL_GetUserCmd, CL_WritePacket EAX after MSG_WriteLong (now Result::Eax).
+- C exists, never reached in level runs: CL_CgameSystemCalls (the cgame calls the renderer directly),
+  SCR_AdjustFrom640, CL_AddReliableCommand, Char_IsDigit (hex key names only). CL_AdjustAngles' accelerated path
+  (cl_bomberKeyboardMode) is probably mission 5's turret; not checked separately.
+- Before the client module becomes Replaced: the loader's PC mouse patch rewrites the CL_MouseMove call inside
+  CL_CreateCmd (0x002c7ad7, loader/patches.cpp) - move that hook into the C.
+- Left in the reached list: the XInput pad functions (IN_PadInit/Create/Update/CheckDeviceChanges/StopAllRumble,
+  IN_SetRumbleMotor: XPP calls end inconclusive unless recorded), SCR_InitLoadingSpinner (Sys_Main, before tests),
+  FE_LiberatorCreateCrossIcons (ESI-this constructor 0x00317050), CL_InitRef (refimport table + GetRefAPI).
+  CL_ScaledMilliseconds starts with a CALL (unhookable).
+Next: CL_Frame and the rest of the per-frame client (rank.py client 1), then the collision/server items below.
+
+**Earlier (decomp, 2026-10-23, day 15, closed): renderer + engine (user: "focus on the renderer and
 engine"). matched 1116 -> 1364.** All work merged and pushed; the subagent worktrees are removed (cod_bro/wt/
 keeps only the `unpacked` symlink). Names of the day's unnamed functions are in manual_names.csv, not applied in
 Ghidra yet (apply + ExportSymbols + smoke test next session).
@@ -42,8 +64,7 @@ Ghidra yet (apply + ExportSymbols + smoke test next session).
 - Never reached in level runs (C exists): console-only command helpers, FS path helpers, Com_PushEvent,
   NET_AdrToString, COM_ParseExt, area-portal flooding, CM_TraceThroughSphere, the skill setters (menu).
 Next:
-1. Client module: start cl.cpp with the 43 functions the round 5 probe found running in level runs (input,
-   per-frame client, CL_DObj*; list in the round 5 paragraph below).
+1. (done day 16) Client module start.
 2. Collision: the rest of the sight-trace tree (collision paragraph below), CM_TransformedSightTrace -> Result::Eax.
 3. Server: SV_LinkEntity (1.7 KB) after its helpers 0x002ba9d0 and 0x002b1f70 (-> 0x002aae40); SV_ClipToEntity,
    SV_Trace (needs 0x002db3e0, 0x002e84d0, 0x002e88d0).
