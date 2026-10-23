@@ -25,19 +25,21 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, day 14): quaternion decoders, anim managers, cgame + AnimScript_Update (subagents).**
-Matched 935 -> 995. Mine (game/code/nal_codec.cpp, nal_anim.cpp; docs/nal_animation.md "Quaternion frames and the int16
-position + orientation class"): the three quaternion frame decoders (0x00086280 int16, 0x00084970 float with
-renormalization, 0x00085ba0 bytes; second-order deltas, packed quaternion products), slots 5-9 of every quaternion
-class, the entropy trajectory block methods, the int16 PosOri class 0x007c2c38, the Float1/packed Float3/Float4 block
-methods, the anim managers' load paths (NAL_AnimFile_Register/Fixup, NAL_Skeleton_Register, NAL_FindClip ...),
-NAL_GenericAnim_Init, NAL_Skeleton_BoneTransform. Many of these are not reached: missions 0-7 only use the entropy
-Float3, float/int16 entropy quaternion and entropy trajectory classes, and only slot 7 (DecodeBlock) of each.
-Subagents (worktrees cod_bro/wt/camera, wt/cgame; merged): AnimScript_Update 0x0001e150 (frame rebuilt, 7.8k tests
-settled) + 5 helpers (game/code/anim_script.cpp); two cgame batches (49 functions, 37 matched; game/code/cg_ents.cpp
-new). Still running at the time of writing: the cgame agent (CG_ClipMoveToEntities/CG_Trace, CG_DamageFeedback,
-CG_CalcFov ...) and the camera agent on the rest of the NAL anim range (0x00086cb0-0x00093090). Next for me: the
-renderer leftovers (tools/progress.py --module renderer --state untested).
+**Resume here (decomp, 2026-10-22, day 14): quaternion decoders, anim managers, AI paths/actor states, cgame (subagents).**
+Matched 935 -> 1063. Mine: game/code/nal_codec.cpp + nal_anim.cpp (docs/nal_animation.md "Quaternion frames and the
+int16 position + orientation class"; most NAL channel classes are never used in missions 0-7, only slot 7 of the
+used ones runs), actor.cpp (Path_StepBack/AdvanceAlong/AccumulateTrim/RefreshForwardLookahead/IsPointNearPath,
+Actor_ApplyStateTransitions with the state callbacks at the original's ESP, PopBlockingStates, RotateOrient,
+AdvanceMoveHistory, AskActorsToMoveAside, cover/noncombat callbacks ...), g_utils.cpp (G_MissileTrace,
+Bullet_RandomSpread), bg_misc.cpp (BG_EvaluateTrajectoryDelta), 21 vertex iterator Clones (never called).
+EAX rule: functions that never write EAX hand their EAX argument back and callers use it (Actor_MergeStateTransitions
+broke Actor_PopBlockingStates' assumption): tools/eax_check.py lists Result::None entries that keep an EAX input;
+actor.cpp and the cgame ones are fixed, the camera agent is fixing the rest.
+Subagents (worktrees cod_bro/wt/camera, wt/cgame; resumed per batch after `git merge main`): AnimScript_Update and
+the NAL anim range (streamed anim player, track constructor ...), four cgame batches (cg_ents.cpp etc.). Running at
+the time of writing: cgame batch 5, camera agent on the eax fixes + vehicles/turrets (new module).
+Next for me: Actor_IsCoverValidAgainst (1.3 KB, x87 atan series), G_TryPushingEntity if the agent leaves it, then
+the next game-module ranking (rank script: scratch rank.py = build/naming/meta col 3 x progress.csv).
 
 **Earlier (decomp, 2026-10-22, day 13f): Float3 + quaternion class methods.** 31 functions in C
 (game/code/nal_codec.cpp; docs/nal_animation.md "Float3 and quaternion classes"): the shared Float3 / quaternion slots
