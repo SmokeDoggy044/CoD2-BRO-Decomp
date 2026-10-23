@@ -26,7 +26,7 @@ runs (only a front-end text dialog calls them). Next:
    not function-by-function decompilation.
 
 **Resume here (decomp, 2026-10-23, day 15, in progress): renderer + engine (user: "focus on the renderer and
-engine"). matched 1116 -> 1285+.** Mine: qcommon (game/code/qcommon.cpp: string/path helpers, va/Com_sprintf,
+engine"). matched 1116 -> 1311+.** Mine: qcommon (game/code/qcommon.cpp: string/path helpers, va/Com_sprintf,
 command list/tokenizer/Cbuf, cvars incl. Cvar_Get/Cvar_Set2, info strings, MSG byte/usercmd readers+writers,
 NET helpers, COM_ParseExt, memset, aligned free) and the collision module (new game/code/cm.cpp: leafs/areas/PVS,
 CM_BoxLeafnums(_r), CM_TempBoxModel, CM_PointContents + quad tree, the trace start tests CM_TestBoxInBrush /
@@ -38,10 +38,13 @@ effect loader tree (fx_load.cpp). Unnamed functions get neutral names in manual_
   commands, CM_FloodArea*, CM_AdjustAreaPortalState, CM_TestCapsuleInTempBox. Capsule tests: missions 3/7/9.
 - Skipped: the zone heap (Z_Free -> Heap_Free: dlmalloc-style, odd Ghidra bounds), FS file I/O (CRT FILE).
 - CM_BoxTreeStack_Next returns AX only (upper EAX = caller garbage): registered Result::None.
-Next: the rest of CM_BoxTrace's tree bottom-up - 0x002d4f80 (needs ClosestPointOnTriangle), 0x002da4d0 (leaf
-objects; needs 0x002d4f80 + CM_BoxTreeStack_Next), 0x002cb890 / 0x002cbca0 (trace through brush), 0x002d4360,
-0x002d4f10, 0x002dab20, 0x002e4980, then CM_BoxTrace / CM_TransformedBoxTrace; CM_FilterBoxCandidates,
-CM_GatherBoxCandidates.
+Done since (all settled or matching): CM_TraceCapsule/BoxThroughBrush, CM_TraceThroughBrushes,
+CM_TraceCapsuleThroughTempBox, CM_SphereTouchesTriangle, ClosestPointOnTriangle, CM_TestInLeafObjects,
+Vec4Normalize, CM_TraceThroughVerticalCylinder, CM_TraceCapsuleThroughCapsule; CM_TraceThroughSphere is C but
+never reached (the cylinder test returns first). Renderer subagent rounds 1-3 merged (round 4 running: effect
+runtime, NAL classes). Next: the world trace under CM_BoxTrace - 0x002e4980 -> 0x002e04e0 (3.2 KB) and 0x002d37f0
+(1.5 KB), their helpers 0x002c6bf0 (1.6 KB), 0x002dae30 (1.3 KB), CM_SegmentOverlapsBox (0x002c0d80, testing),
+then CM_BoxTrace / CM_TransformedBoxTrace; CM_FilterBoxCandidates, CM_GatherBoxCandidates.
 
 **Earlier (decomp, 2026-10-22, day 14, closed): matched 935 -> 1116.** All work merged and pushed; the
 subagent worktrees are removed (cod_bro/wt/ keeps only the `unpacked` symlink worktree tools need).
