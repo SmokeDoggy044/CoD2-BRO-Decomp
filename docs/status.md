@@ -27,11 +27,12 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-23, day 17): matched 1419 -> 1541 (main session + two subagents, all merged).**
+**Resume here (decomp, 2026-10-23, day 17): matched 1419 -> 1543 (main session + two subagents, all merged).**
 Main session: CL_Frame and its per-frame callees, Key_TranslateButtonName / SCR_UpdateLoadingDots (C, not
 reached in --level runs), Actor_PopBlockingStates fixed to take its state in ECX (was declared REGS2 = EDX; it
-matched 114 tests anyway), Sentient_ClaimGoalNode (settled), multi_wait, Entity_YawToForward and
-Phys_FindBodyForEntity (not reached), sound and streaming (paragraph below). Subagents: the collision
+matched 114 tests anyway), Sentient_ClaimGoalNode (settled), multi_wait (matching), Entity_YawToForward and
+Phys_FindBodyForEntity (not reached), Sentient_SetGoalNode (settled), Actor_Exposed_Finish (matching), sound and
+streaming (paragraph below). Subagents: the collision
 sight-trace tree and movement collision, the server module (linking, SV_Trace, per-frame server and send path), the
 sound update leaves and game path-node/actor helpers (paragraphs below). Names of the day (~110) are in
 manual_names.csv only - apply them in Ghidra (ApplyNames, save, ExportSymbols, smoke test) next session.
