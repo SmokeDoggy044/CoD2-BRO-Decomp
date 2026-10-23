@@ -46,6 +46,23 @@ runtime, NAL classes). Next: the world trace under CM_BoxTrace - 0x002e4980 -> 0
 (1.5 KB), their helpers 0x002c6bf0 (1.6 KB), 0x002dae30 (1.3 KB), CM_SegmentOverlapsBox (0x002c0d80, testing),
 then CM_BoxTrace / CM_TransformedBoxTrace; CM_FilterBoxCandidates, CM_GatherBoxCandidates.
 
+**Earlier (decomp, 2026-10-23, day 15, collision subagent; branch day15-collision, worktree wt/collision): matched
+1312 -> 1326.** The world trace under CM_BoxTrace is C, all settled with plain C (no frame rebuilds; every callee
+already C), tested with `--only --every 1` over missions 1/3/4/7: CM_ClipSphereSweepToTriangle (0x002dae30),
+CM_QuadTreeTraceLeafs_r (0x002c6bf0), CM_TraceRayThroughWorldTrees (0x002d37f0), CM_TraceThroughWorldTrees
+(0x002e04e0), CM_TraceThroughWorld (0x002e4980), CM_BoxTrace, CM_TransformedBoxTrace, CM_TransformedSightTrace
+(0x002e6dc0), CM_FilterBoxCandidates, CM_GatherBoxCandidates + CM_GatherQuadTreeCandidates_r (0x002c6840), and
+from the sight-trace tree CM_SegmentCrossesMesh (0x002d1980), CM_SightTraceRayThroughWorldTrees (0x002d2f90),
+CM_SightTraceThroughWorldTrees (0x002e1740). Never-set stack words handed to CM_BoxTrace (the capsule block's
+size/w words, rotation row w lanes) are zero-initialized: tests zero the dead stack. Skipped: CM_LoadMapFile (FS
+file I/O: tests would end inconclusive).
+Left of the sight-trace tree, bottom-up: 0x002d41f0 (model brushes, CM_TraceBoxThroughBrush until a hit), 0x002d3e10
+(temp-box capsule setup + box trace), 0x002d3f40 / 0x002d4050 (sight sphere / vertical cylinder, x87 like
+CM_TraceThroughSphere, return 0 when blocked), 0x002da1d0 (capsule vs capsule, 0 / -1), then 0x002e4c00 (the sight
+trace root: CM_BoxTrace-style setup, returns the callee's EAX - no stack address, so CM_TransformedSightTrace could be
+Result::Eax), 0x002e4940 / 0x002da080 (no direct callers). Also open: 0x002e1150 (another CM_ClipSphereSweepToTriangle
+caller, via 0x002e20e0).
+
 **Earlier (decomp, 2026-10-22, day 14, closed): matched 935 -> 1116.** All work merged and pushed; the
 subagent worktrees are removed (cod_bro/wt/ keeps only the `unpacked` symlink worktree tools need).
 - Mine: NAL quaternion decoders and channel-class slots (nal_codec.cpp; most classes are never used in missions 0-7,
