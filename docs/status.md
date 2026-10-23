@@ -25,26 +25,46 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-23, day 15, in progress): renderer + engine (user: "focus on the renderer and
-engine"). matched 1116 -> 1311+.** Mine: qcommon (game/code/qcommon.cpp: string/path helpers, va/Com_sprintf,
-command list/tokenizer/Cbuf, cvars incl. Cvar_Get/Cvar_Set2, info strings, MSG byte/usercmd readers+writers,
-NET helpers, COM_ParseExt, memset, aligned free) and the collision module (new game/code/cm.cpp: leafs/areas/PVS,
-CM_BoxLeafnums(_r), CM_TempBoxModel, CM_PointContents + quad tree, the trace start tests CM_TestBoxInBrush /
-CM_TestInBrushes / capsule tests / CM_TestInWorldTrees, the box-tree walk stack, ClosestPointOnTriangle); the
-renderer subagent (branch day15-renderer, worktree wt/renderer, rounds 1-3) did the renderer ready list and the
-effect loader tree (fx_load.cpp). Unnamed functions get neutral names in manual_names.csv (not applied in Ghidra).
-- Never reached in level runs even with --only --every 1: Cmd_Argv/Argc/ArgsFrom/ArgsBuffer, the FS path/list
-  helpers, Q_strcat/Q_stricmp, COM_ParseExt (+ comma helper), Com_PushEvent, NET_AdrToString, the cvar console
-  commands, CM_FloodArea*, CM_AdjustAreaPortalState, CM_TestCapsuleInTempBox. Capsule tests: missions 3/7/9.
-- Skipped: the zone heap (Z_Free -> Heap_Free: dlmalloc-style, odd Ghidra bounds), FS file I/O (CRT FILE).
-- CM_BoxTreeStack_Next returns AX only (upper EAX = caller garbage): registered Result::None.
-Done since (all settled or matching): CM_TraceCapsule/BoxThroughBrush, CM_TraceThroughBrushes,
-CM_TraceCapsuleThroughTempBox, CM_SphereTouchesTriangle, ClosestPointOnTriangle, CM_TestInLeafObjects,
-Vec4Normalize, CM_TraceThroughVerticalCylinder, CM_TraceCapsuleThroughCapsule; CM_TraceThroughSphere is C but
-never reached (the cylinder test returns first). Renderer subagent rounds 1-3 merged (round 4 running: effect
-runtime, NAL classes). Next: the world trace under CM_BoxTrace - 0x002e4980 -> 0x002e04e0 (3.2 KB) and 0x002d37f0
-(1.5 KB), their helpers 0x002c6bf0 (1.6 KB), 0x002dae30 (1.3 KB), CM_SegmentOverlapsBox (0x002c0d80, testing),
-then CM_BoxTrace / CM_TransformedBoxTrace; CM_FilterBoxCandidates, CM_GatherBoxCandidates.
+**Resume here (decomp, 2026-10-23, day 15, closed): renderer + engine (user: "focus on the renderer and
+engine"). matched 1116 -> 1364.** All work merged and pushed; the subagent worktrees are removed (cod_bro/wt/
+keeps only the `unpacked` symlink). Names of the day's unnamed functions are in manual_names.csv, not applied in
+Ghidra yet (apply + ExportSymbols + smoke test next session).
+- Mine: qcommon (qcommon.cpp: strings, va/Com_sprintf, command system + Cbuf, Cvar_Get/Set2 and the cvar commands,
+  info strings, MSG byte/usercmd readers + writers, NET helpers, COM_ParseExt, memset, aligned free), the
+  collision module start (cm.cpp: leafs/areas/PVS, CM_BoxLeafnums(_r), CM_TempBoxModel, CM_PointContents + quad
+  trees, the trace start/brush/capsule/sphere/cylinder tests, ClosestPointOnTriangle, Vec4Normalize, the box-tree
+  walk stack), the server module start (sv.cpp: SV_UnlinkEntity, SV_AreaEntities(_r), SV_PointContents,
+  SV_ClipHandleForEntity, the reliable command buffer and send functions, SV_RunGameFrame (G_RunFrame at the
+  original's ESP), SV_DObj*Skeleton, SV_Init/AddOperatorCommands, RadiusFromBounds).
+- Subagents: the renderer ready list, the whole effect loader and particle runtime (fx_load.cpp), nglBeginFrame/
+  EndFrame (harness: title RDTSC recorded as EDX:EAX = 0), R_ModelBoneMatrices; the collision world trace up to
+  CM_BoxTrace / CM_TransformedBoxTrace (paragraphs below).
+- Never reached in level runs (C exists): console-only command helpers, FS path helpers, Com_PushEvent,
+  NET_AdrToString, COM_ParseExt, area-portal flooding, CM_TraceThroughSphere, the skill setters (menu).
+Next:
+1. Client module: start cl.cpp with the 43 functions the round 5 probe found running in level runs (input,
+   per-frame client, CL_DObj*; list in the round 5 paragraph below).
+2. Collision: the rest of the sight-trace tree (collision paragraph below), CM_TransformedSightTrace -> Result::Eax.
+3. Server: SV_LinkEntity (1.7 KB) after its helpers 0x002ba9d0 and 0x002b1f70 (-> 0x002aae40); SV_ClipToEntity,
+   SV_Trace (needs 0x002db3e0, 0x002e84d0, 0x002e88d0).
+4. Renderer leftovers: 0x00242730 (1.9 KB SSE/x87, ~1754 calls).
+
+**Earlier (decomp, 2026-10-23, day 15, collision subagent; branch day15-collision, worktree wt/collision): matched
+1312 -> 1326.** The world trace under CM_BoxTrace is C, all settled with plain C (no frame rebuilds; every callee
+already C), tested with `--only --every 1` over missions 1/3/4/7: CM_ClipSphereSweepToTriangle (0x002dae30),
+CM_QuadTreeTraceLeafs_r (0x002c6bf0), CM_TraceRayThroughWorldTrees (0x002d37f0), CM_TraceThroughWorldTrees
+(0x002e04e0), CM_TraceThroughWorld (0x002e4980), CM_BoxTrace, CM_TransformedBoxTrace, CM_TransformedSightTrace
+(0x002e6dc0), CM_FilterBoxCandidates, CM_GatherBoxCandidates + CM_GatherQuadTreeCandidates_r (0x002c6840), and
+from the sight-trace tree CM_SegmentCrossesMesh (0x002d1980), CM_SightTraceRayThroughWorldTrees (0x002d2f90),
+CM_SightTraceThroughWorldTrees (0x002e1740). Never-set stack words handed to CM_BoxTrace (the capsule block's
+size/w words, rotation row w lanes) are zero-initialized: tests zero the dead stack. Skipped: CM_LoadMapFile (FS
+file I/O: tests would end inconclusive).
+Left of the sight-trace tree, bottom-up: 0x002d41f0 (model brushes, CM_TraceBoxThroughBrush until a hit), 0x002d3e10
+(temp-box capsule setup + box trace), 0x002d3f40 / 0x002d4050 (sight sphere / vertical cylinder, x87 like
+CM_TraceThroughSphere, return 0 when blocked), 0x002da1d0 (capsule vs capsule, 0 / -1), then 0x002e4c00 (the sight
+trace root: CM_BoxTrace-style setup, returns the callee's EAX - no stack address, so CM_TransformedSightTrace could be
+Result::Eax), 0x002e4940 / 0x002da080 (no direct callers). Also open: 0x002e1150 (another CM_ClipSphereSweepToTriangle
+caller, via 0x002e20e0).
 
 **Earlier (decomp, 2026-10-22, day 14, closed): matched 935 -> 1116.** All work merged and pushed; the
 subagent worktrees are removed (cod_bro/wt/ keeps only the `unpacked` symlink worktree tools need).
