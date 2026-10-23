@@ -71,6 +71,15 @@ Next:
    BG_CanItemBeGrabbed, G_InitAnimScripts.
 3. Ranking: `tools/rank.py MODULE [MAX_PENDING]` (bottom-up: naming meta callees x progress.csv).
 
+**Earlier (decomp, 2026-10-23, day 15 round 5, renderer subagent): renderer leftovers, client usage probe.**
+fx_load.cpp: FxAxis_Frame (0x0009ddb0, 772 B packed SSE, settled), FxMatrix_RigidInverse, FxSystem_InitBounds,
+FxSystems_New, FxEmitters_Init (startup, not reached). tr_main.cpp: R_ModelBoxBounds (0x00240f70, matched) and
+R_ModelBoneMatrices (0x00241ff0, settled). A probe showed 0x00240930 (skeleton debug draw) never runs; 0x00242730
+(1.9 KB SSE/x87, 1754 calls) is left. Client module: not decompiled yet; a usage probe (dummy registrations, `--only`,
+missions 1/4/5/6, rows removed afterwards) over the 126 ready rows (rank.py client, 0-1 pending) found these called in
+level runs: IN_PadCheckDeviceChanges IN_PadInit IN_PadCreate IN_PadUpdate IN_PadIsConnected IN_PadButtonDown IN_PadConsumeReleased IN_PadButtonPressed IN_PadConsumePressed IN_PadGetStick IN_SetRumbleMotor CL_DObjCreateSkeleton CL_DObjGetBoneMatrix SCR_InitLoadingSpinner CL_RefPrintf Key_KeynumToString CL_FinishMove CL_CmdButtons CL_KeyState IN_KeyUp IN_KeyDown CL_GetSnapshot CL_GetUserCmd Key_StringToKeynum CL_WritePacket CL_MouseMove CL_JoystickMove CL_KeyMove CL_AdjustAngles CL_ShutdownCGame IN_InitCvars CL_ResetLocalConnection CL_SystemInfoChanged CL_ParseSnapshot CL_CreateNewCommands CL_ParseServerMessage CL_InitRenderer Key_ClearStates CL_GetServerCommand CL_InitInput CL_InitRef FE_LiberatorCreateCrossIcons Key_GetKeyNameForCommand. The other ~80 (most FE_* text/menu helpers, CL_*_f commands, Key_Bindlist_f,
+CL_ShellExecute_URL_f, CL_Setenv_f ...) never run in --level runs: start cl.cpp with the reached ones.
+
 **Earlier (decomp, 2026-10-23, day 15 round 4, renderer subagent): particle runtime, NAL class check.** fx_load.cpp
 gained the particle runtime in 0x0009b000-0x000a0000: pool statistics/slot functions, FxAction_Compact/Destroy,
 apsPtrVector_DeleteAll/Reserve, apsLog_Printf, FxEmitters_FreeAll/Destroy, FxEffect_ViewDepth, object light selection
