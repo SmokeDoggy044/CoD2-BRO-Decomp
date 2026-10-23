@@ -48,7 +48,7 @@ Next:
    EventBullet / SendLineEvent, Actor_AnimStationary + Grenade_Recover/Cower, Actor_ForgetSentient,
    Sentient_SetGoalNode, Actor_DropClaimedNode, Actor_GatherCoverCandidates, Actor_Exposed_Finish; Scr_Atan2,
    BG_CanItemBeGrabbed, G_InitAnimScripts.
-3. Ranking: game/code bottom-up via build/naming/meta col 3 x progress.csv (scratch rank.py; worth adding to tools/).
+3. Ranking: `tools/rank.py MODULE [MAX_PENDING]` (bottom-up: naming meta callees x progress.csv).
 
 **Earlier (decomp, 2026-10-22, day 13f): Float3 + quaternion class methods.** 31 functions in C
 (game/code/nal_codec.cpp; docs/nal_animation.md "Float3 and quaternion classes"): the shared Float3 / quaternion slots
