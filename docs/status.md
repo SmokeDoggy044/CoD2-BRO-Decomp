@@ -50,6 +50,28 @@ Next:
    BG_CanItemBeGrabbed, G_InitAnimScripts.
 3. Ranking: `tools/rank.py MODULE [MAX_PENDING]` (bottom-up: naming meta callees x progress.csv).
 
+**Earlier (decomp, 2026-10-23, day 15, renderer subagent): the renderer's bottom-up ready list.** ~85 functions in C
+(ngl.cpp, shaders.cpp, nal_codec.cpp, nal_anim.cpp, tr_main.cpp, dobj.cpp, fx.cpp): the 18 shader NewVertexIter slots,
+cdDebug_GetSortInfo, the NGL managers' skip-list clears + 7 deleting destructors, nglResourceManager_Add/ForEachPass,
+nglDrawQuad (settled 252/252; the original keeps the depth in its argument slot: registered with 4 argument bytes),
+nglSetFrameMemorySize, nglInitMultisample/InitFrameBuffers/SelectVideoMode/InitShaders, nglSelectMeshLodWithMatrix,
+nglSelectMeshProjectors (was FUN_0006fb30), the debug mesh draws, nglReadFile, TGA/screenshot writers, nglDumpPrintf,
+nglToggleShaderByName + Str_EqualN (was FUN_000442a0), the remaining entropy float DecodeFrames (Float1/Float4,
+Packed8/16 Float3 + channel decoders), XModel_Free, R_Init, RE_BeginRegistration/RE_EndFrame, R_DrawTextWithShadow,
+Anim_InitManagers, FX_ResetParticleSystem. Matched: XModel_Free, nglMeshSection_FreeBuffers, R_Init,
+NalManager_SkipListRemoveKey8, nglDrawQuad, nglSetFrameMemorySize (startup: `--only --every 1 --missions 1`). Inconclusive
+only (host calls: D3D Reset, XGAssembleShader heap, back-buffer GetDesc): nglReadBackBufferSize, nglInitMultisample,
+nglInitFrameBuffers, nglInitShaders. Not reached in missions 1/4/5/6: iterators, manager teardown, the NAL classes above,
+debug draws/dumps, projectors (no type-2 projectors in these levels). Unhookable (CALL/JMP/RET in the first 5 bytes):
+nglShutdown, cdSimpleInstance_Init/FreeList, nglUpdateScene_Nop, nglResetDevice, nglResourceManager_Add, RE_EndFrame,
+RE_BeginRegistration, nglDrawSingleQuadFrame, nglSaveScreenshot, Anim_InitManagers, FX_ResetParticleSystem.
+Skipped: RDTSC-bound nglBeginFrame/EndFrame/WaitFrameInterval/VBlankCallback; dead code with no references
+(nglDebugDrawLine/Axes, nglCreateNormalCubeMap, FUN_00068f70); FX_LoadEffectFromStream (Stream_LoadBpe returns its EAX =
+MemStream_Destroy's leftover, called at the original's ESP); nglAllocFrameMemory, nglDebugMesh_AddBox/InitDebugMeshes,
+nglAssemble*Shader, nglDumpCamera/SceneMeshes, R_DrawDObjSkeleton (startup/debug, large). Gotcha: fnpack disassembles a
+switch's jump table as garbage - read the table words (xbedis.py) instead of guessing the case order
+(nglSetFrameMemorySize mismatched on it).
+
 **Earlier (decomp, 2026-10-22, day 13f): Float3 + quaternion class methods.** 31 functions in C
 (game/code/nal_codec.cpp; docs/nal_animation.md "Float3 and quaternion classes"): the shared Float3 / quaternion slots
 (type, size, Blend, BlendWeighted, Fixup, Init/Free/CopyState), the plain Float3 class's block methods, the entropy
