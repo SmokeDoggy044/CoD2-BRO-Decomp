@@ -25,7 +25,22 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-22, day 13e): the position + orientation classes.** 27 functions in C
+**Resume here (decomp, 2026-10-22, day 13f): Float3 + quaternion class methods.** 31 functions in C
+(game/code/nal_codec.cpp; docs/nal_animation.md "Float3 and quaternion classes"): the shared Float3 / quaternion slots
+(type, size, Blend, BlendWeighted, Fixup, Init/Free/CopyState), the plain Float3 class's block methods, the entropy
+Float3 class's BeginBlock/DecodeFrames/SkipBlock/Evaluate, the packed quaternion class's SkipBlock/SkipCachedFrame,
+NAL_Entropy_SkipStatic4 and the quaternion entropy reader NAL_QuatReader_Init (0x000843c0, settled 301/301) with its
+BeginBlock 0x000842e0. Missions 1/4/5/6: 22 matched (12 settled), none mismatched; not reached: the plain Float3
+block methods, the entropy Float3 BeginBlock/DecodeFrames, NAL_EntropyQuat_BeginBlock, NAL_Const4, NAL_Quat_TypeId
+(other levels / --only --every 1 runs). One m4 run crashed in nglInit's host device creation (parallel DXVK startup).
+Next:
+1. 0x00086280 (1.1 KB packed SSE, rebuilds w then quaternion products; psssym.py) - it unlocks the quaternion slots
+   6/7 (0x000861b0, 0x00086730) and 0x0008d510; then 0x00082170/0x000822b0 and the other quaternion kinds' slots
+   (list in docs/nal_animation.md "Not done yet").
+2. The entropy PosOri block methods (0x00085600/0x000856e0, 0x000857b0/0x00084970, 0x00085930/0x00085480).
+3. 0x0001e150 (2.5 KB vtable method, "camera"), then the cgame ones with one title callee left.
+
+**Earlier (decomp, 2026-10-22, day 13e): the position + orientation classes.** 27 functions in C
 (game/code/nal_codec.cpp, nal_math.cpp; docs/nal_animation.md "Position + orientation classes"): the shared PosOri
 methods (Blend, BlendWeighted, Fixup, Init/Free/CopyState, SkipCachedFrame, type/size), the entropy trajectory
 class's SkipBlock/Evaluate/ApplyStatic/ApplyWraps, the cursor helpers in most vtables, NAL_Trajectory_AccumulateRoot
