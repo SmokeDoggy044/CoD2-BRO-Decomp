@@ -27,7 +27,40 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-23, day 18): matched 1545 -> 1578.** Day 17's names are applied in Ghidra (85;
+**Resume here (decomp, 2026-10-24, day 19): matched 1578 -> 1628; the renderer's 41 functions without C are down to 1
+(FUN_00068f70, a bone matrix palette builder with no callers - debugdraw agent).** Main session + two subagents
+(branches day18-debugdraw, day18-fxcmd, both merged; agents resumed on new batches).
+- Harness: (1) the trampoline relocates a CALL (`push <original return address>; jmp target`, so the callee returns into
+  the original code with the original's return address on the stack) or JMP in the first 5 bytes (loader/compare_linux.cpp
+  relative_transfer) - all 23 shader-class Init functions (`push 0xc; call Z_Malloc`) and cdSimpleInstance_FreeList
+  matched at once; the C-only functions left out of kFunctions for that reason are being registered (debugdraw agent).
+  `push imm8; call [mem]` (FF /2) stays unhookable. (2) RtlEnterCriticalSection/RtlLeaveCriticalSection are recorded
+  calls (the XAPI heap lock under RtlAllocateHeap: CRT malloc, XGAssembleShader); heap growth
+  (RtlpFindAndCommitPages -> NtAllocateVirtualMemory) still ends tests inconclusive.
+- r_init.cpp (main): GetRefAPI, ResourceManager_Construct/Destruct (registry 0x009719f8, 20 slots), SceneFX_Init,
+  PakRender_Shutdown, nglAssemblePixelShader/VertexShader (XGAssembleShader stores stack addresses in 0x0095f734 and
+  0x00419560: gap entry, vsprintf/sprintf/XGAssembleShader at the original's ESP, text at the original's frame offsets -
+  matched), nglAllocFrameMemory (= five gated nglSetFrameMemorySize calls), nglInit (reached at boot, inconclusive:
+  D3D device creation), nglCreateNormalCubeMap and nglDumpCamera/nglDumpSceneMeshes (no callers: C only).
+  compiler.h: platform_mxcsr_or.
+- ngl_debug.cpp (agent): nglDrawFpsCounter, R_DrawDObjSkeleton, DebugDraw_AddLine settled; nglDebugMesh_AddBox,
+  nglInitDebugMeshes, DebugDraw_AddString matched. Unreachable: nglDrawFrameTimeBar (nothing writes its switch
+  0x00902c01), nglDebugDrawLine/Axes and nglDebugLineBatch_Draw (callers 0x0006d200/0x0006d220/0x0006c050 uncalled).
+  nglDrawFpsCounter's format has one %d more than arguments (prints a never-written stack word; C passes 0).
+- fx_cmd.cpp (agent): FXCmd_* builders, FXCmd_Alloc/Commit, FXParam_Broadcast, FxSpawnCmd_Copy (0x00024520, was
+  FUN_), FxInstance_Init (0x00296d80) - 15 matched, none mismatched; not reached: FxSpawnCmd_Copy (64-slot queue full),
+  FXCmd_Type6AtTransform, FXCmd_PlayWeaponSoundLoop, FXCmd_PlayWeaponSoundAtBoneEx, FXCmd_Type2AtTransform. Builders run
+  FXCmd_Alloc/Commit at the original's ESP (Alloc can call the depth-sensitive FX_FlushSpawnQueue). Found: snd.cpp
+  play_alias calls FXCmd_PlaySoundAlias without ECX = owner entity (fix in progress, FX agent). 0x002a5db0 is an uncreated,
+  uncalled Type8-at-transform variant.
+- --exec runs at ~8 s while the mission still loads: vid_restart / map_restart / disconnect there reached nothing;
+  exec_sweep groups now prefix `wait 2400`. Level changes reboot (re-exec) the loader, so shutdown paths need an
+  in-process trigger.
+Next: merge the agents' batches; the renderer's untested list (shader NewVertexIter/Clone: vtable slots not reached in
+missions 1/4 - check which missions use each shader class; FX paths: FX agent; text-with-icons: --press hint prompts);
+then the open question to the user about letting the renderer become Replaced before naming is finished.
+
+**Earlier (decomp, 2026-10-23, day 18): matched 1545 -> 1578.** Day 17's names are applied in Ghidra (85;
 ApplyNames now leaves rows without a function uncreated unless given `create`; gap functions stay uncreated). Loader
 `--exec "cmd; cmd"`: Cbuf_AddText on the first frame cls.state (0x0092bdf0) is 2, after forcing sv_cheats 1 (Cvar_Set2
 refuses cheat cvars, flag 0x200, otherwise); first boot only. The renderer's real debug switches are the game's
