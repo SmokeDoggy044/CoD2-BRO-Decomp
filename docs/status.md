@@ -27,25 +27,26 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-23, day 17): matched 1419 -> 1545 (main session + two subagents, all merged).**
-Main session: CL_Frame and its per-frame callees, Key_TranslateButtonName / SCR_UpdateLoadingDots (C, not reached in
---level runs), Actor_PopBlockingStates fixed to take its state in ECX (was declared REGS2 = EDX; it matched 114 tests
-anyway), Sentient_ClaimGoalNode (settled), multi_wait (matching), Entity_YawToForward and Phys_FindBodyForEntity (not
-reached), Sentient_SetGoalNode (settled), Actor_Exposed_Finish (matching), ActorMove_ProjectVelocity (settled),
-Actor_RegisterSuppression (settled; G_NotifyWithEntity at the original's ESP through a gap entry, the shooter number
-in the original's argument slot), Actor_Noncombat_NodeClaimRevoked, hurt_use, Use_trigger_use, G_AddSpawnVarToken (not
-reached), sound and streaming (paragraph below). Subagents: the collision sight-trace tree and movement collision, the
-server module (linking, SV_Trace, per-frame server and send path), the sound update leaves and game path-node/actor
-helpers (paragraphs below). Names of the day (~110) are in manual_names.csv only - apply them in Ghidra (ApplyNames,
-save, ExportSymbols, smoke test) next session.
+**Resume here (decomp, 2026-10-23, day 18): matched 1545 -> 1575.** Day 17's names are applied in Ghidra (85;
+ApplyNames now leaves rows without a function uncreated unless given `create`; gap functions stay uncreated). Loader
+`--exec "cmd; cmd"`: Cbuf_AddText on the first frame cls.state (0x0092bdf0) is 2, after forcing sv_cheats 1 (Cvar_Set2
+refuses cheat cvars, flag 0x200, otherwise); first boot only. The renderer's real debug switches are the game's
+command table g_devCommands (0x008ddae0: nglstats, nglfpsdisplay, wireframe, fullbright, solidcolor, toggleshader
+<cdname>, texturemip, texturesize, texturetiling, fogswitch, entity_stats, memreport, mempools, plus give/god/noclip);
+r_fullbright, r_LightScale, r_showtris and ~30 other r_ cvars are registered in R_Register but never read on the Xbox.
+`tools/exec_sweep.py` runs one `--compare --only --every 1` pass per command group over the module's untested
+decompiled functions (commands 30 frames apart with `wait 30`: the harness has 4 test slots, and 22 toggles in one
+frame got 2 tests). Reached and matched: all 22 cd*_Toggle, nglToggleShaderByName, R_SetDebugViewMode,
+R_SetTextureMip, FxEmitters_Init, FxSystems_New, FxSimpleShader_GetName, cdWorld_InitPixelShaders2,
+cdWorldBlend_InitVertexShaders2. Reports: build/exec_sweep/day18{,b}/report.txt.
 Next:
-0. First (user, 2026-10-23): a loader option `--exec "cmd; cmd"` that queues console commands/cvars through
-   Cbuf_AddText (0x002aabb0, string in EAX) from a per-frame hook like --level, then restores the original call.
-   Then a sweep script (like tools/feature_sweep.sh): per cvar/command, a level run with `--only --every 1` on the
-   renderer functions it should reach; record matched / not reached. Goal: clear the 252 untested renderer functions
-   (console toggles, debug overlays); menu paths need --press; unreachable ones get listed as such. Renderer leftovers
-   besides that: 42 without C (FXCmd_* builders, debug draw, nglInit, shader assembly), 10 mismatched/inconclusive.
-   Open question to the user: let the renderer become Replaced before all naming is done (exception to the rule)?
+0. Renderer: 174 decompiled functions still untested - ~30 shutdown/free paths (end or change a level: a test that
+   quits to the menu or loads a second mission), ~39 init/load-time (run before the harness is active? check when
+   hooks go in), 23 FX paths, the text-with-icons functions (hint prompts / menus: --press), the rest per function.
+   The debug-draw functions (nglDrawFpsCounter, nglDrawFrameTimeBar, R_DrawDObjSkeleton, DebugDraw_AddLine) have no C
+   yet: decompile them, then `exec_sweep.py --groups stats,debugdraw,rcvars`. Handler names for g_devCommands are
+   in manual_names.csv (apply next naming batch). Open question to the user: let the renderer become Replaced before
+   all naming is done (exception to the rule)?
 1. Harness: record the DirectSound calls (audio::dsound_functions(), like kRecordedD3dCalls; GetStatus needs a stand-in
    reading the replacement's buffer state). That makes CL_Frame, the sound update 0x000c3700 (SndVoice_ApplyParams,
    Snd_UpdateListenerAxis are C but untested), S_StopAllSounds, CL_ClearState and CL_MapLoading testable.
@@ -54,6 +55,10 @@ Next:
 3. Collision/physics leftovers: 0x0020da90, the 0x00231770 physics siblings, 0x002635c0; game rank.py rows.
 4. On record (dead-stack words only): SV_SectorSightTrace_r, SV_ClipMoveToEntities_r, SV_CapsuleTrace, SV_Trace,
    the point/box sector walkers.
+
+**Earlier (decomp, 2026-10-23, day 17): matched 1419 -> 1545 (main session + two subagents, all merged).** Main
+session: CL_Frame and its per-frame callees, Actor_PopBlockingStates (state in ECX), Sentient/Actor goal-node
+functions, sound and streaming; subagents: collision sight traces, the server module, sound update leaves.
 
 **Earlier (decomp, 2026-10-23, day 17, main session): CL_Frame and its per-frame callees, sound and streaming.**
 - CL_Frame (0x002f2630) is C: gap entry (C frame 0x20000 below), every callee at the original's ESP with the
