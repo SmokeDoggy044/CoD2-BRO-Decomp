@@ -27,7 +27,38 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-24, day 19): matched 1578 -> 1628; the renderer's 41 functions without C are down to 1
+**Resume here (decomp, 2026-10-24, day 20): offline tests of the functions the campaign never runs.**
+New `tests/leaf_test.cpp` (ctest leaf_test, about 3.5 min) maps default.xbe at its addresses and runs
+the original's bytes and our C on random inputs (registers, XMM, stack, the globals read, a 32 KB
+arena of pointer chains), compared as in the game; `tools/leafscan.py --emit tests/leaf_functions.inc`
+picks what can run offline (no indirect calls, kernel/D3D/DSound/XOnline/XNet/XPP calls or
+privileged code in the call tree). Details: docs/comparison-harness.md, "Offline tests". Renderer:
+56 of its 208 open functions are eligible (the rest: Z_Malloc -> XPhysicalAlloc, vtable calls, D3D,
+kernel). New state **offline** (user, 2026-10-24: counts in the matched counter): 100+ inputs
+matched, none mismatched, 90%+ coverage - `LEAF_CSV=tools/data/offline.csv build/linux-loader/bin/leaf_test`
+records, progress.py reads it.
+- Found and fixed (all only reachable with values the game never has, but the C is now exact):
+  nglEvalPointLight squares w too (packed MULPS: its overflow flag), nglNode_ViewDepth returns the
+  x87 sum unrounded (long double: overflow happens at the caller's FSTP), ResourceManager_Destruct
+  searches by slot address (wraps like the pointer), R_SetInstanceColor re-reads *params.
+  nglSelectMeshLodWithMatrix's kFunctions arg_bytes 0 -> 8.
+- Test-side lessons (each a false mismatch first): argument slots are callee scratch; arguments must
+  be distinct objects (self == src); pointers stay near a 1 KB chunk's start; random words must not
+  point into host memory (-inf = 0xff800000 lands in the main stack's growth gap); a pointer computed
+  from random fields can hit the call stack (rerun the original with the stack moved: unstable); a
+  worker can die from a wild write into its own heap (functions rerun in fresh workers).
+- NaN-only differences (SSE keeps the first operand's NaN, GCC commutes; signaling NaNs quieted)
+  are reported in their own column, not failures.
+- Not offline yet (too few inputs reach them, or coverage under 90%): cdDebug_GetSortInfo,
+  nglTextureGetPixel, nglSelectMeshProjectors, nglPaletteSetEntry, FxEffectDef_SetElementValue,
+  FxPool_SetSlotTag, FX_FindEvictableEffect, R_SetInstanceColor, XModel_CalcBoneChildren,
+  ResourceManager_Destruct - shape hints per function (e.g. the pool/registry layout) would get them.
+Next: (1) widen leafscan to other modules (`--module cgame,game,qcommon,...` - same test), (2) the
+renderer's remaining ~150 open: forced-call harness feature for shutdown/destructor paths, stand-ins
+for XPhysicalAlloc (Z_Malloc -> the 25 VertexIter_Clone), check the shader vtable-slot callers in
+Ghidra, (3) then back to naming.
+
+**Earlier (decomp, 2026-10-24, day 19): matched 1578 -> 1628; the renderer's 41 functions without C are down to 1
 (and then 0).** Main session + two subagents
 (branches day18-debugdraw, day18-fxcmd, both merged; agents resumed on new batches).
 - Harness: (1) the trampoline relocates a CALL (`push <original return address>; jmp target`, so the callee returns into
