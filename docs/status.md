@@ -67,10 +67,19 @@ runs (only a front-end text dialog calls them). Next:
   stay unhookable (5-byte functions), FxNop_* are bare rets.
 - Renderer now: 969 functions, all with C; 743 matched, 214 untested, 7 inconclusive, 4 on-record mismatches
   (nglRenderSceneTree, nglRenderTranslucentList, R_RenderView, DObj_UpdateSkeletons: stale-stack words).
-Next: a quit-to-menu / end-of-level run (user-steered or a pause-menu --press route) for the shutdown paths; the
-renderer's untested list (shader NewVertexIter/Clone: vtable slots not reached in
+- User-steered quit-to-menu run (build/compare/quit_user, 390 s, 348 untested functions of renderer/cgame/client/
+  server/qcommon/sound/streaming, --only --every 1): quitting to the menu and starting a mission both REBOOT the title
+  (HalReturnToFirmware -> the loader re-execs), so the in-process shutdown paths (SV_Shutdown, CG_Shutdown,
+  FxSystemList_DestroyAll, PakRender_Shutdown, ...) never run in the campaign. Reached, all matched (+9):
+  FXCmd_PlayWeaponSoundAtBoneEx, FxOp31_AddToList, SCR_UpdateLoadingDots settled; FxLightSet_SelectObjectLights,
+  FxNode_ComputeObjectLights, FxMatrix_RigidInverse, apsPtrVector_Reserve, Com_BitCheck matching; Anim_InitManagers
+  inconclusive (FUN_00093a10 file read). Testing the shutdown paths would need a test entry the title never takes
+  (e.g. a forced call from a loader hook at a quiet point) - not done.
+- Renderer Replaced before naming is finished: no (user, 2026-10-24) - its whole structure must be known before modern
+  features go in.
+Next: the renderer's untested list (shader NewVertexIter/Clone: vtable slots not reached in
 missions 1/4 - check which missions use each shader class; FX paths: FX agent; text-with-icons: --press hint prompts);
-then the open question to the user about letting the renderer become Replaced before naming is finished.
+then back to naming (renderer stays Compare until naming is done).
 
 **Earlier (decomp, 2026-10-23, day 18): matched 1545 -> 1578.** Day 17's names are applied in Ghidra (85;
 ApplyNames now leaves rows without a function uncreated unless given `create`; gap functions stay uncreated). Loader
