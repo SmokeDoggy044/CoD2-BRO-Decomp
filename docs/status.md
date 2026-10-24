@@ -27,7 +27,32 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-24, day 20c): the offline test passes on all 298 functions; matched 1826 -> 1830.**
+**Resume here (decomp, 2026-10-24, day 20d): offline tests widened 298 -> 436 functions; matched 1830 -> 1911.**
+Full run about 13 min (765 s, ctest timeout 1800 s). Details: docs/comparison-harness.md, "Offline tests".
+- Inputs: fault-learned pointer fields, a mutation corpus of quick non-crashing inputs (arguments stay
+  distinct chunks), per-function budget (15 s once 1000 inputs ran), 10 ms timeout untraced.
+- leafscan: stand-ins (Z_Malloc, XPhysicalAlloc/Free, _aligned_*, _vsprintf/_sprintf/__vsnprintf),
+  pinned free hook 0x009098ec, int3 allowed, reachable code only, calls through constant tables and
+  fixed vtable slots, eh_vector_constructor_iterator's pushed constructor, depth 12, kFunctions names.
+- Robustness: arena, call stack and stand-in heap each inside a 32 MB no-access reservation (wild writes
+  corrupted ld.so/libc/malloc - 83 functions lost in one run); workers non-dumpable (no coredump
+  notifications); a dead worker is replaced at once.
+- Fixed in the C: ParamSet_TestCondition (strings read *value only for ops 0/9), R_DrawTextWithShadow and
+  ngl target-size conversions on the x87 (new platform_x87_int_to_float / _mul_ftol; drift on the ngl
+  projection family 10% -> 0), skip-list remove's level loop is a do-while, NAL CopyState/CopyChannels
+  copy front to back (new platform_rep_movs; glibc memcpy stores its tail first).
+- Test: a difference of close floats mixed with NaN pairs counts as drift, not a mismatch.
+- **Next:** the 4 open entries in tools/data/leaf_pending.csv (nglBuildBoneMatrixPalette crashes in our C;
+  NAL_RleReader_ReadBytes, NAL_Entropy_SkipStatic4, NAL_EntropyMode19 rare inputs); Vehicle_Controller
+  there is explained (title callee's uninitialized 4th lane). Then the blocked 168, ranked plan (a
+  subagent's analysis): 1. the static allocator object 0x008bb760 (vtable 0x007c4d90: +4 alloc 0x94120,
+  +8 free 0x94140) behind FxPtrArray_InitFill etc., ~27; 2. pin hooks 0x009098e8 (Mem_AlignedAlloc) and
+  0x009098dc (nglFreeFileBuffer); 3. log stubs for import slots in .bss (0x009284f4-0x00928578 cgame,
+  0x0095e6b0, 0x0095e634, 0x0092f138), ~10; 4. log stubs for D3D setters our C calls by title address,
+  ~14; 5. fake vtables on argument objects (stub page; callee-pop byte counts), ~32; 6. callback
+  arguments. 29 call trees reach callees outside any section (misdisassembly in some symbol ranges?).
+
+**Earlier (decomp, 2026-10-24, day 20c): the offline test passes on all 298 functions; matched 1826 -> 1830.**
 `tools/data/leaf_pending.csv` is empty: the 9 pending functions and 4 rare-input finds are fixed or explained.
 `tools/leafscan.py` now also takes decompiled gap functions (no symbol, state `unsorted`): 298 eligible.
 - Fixed in the C: apsActionPlaneBounce_Apply (the unit normal's 4th lane stays 0, not 0 * inverse: a NaN there
