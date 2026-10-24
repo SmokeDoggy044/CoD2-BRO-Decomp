@@ -26,6 +26,14 @@ there every thread is sampled), `--profile` and the launcher's "Measure performa
 tools/resolve_profile.py names our offsets from the unstripped build - keep each
 release's build directory binaries for that. Windows side tested under Wine only.
 The launcher has tabs (General, Graphics, Controls, Multiplayer, Help).
+After 0.1.8 (issue #8 logs): the frame end's spin on the vblank flag (SP 0x000651c3, MP
+0x00066123) sleeps until the next vertical blank instead (one core less: 102 s -> 51 s
+CPU in 100 s of mission 1 at 30 fps; Linux, Wine checked); late frames are shown at once
+(the game's own mode 3/4 flag; `--late-frames wait` = the Xbox's 20 fps step); the
+Windows profiler's busy is the thread's cycles, and it samples only threads that ran
+a quarter of the tick (0.1.8 reported every thread at 100%). Not yet on real Windows.
+Issue #9: the reporter's codmp_xboxf.xbe (fr/es/it disc) is another build (.rdata
+0x20 later, RDTSC sites from 0x2074fa on differ), so every MP address misses.
 Next candidates:
 1. Multiplayer between two PCs, and v0.1.1 on real Windows (firewall prompt).
 2. The full native build plan + a list of every game-code patch and its intent (asked for).
