@@ -27,7 +27,26 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-24, day 20b): offline tests widened to every module; matched 1707 -> 1826.**
+**Resume here (decomp, 2026-10-24, day 20c): the offline test passes on all 298 functions; matched 1826 -> 1830.**
+`tools/data/leaf_pending.csv` is empty: the 9 pending functions and 4 rare-input finds are fixed or explained.
+`tools/leafscan.py` now also takes decompiled gap functions (no symbol, state `unsorted`): 298 eligible.
+- Fixed in the C: apsActionPlaneBounce_Apply (the unit normal's 4th lane stays 0, not 0 * inverse: a NaN there
+  hid DE flags), apsActionFrenetMove_Apply (curvature and torsion re-read before their clamps),
+  NAL_EntropyFloat3_InitReaders and NAL_PosOri/Quat_BlendWeighted (read through the stream pointer before
+  advancing it), NAL_Skeleton_BoneTransform (out[6] is z: the second `[esp+0x24]` follows a POP; the
+  "title stores y twice" comment was wrong), the NAL entropy Decoder (now the title's register model: buffered
+  words, masked shifts, unsigned bit count; Mode3D's own 32-bit reader), inflate_fast (the title's inflate_mask
+  table at 0x008a1d80, not a 17-entry copy), cgame `g()` returns `const float&` (a float returned by value
+  goes through x87 and quiets a signaling NaN).
+- Test: unaligned NaNs count as NaN differences; a mismatch with equal registers reruns with an arena write log
+  and counts as nan when the first divergent store is NaN on both sides (aps particle overlaps cascaded NaN
+  payloads); `LEAF_DUMP` / `LEAF_REPLAY` (+ `LEAF_REPLAY_STACK`, under `setarch -R`) replay one input.
+  See docs/comparison-harness.md, "Offline tests".
+- **Next:** inputs-shape hints for functions with few inputs (apsActionPlaneBounce 30, apsOrientToVelocity ~90,
+  the NAL entropy modes ~10 per 4000 - all reader/pointer chains), then the 306 blocked (indirect calls:
+  stand-ins for Z_Malloc/XPhysicalAlloc, vtables), then naming.
+
+**Earlier (decomp, 2026-10-24, day 20b): offline tests widened to every module; matched 1707 -> 1826.**
 `tools/leafscan.py` now defaults to every module and keeps offline functions in the table (re-checked
 each run): 219 eligible (renderer 56, xanim 48, qcommon 47, game 34, client 23, cgame 5, others), 211 in
 `tests/leaf_functions.inc` (ctest leaf_test, about 10 min; timeout 1800 s). Test changes: constants in
@@ -40,10 +59,7 @@ offline.csv no longer keeps its header as a row.
   base + count * 4 (count mod 2^30), ParamSet_TestCondition reads *value only for handled operators,
   ngl's STL sort counts nodes as bytes SAR 3 (`node_count`: GCC folded `last - first > 1` into
   `bytes > 8`, one sort step too many on a 12-byte range).
-- **Next:** the 9 in `tools/data/leaf_pending.csv` (left out of the table until fixed): seven aps particle
-  actions (MXCSR flags, arena; AngleToEmitterX fails 1 input in ~2300), NAL_EntropyFloat3_InitReaders (reader pointers), NAL_Skeleton_BoneTransform.
-  Run one with `LEAF_ONLY=name LEAF_VERBOSE=1` after `--emit` without the pending list (remove its row).
-  "0 of 0" in the progress lines = the original crashed on every random input (inflate_fast,
+- "0 of 0" in the progress lines = the original crashed on every random input (inflate_fast,
   NAL_IK_TwoBoneAngles, Actor_GrenadeTargetClear...): they need input shapes, not counted.
   Then the 304 blocked (mostly indirect calls: stand-ins for Z_Malloc/XPhysicalAlloc, vtables), then naming.
 
