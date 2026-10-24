@@ -39,6 +39,13 @@ server module (linking, SV_Trace, per-frame server and send path), the sound upd
 helpers (paragraphs below). Names of the day (~110) are in manual_names.csv only - apply them in Ghidra (ApplyNames,
 save, ExportSymbols, smoke test) next session.
 Next:
+0. First (user, 2026-10-23): a loader option `--exec "cmd; cmd"` that queues console commands/cvars through
+   Cbuf_AddText (0x002aabb0, string in EAX) from a per-frame hook like --level, then restores the original call.
+   Then a sweep script (like tools/feature_sweep.sh): per cvar/command, a level run with `--only --every 1` on the
+   renderer functions it should reach; record matched / not reached. Goal: clear the 252 untested renderer functions
+   (console toggles, debug overlays); menu paths need --press; unreachable ones get listed as such. Renderer leftovers
+   besides that: 42 without C (FXCmd_* builders, debug draw, nglInit, shader assembly), 10 mismatched/inconclusive.
+   Open question to the user: let the renderer become Replaced before all naming is done (exception to the rule)?
 1. Harness: record the DirectSound calls (audio::dsound_functions(), like kRecordedD3dCalls; GetStatus needs a stand-in
    reading the replacement's buffer state). That makes CL_Frame, the sound update 0x000c3700 (SndVoice_ApplyParams,
    Snd_UpdateListenerAxis are C but untested), S_StopAllSounds, CL_ClearState and CL_MapLoading testable.
