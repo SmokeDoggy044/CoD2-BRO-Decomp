@@ -75,6 +75,17 @@ runs (only a front-end text dialog calls them). Next:
   FxNode_ComputeObjectLights, FxMatrix_RigidInverse, apsPtrVector_Reserve, Com_BitCheck matching; Anim_InitManagers
   inconclusive (FUN_00093a10 file read). Testing the shutdown paths would need a test entry the title never takes
   (e.g. a forced call from a loader hook at a quiet point) - not done.
+- User-steered pause-menu "Restart level" run (build/compare/restart_user, 180 s, 339 untested functions): no reboot -
+  the restart stays in process but is a soft restart (like map_restart): only CG_ParseServerinfo and
+  CG_ParseConfigStringFloat11 ran (+2 matched); no renderer/FX/server shutdown or reload path. So no campaign action runs
+  those paths: they need forced test calls (harness feature, planned) - see the plan for the renderer's 208 below.
+- Plan for the renderer's 208 (195 untested, 9 inconclusive, 4 mismatched; user asked 2026-10-24): ~60 reachable by
+  more running (rare gameplay 22, other levels 15, UI/text/screenshot 16, load-time 7); ~130 never run in the shipped
+  campaign (no callers 35, shader vertex-iterator vtable slots 39 - check for slot callers, shutdown/destructors 24, FX
+  data no level has 20, stubs under 5 bytes 15). Tools: offline tests of pure leaves (XBE bytes in mmap vs C, like
+  tests/nal_entropy_test.cpp), a forced-call harness feature (fork a test process at a quiet point and call the function
+  there on live state; the game itself never calls it), stand-ins for XGetVideoFlags / heap growth / D3D device
+  creation+reset / file reads, and a rerun of the 4 mismatched callers with their callees switched to our C.
 - Renderer Replaced before naming is finished: no (user, 2026-10-24) - its whole structure must be known before modern
   features go in.
 Next: the renderer's untested list (shader NewVertexIter/Clone: vtable slots not reached in
