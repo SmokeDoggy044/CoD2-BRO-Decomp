@@ -26,7 +26,7 @@ there every thread is sampled), `--profile` and the launcher's "Measure performa
 tools/resolve_profile.py names our offsets from the unstripped build - keep each
 release's build directory binaries for that. Windows side tested under Wine only.
 The launcher has tabs (General, Graphics, Controls, Multiplayer, Help).
-After 0.1.8 (issue #8 logs): the frame end's spin on the vblank flag (SP 0x000651c3, MP
+v0.1.9 (test pre-release, 2026-10-24) has everything below. After 0.1.8 (issue #8 logs): the frame end's spin on the vblank flag (SP 0x000651c3, MP
 0x00066123) sleeps until the next vertical blank instead (one core less: 102 s -> 51 s
 CPU in 100 s of mission 1 at 30 fps; Linux, Wine checked); late frames are shown at once
 (the game's own mode 3/4 flag; `--late-frames wait` = the Xbox's 20 fps step); the
