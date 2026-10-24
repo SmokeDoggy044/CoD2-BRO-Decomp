@@ -27,7 +27,27 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-24, day 20): offline tests of the functions the campaign never runs.**
+**Resume here (decomp, 2026-10-24, day 20b): offline tests widened to every module; matched 1707 -> 1826.**
+`tools/leafscan.py` now defaults to every module and keeps offline functions in the table (re-checked
+each run): 219 eligible (renderer 56, xanim 48, qcommon 47, game 34, client 23, cgame 5, others), 211 in
+`tests/leaf_functions.inc` (ctest leaf_test, about 10 min; timeout 1800 s). Test changes: constants in
+writable sections stay at the image's value (leafscan's `constant()`), an x87-result function returning
+with an empty x87 stack is skipped like a crash, our C gets a 2 s rerun when only it timed out (-O0),
+offline.csv no longer keeps its header as a row.
+- Fixed in the C (offline mismatches): hurt_use and Vehicle_FreeDefs are void (EAX was lahf/Z_Free
+  leftovers; callers ignore it), CG_BobCycleVertical/Lateral return the x87 value unrounded (and
+  CG_CalcWeaponBob compares it unrounded, as FCOMIP does), Phys_FindBodyForEntity walks to
+  base + count * 4 (count mod 2^30), ParamSet_TestCondition reads *value only for handled operators,
+  ngl's STL sort counts nodes as bytes SAR 3 (`node_count`: GCC folded `last - first > 1` into
+  `bytes > 8`, one sort step too many on a 12-byte range).
+- **Next:** the 9 in `tools/data/leaf_pending.csv` (left out of the table until fixed): seven aps particle
+  actions (MXCSR flags, arena; AngleToEmitterX fails 1 input in ~2300), NAL_EntropyFloat3_InitReaders (reader pointers), NAL_Skeleton_BoneTransform.
+  Run one with `LEAF_ONLY=name LEAF_VERBOSE=1` after `--emit` without the pending list (remove its row).
+  "0 of 0" in the progress lines = the original crashed on every random input (inflate_fast,
+  NAL_IK_TwoBoneAngles, Actor_GrenadeTargetClear...): they need input shapes, not counted.
+  Then the 304 blocked (mostly indirect calls: stand-ins for Z_Malloc/XPhysicalAlloc, vtables), then naming.
+
+**Earlier (decomp, 2026-10-24, day 20): offline tests of the functions the campaign never runs.**
 New `tests/leaf_test.cpp` (ctest leaf_test, about 3.5 min) maps default.xbe at its addresses and runs
 the original's bytes and our C on random inputs (registers, XMM, stack, the globals read, a 32 KB
 arena of pointer chains), compared as in the game; `tools/leafscan.py --emit tests/leaf_functions.inc`
