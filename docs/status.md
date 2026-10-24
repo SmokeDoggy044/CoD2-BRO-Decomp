@@ -27,7 +27,7 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-23, day 18): matched 1545 -> 1575.** Day 17's names are applied in Ghidra (85;
+**Resume here (decomp, 2026-10-23, day 18): matched 1545 -> 1578.** Day 17's names are applied in Ghidra (85;
 ApplyNames now leaves rows without a function uncreated unless given `create`; gap functions stay uncreated). Loader
 `--exec "cmd; cmd"`: Cbuf_AddText on the first frame cls.state (0x0092bdf0) is 2, after forcing sv_cheats 1 (Cvar_Set2
 refuses cheat cvars, flag 0x200, otherwise); first boot only. The renderer's real debug switches are the game's
@@ -47,6 +47,13 @@ Next:
    yet: decompile them, then `exec_sweep.py --groups stats,debugdraw,rcvars`. Handler names for g_devCommands are
    in manual_names.csv (apply next naming batch). Open question to the user: let the renderer become Replaced before
    all naming is done (exception to the rule)?
+   Renderer's 266 untested = 174 hookable not reached + 50 the harness cannot hook ("cannot move the instruction at
+   ...; not tested" at startup: the cd*_Init shader setups, nglShutdown, nglResetDevice, nglSaveScreenshot, buffer/
+   texture/palette unlocks, ...; no run will test them - needs a test entry past the first instruction or a test
+   through the caller) + 42 without C. Main-menu run steered by the user (build/compare/menu_user, 393 s, every menu
+   option): only +2 matched (ScriptString_Find, CL_PauseForDialog, Cmd_Argv, SV_SetSkillMedium, IN_UpUp,
+   IN_ActivateUp) - the UI screen classes (~0x31xxxx-0x33xxxx) are not decompiled yet; repeat that steered run once
+   the client/UI module has C (the user offered to steer).
 1. Harness: record the DirectSound calls (audio::dsound_functions(), like kRecordedD3dCalls; GetStatus needs a stand-in
    reading the replacement's buffer state). That makes CL_Frame, the sound update 0x000c3700 (SndVoice_ApplyParams,
    Snd_UpdateListenerAxis are C but untested), S_StopAllSounds, CL_ClearState and CL_MapLoading testable.
