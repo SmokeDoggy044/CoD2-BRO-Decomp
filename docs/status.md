@@ -35,6 +35,8 @@ a quarter of the tick (0.1.8 reported every thread at 100%). Not yet on real Win
 Issue #9: the reporter's codmp_xboxf.xbe (fr/es/it disc) is another build (.rdata
 0x20 later, RDTSC sites from 0x2074fa on differ), so every MP address misses. The loader
 now checks each XBE's time stamp and size and refuses other builds (`--any-release`).
+Issue #10: pictures wider than 16:9 (`--aspect 21:9` etc., launcher choices marked
+experimental), campaign only, see docs/rendering.md "Wider than 16:9".
 Next candidates:
 1. Multiplayer between two PCs, and v0.1.1 on real Windows (firewall prompt).
 2. The full native build plan + a list of every game-code patch and its intent (asked for).
