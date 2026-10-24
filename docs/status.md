@@ -28,7 +28,7 @@ runs (only a front-end text dialog calls them). Next:
    not function-by-function decompilation.
 
 **Resume here (decomp, 2026-10-24, day 19): matched 1578 -> 1628; the renderer's 41 functions without C are down to 1
-(FUN_00068f70, a bone matrix palette builder with no callers - debugdraw agent).** Main session + two subagents
+(and then 0).** Main session + two subagents
 (branches day18-debugdraw, day18-fxcmd, both merged; agents resumed on new batches).
 - Harness: (1) the trampoline relocates a CALL (`push <original return address>; jmp target`, so the callee returns into
   the original code with the original's return address on the stack) or JMP in the first 5 bytes (loader/compare_linux.cpp
@@ -56,7 +56,19 @@ runs (only a front-end text dialog calls them). Next:
 - --exec runs at ~8 s while the mission still loads: vid_restart / map_restart / disconnect there reached nothing;
   exec_sweep groups now prefix `wait 2400`. Level changes reboot (re-exec) the loader, so shutdown paths need an
   in-process trigger.
-Next: merge the agents' batches; the renderer's untested list (shader NewVertexIter/Clone: vtable slots not reached in
+- Second agent batches (merged): the C-only unhookable functions are registered - SndVoice_ApplyParams,
+  S_ClearVoiceAttenuation, Snd_UpdateListenerAxis, Snd_UpdateTime, Actor_PushState, Actor_AnimStationary,
+  Snd_CountBusyVoices, SV_UpdateInfoConfigstrings settled; Scr_Acos/Scr_Asin/Scr_GetEntObjectOrEmpty got C (not
+  reached); FUN_00068f70 = nglBuildBoneMatrixPalette (C, no callers). snd.cpp play_alias passes ECX = owner entity
+  (S_UpdateAmbientEmitters 9408/0). FX paths: FxOp_SetTextures, FxOp1d5_AddToList settled; the FX shutdown/free paths
+  (FxSystemList_DestroyAll, FxPools_*, FxEmitters_*, FxEffectPool_Release, ...) need a run that ends the level or quits
+  to the menu (`disconnect` via --exec is a no-op on the Xbox build: the mission plays on); 11 of 12 FxAction*_Init use
+  particle action tags no level pack contains; the 5b/d5/dd render ops are never created; FxSystem_Stop / FxNull_Query
+  stay unhookable (5-byte functions), FxNop_* are bare rets.
+- Renderer now: 969 functions, all with C; 743 matched, 214 untested, 7 inconclusive, 4 on-record mismatches
+  (nglRenderSceneTree, nglRenderTranslucentList, R_RenderView, DObj_UpdateSkeletons: stale-stack words).
+Next: a quit-to-menu / end-of-level run (user-steered or a pause-menu --press route) for the shutdown paths; the
+renderer's untested list (shader NewVertexIter/Clone: vtable slots not reached in
 missions 1/4 - check which missions use each shader class; FX paths: FX agent; text-with-icons: --press hint prompts);
 then the open question to the user about letting the renderer become Replaced before naming is finished.
 
