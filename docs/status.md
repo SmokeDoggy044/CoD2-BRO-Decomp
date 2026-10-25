@@ -26,6 +26,20 @@ there every thread is sampled), `--profile` and the launcher's "Measure performa
 tools/resolve_profile.py names our offsets from the unstripped build - keep each
 release's build directory binaries for that. Windows side tested under Wine only.
 The launcher has tabs (General, Graphics, Controls, Multiplayer, Help).
+After 0.1.10 (issue #8, eight Windows/Intel HD 3000 logs, not yet replied to): the
+automatic profile ran once per run, right after the level start, never at the spots
+reported; it now reports at each slow second (at most once a minute, 20 times a run)
+with the mission number. Main thread there: busy only 41-60% at 20-27 fps, 15-25% of
+its samples in driver Lock/Unlock/Render/waits (every draw was DrawPrimitiveUP), 3-13%
+in texture_for_stage (whole-texture hash of every bound texture every frame). Now:
+draws fill our own dynamic vertex/index buffers (NOOVERWRITE, DISCARD on wrap; UP
+remains the fallback), and textures are sample-hashed each frame, whole only every 8
+frames or while they changed in the last 60. Linux/DXVK A/B (missions 1 and 9, fixed
+10 s window): texture_for_stage 11-13% -> under 2% of main-thread samples, memcpy
+roughly halved, pictures unchanged. Windows' own D3D9 not measured (Wine untested so
+far). Also: the PC menu's ImGui init asserted in Linux debug builds (InitForD3D).
+`tools/resolve_profile.py --summary` sums each report per place. Next idea if the
+draws still dominate: vertices in their real types instead of a float4 per attribute.
 v0.1.10 (test pre-release, 2026-10-25): the release check by code fingerprint, other releases' campaigns start (issue #9). v0.1.9 (test pre-release, 2026-10-24) has everything below. After 0.1.8 (issue #8 logs): the frame end's spin on the vblank flag (SP 0x000651c3, MP
 0x00066123) sleeps until the next vertical blank instead (one core less: 102 s -> 51 s
 CPU in 100 s of mission 1 at 30 fps; Linux, Wine checked); late frames are shown at once
