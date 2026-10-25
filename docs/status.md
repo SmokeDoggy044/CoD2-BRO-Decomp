@@ -46,6 +46,20 @@ Open:
   mission-1 run, build/compare/rst_*). Find the writer in nglRenderSceneTree's subtree; matters before Replaced in
   release builds. Keep compare runs on the linux-loader preset until then (steered runs used release for frame rate).
 
+**Renderer testing, 2026-10-25 (day 23), in progress:**
+- Group 1 sweep, missions 0,2,3,7,8 (build/compare/r146a, --only the 146, --every 1): only cdOcean_SetWaveOrigin and
+  nglCreateSysFont new; the 7 boot functions stay inconclusive (call host code). Missions 9-14 not run yet.
+- leaf_test coverage bug fixed (e64366e): tracing stopped for good when the original called out of the image
+  (stand-ins' `push target; ret` thunks, log stubs), so everything after a Z_Malloc call counted as unreached - the
+  82 leaf-eligible renderer functions had matched for days at 22-86% coverage. Now a resume trampoline re-arms TF on
+  return; 1 traced input in 16 makes the stand-in allocators return null (the clones' out-of-memory branch).
+  Counter 2051 -> 2117 -> 2141 (second run, with the null-alloc inputs); renderer untested 138 -> 65. Still low: switch/compare-constant branches (FxRenderer_NewOp5b/d5 ~40%, RE_ParseButtonToken,
+  XModel_CalcBoneChildren, nglSkipList_Remove*, FxConst*_Within equal floats): compare-constant input seeding is
+  being built on branch leaf-const (worktree cod_bro/wt/leafconst).
+- Rare pre-existing flake: "worker crashed outside a call" (NAL_Quat_BeginBlock, nglSkipList_RemoveTexture once
+  each); the named function passes alone, the committed binary shows the same. Second run: two workers died of
+  SIGALRM outside a call (after apsActionPlaneBounce_Apply, CM_FloodAreaConnections); retries passed - watch for it.
+
 **Next (user, 2026-10-25): test the renderer's 146 remaining functions** (138 untested, 8 inconclusive; no new naming
 passes - leftovers get named as the decompile reaches them). Groups and plan, cheapest first:
 1. Rare gameplay / other levels / UI (~25: RE_DrawTextWithIcons, R_ParseTextIcon, RE_ParseButtonToken, cdWater_Draw,
