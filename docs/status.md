@@ -27,7 +27,18 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-24, day 20e/f): matched 1911 -> 1954.** Pending entries fixed; CG_Draw2D's whole tree
+**Resume here (decomp, 2026-10-25, day 21): offline-test harness fixed; next is hub naming.** Two worker-heap
+corruptions found and fixed in tests/leaf_test.cpp (details in docs/comparison-harness.md, "Offline tests"):
+wide-text arena words were never filtered against host memory (NAL_Float1_CopyState stored into malloc's chunks;
+off the pending list now), and computed pointers can reach the brk heap (NAL_Quat_BeginBlock's loop overwrites its
+own pointer cell) - the brk heap is read-only during every call, handlers write only static state, a page below
+each host range counts as host. D3D log stubs (item 4): 40 setters/draws stubbed, but most freed functions store
+D3D shadow state (blocked as "writes SDK state"), net +3: 497 eligible. Items 5-6 dropped: a simulation with
+XAPI and CRT-allocator stand-ins frees 1 of the 134 blocked (their trees reach CRT locks, SEH, _getptd, file I/O).
+Debug aid worth reusing: copy [heap] before each untraced run, compare after, print the input (not committed).
+Next: hub naming (naming.md, memory "hubs, then decompile"); apply day 20f's manual_names.csv rows in Ghidra first.
+
+**Earlier (decomp, 2026-10-24, day 20e/f): matched 1911 -> 1954.** Pending entries fixed; CG_Draw2D's whole tree
 (cgame HUD, weapon reticle) and client batch 2 (cl.cpp commands, fe.cpp front end) decompiled; offline tests 494
 eligible. Next: the bullet "**Next:**" below; front-end functions (fe.cpp, 15 untested) want a user-steered menu run.
 
@@ -66,7 +77,7 @@ Full run about 13 min (765 s, ctest timeout 1800 s). Details: docs/comparison-ha
   0x008bb760's vtable slots followed, hooks 0x009098e8/0x009098dc pinned, Swap_Init byte-order presets, cgame import
   slots as log stubs; 476 eligible, all pass; FxStage/EmitterTable_Resize compute their loop end once, as the
   original). A full run with LEAF_JOBS=2 under load ran past ctest's 1800 s timeout: run the binary directly then.
-- **Next:** NAL_Float1_CopyState in leaf_pending.csv (worker heap corrupted by a rare input since the merge, layout-dependent); then the ranked plan for the blocked 144 (494 eligible after the merge): 4. log stubs for D3D setters our C calls by title address,
+- **Next (done day 21):** NAL_Float1_CopyState in leaf_pending.csv (worker heap corrupted by a rare input since the merge, layout-dependent); then the ranked plan for the blocked 144 (494 eligible after the merge): 4. log stubs for D3D setters our C calls by title address,
   ~14; 5. fake vtables on argument objects (stub page; callee-pop byte counts), ~32; 6. callback
   arguments. 29 call trees reach callees outside any section (misdisassembly in some symbol ranges?). CG_ParseConfigStringFloat9 tests nothing (its slot returns on the x87, the stub pushes none); R_DrawPic matches only because the stub leaves its out-parameters unwritten.
 
