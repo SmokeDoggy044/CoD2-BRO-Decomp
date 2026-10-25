@@ -26,7 +26,7 @@ there every thread is sampled), `--profile` and the launcher's "Measure performa
 tools/resolve_profile.py names our offsets from the unstripped build - keep each
 release's build directory binaries for that. Windows side tested under Wine only.
 The launcher has tabs (General, Graphics, Controls, Multiplayer, Help).
-After 0.1.10 (issue #8, eight Windows/Intel HD 3000 logs, not yet replied to): the
+v0.1.11 (built 2026-10-25, not yet published): everything below up to v0.1.10. After 0.1.10 (issue #8, eight Windows/Intel HD 3000 logs, not yet replied to): the
 automatic profile ran once per run, right after the level start, never at the spots
 reported; it now reports at each slow second (at most once a minute, 20 times a run)
 with the mission number. Main thread there: busy only 41-60% at 20-27 fps, 15-25% of
