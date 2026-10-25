@@ -42,9 +42,12 @@ Full run about 13 min (765 s, ctest timeout 1800 s). Details: docs/comparison-ha
   projection family 10% -> 0), skip-list remove's level loop is a do-while, NAL CopyState/CopyChannels
   copy front to back (new platform_rep_movs; glibc memcpy stores its tail first).
 - Test: a difference of close floats mixed with NaN pairs counts as drift, not a mismatch.
-- **Next:** the 4 open entries in tools/data/leaf_pending.csv (nglBuildBoneMatrixPalette crashes in our C;
-  NAL_RleReader_ReadBytes, NAL_Entropy_SkipStatic4, NAL_EntropyMode19 rare inputs); Vehicle_Controller
-  there is explained (title callee's uninitialized 4th lane). Then the blocked 168, ranked plan (a
+- Done after (day 20e): the pending entries. Fixed in the C: nglBuildBoneMatrixPalette re-reads the count and the
+  bone list each iteration (out overlapping section crashed ours), NAL_RleReader_ReadBytes stores the pointer
+  after each byte, NAL_Entropy_SkipStatic/NAL_Packed8Float1_SkipStatic return the stream pointer read before
+  their stores. NAL_EntropyMode19's 2 rare mismatches did not come back in 4 runs (~10k inputs); taken off the
+  list (watch the full run). Vehicle_Controller stays (explained: title callee's uninitialized 4th lane).
+- **Next:** the blocked 168, ranked plan (a
   subagent's analysis): 1. the static allocator object 0x008bb760 (vtable 0x007c4d90: +4 alloc 0x94120,
   +8 free 0x94140) behind FxPtrArray_InitFill etc., ~27; 2. pin hooks 0x009098e8 (Mem_AlignedAlloc) and
   0x009098dc (nglFreeFileBuffer); 3. log stubs for import slots in .bss (0x009284f4-0x00928578 cgame,
