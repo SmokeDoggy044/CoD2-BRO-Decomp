@@ -27,14 +27,14 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-25, day 21b): naming push with subagents, named 9549 -> 10140+.** Naming files
-synced first (day 20f rows applied, ParamList_* fixed, full ExportNaming redone). Then every unnamed .text hub (3+
-callers) and every aligned 2-caller function was read by read-only subagents writing their own CSVs (brief: shared
-file; coordinator merges, applies, sorts modules, smoke-tests, commits per batch); the front-end UI class hierarchy
-and the HUD component classes were named from their vtables. Details and struct findings: docs/naming.md, "Hub pass
-3". In progress: 1-caller functions whose caller is named (522; two halves split at 0x248000). After that: the
-remaining ~560 1-caller functions with unnamed callers and ~720 0-caller (pointer/vtable/script) functions, the
-level sections stay deferred; skipped bodies that need their module are listed in naming.md.
+**Resume here (decomp, 2026-10-25, day 21b): naming push with subagents, named 9549 -> 10393.** Naming files
+synced first (day 20f rows applied, ParamList_* fixed, full ExportNaming redone). Then read-only subagents (shared
+brief; each writes its own CSV; the coordinator merges, applies in Ghidra, sorts modules, smoke-tests, commits per
+batch) read every unnamed .text hub (3+ callers), every aligned 2-caller function and every 1-caller function whose
+caller is named; the front-end UI classes and the HUD component classes were named from their vtables. Details and
+struct findings: docs/naming.md, "Hub pass 3". Next: the ~560 1-caller functions whose caller is unnamed and the
+~720 0-caller (pointer/vtable/script) functions; then decompiling (renderer remainder, client/UI). Re-export
+build/naming (ExportNaming, 3 chunks) before the next naming batch - it predates today's ~850 names.
 
 **Earlier (decomp, 2026-10-25, day 21): offline-test harness fixed; next is hub naming.** Two worker-heap
 corruptions found and fixed in tests/leaf_test.cpp (details in docs/comparison-harness.md, "Offline tests"):
