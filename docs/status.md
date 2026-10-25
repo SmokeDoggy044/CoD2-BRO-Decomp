@@ -27,7 +27,7 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-25, day 22c): user-steered menu walk + one full level, matched 2035 -> 2047.**
+**Resume here (decomp, 2026-10-25, day 22c): user-steered menu walk + one full level, matched 2035 -> 2049.**
 Two `--compare --diag` runs, optimized build, on copies of the user's saves: build/compare/menu_user2 (81 s, every
 main-menu screen plus the multiplayer XBE and back) and build/compare/level_user (662 s, one whole mission to its end
 reboot). First-time matched: FE_FormatPlayTime, FE_FormatPlayTime2, FE_CommandDisplayName, FE_SetDifficultyPicture,
@@ -36,10 +36,10 @@ FXCmd_PlayWeaponSoundLoop, NAL_Skeleton_Release, Actor_Negotiation_Start, Path_G
 Actor_GrenadeTargetClear, Use_trigger_use, CG_HasWeapon, CG_BobCycleVertical, CG_DrawHudElemClock,
 HudElem_SetShaderTimer. Every other mismatch was an on-record one (SV_ trace family, stale-stack anim/renderer words).
 Open:
-- FE_SaveSlotsUpdateText mismatches 8/8 (build/compare/fess, XBCMP_SHOW=8): heap word 0x100006a8 gets a STACK
-  address from a title callee (vtable +0x30/+0x34 set-text method): 0xf650a414 vs our 0xf650a3e4 (esp f650a718),
-  i.e. our frame is 0x30 deeper. Not stale stack - stack-position dependence. Options: rebuild the original's frame
-  for the two method calls (R_RenderView remedy) or accept (asked the user).
+- FE_SaveSlotsUpdateText: fixed (user chose the frame rebuild). Its title set-text methods store a stack address in
+  heap word 0x100006a8, and our frame was 0x30 deeper. The asm entry now keeps nothing above a 64 KB gap (the calls'
+  arguments go at entry-4) and every call runs at the original's ESP via title_call_at_regs, leaving the original's
+  return address; 6/6 matched (-O0 and -O2, build/compare/fess3/fess4), the pre-fix row was reset.
 - Optimized-build-only drift: in the linux-loader-release build nglRenderSceneTree gets "float drift" at frame memory
   0x80054290/0x800542a4 (bytes 1-3: ffff7f orig vs 000080 ours, i.e. ~0x7fffffxx vs 0x800000xx - looks like a
   float->int/saturation or NaN case compiled differently at -O2); the -O0 linux-loader build shows none (same
