@@ -46,6 +46,26 @@ Open:
   mission-1 run, build/compare/rst_*). Find the writer in nglRenderSceneTree's subtree; matters before Replaced in
   release builds. Keep compare runs on the linux-loader preset until then (steered runs used release for frame rate).
 
+**Next (user, 2026-10-25): test the renderer's 146 remaining functions** (138 untested, 8 inconclusive; no new naming
+passes - leftovers get named as the decompile reaches them). Groups and plan, cheapest first:
+1. Rare gameplay / other levels / UI (~25: RE_DrawTextWithIcons, R_ParseTextIcon, RE_ParseButtonToken, cdWater_Draw,
+   cdWorldVertexLit_Draw, FX_FindEvictableEffect, FXCmd_Type2/6AtTransform, RE_RegisterModel,
+   nglGenerateRenderTargetMips, nglMeshFile_RelocateSection3, ...): unattended `--level` sweep over ALL missions with
+   `--only` the 146 and XBCMP_EVERY=1 (compare_batch.py --missions 0-14 --only --every 1, linux-loader preset);
+   button-icon text may need a short user-steered run with hint prompts.
+2. Debug/dev (~25: nglDebugDraw*, DebugDraw_Queue*, cdDebug_*, nglDump*, R_DrawSkeletonBones_r, nglSaveScreenshot/
+   nglWriteTGA, nglGetFreeMemory, CM_DrawWorldTreeDebug's nglVertexWriter_Init/nglMeshBuilder_AddPosSection):
+   tools/exec_sweep.py with the g_devCommands groups.
+3. Shader vertex iterators (~45: cd*_NewVertexIter, *VertexIter_Clone, nglVertexWriter_*, *_ForEachPass) and FX data
+   no level has (~20: FxAction*_Init x11, FxRenderer_NewOp5b/d5/dd, FxOp5b/d5/dd_AddToList, FxConst_Within,
+   FxAction_Compact): offline leaf tests; leafscan.py must accept the allocator vtable call (stand-ins exist).
+4. Shutdown/free/destructors (~20: FxSystemList_DestroyAll, FxEmitters_Destroy, FxPools_Destroy, FxEffectDef_Release,
+   XModel_FreeAnimStates, *_DeletingDtor, nglFreePalette, nglSkipList_Remove*): forced-call harness feature (fork at a
+   quiet point, call e.g. CG_Shutdown on live state) - the campaign reboots instead of shutting down.
+5. Boot-time inconclusive (8: nglInit, nglInitShaders, nglSelectVideoMode, nglInitFrameBuffers, nglInitMultisample,
+   nglResetDevice, nglCreateSysFont, Anim_InitManagers): kernel/D3D stand-ins in test processes (step 3 at the top).
+Also open: the -O2-only nglRenderSceneTree drift (day 22c below).
+
 **Earlier (decomp, 2026-10-25, day 22b): every named renderer function has C, matched 1959 -> 2035.**
 Two subagents (worktrees cod_bro/wt/fx, wt/rest; shared brief cod_bro/wt/decomp_brief.md, fresh agent per batch)
 decompiled the 97 named renderer functions in 6 batches: FX system/components/domains/memory/command queue/draw ops
