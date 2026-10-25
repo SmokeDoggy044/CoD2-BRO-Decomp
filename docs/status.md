@@ -44,11 +44,10 @@ Full run about 13 min (765 s, ctest timeout 1800 s). Details: docs/comparison-ha
 - Test: a difference of close floats mixed with NaN pairs counts as drift, not a mismatch.
 - **Next:** the 4 open entries in tools/data/leaf_pending.csv (nglBuildBoneMatrixPalette crashes in our C;
   NAL_RleReader_ReadBytes, NAL_Entropy_SkipStatic4, NAL_EntropyMode19 rare inputs); Vehicle_Controller
-  there is explained (title callee's uninitialized 4th lane). Then the blocked 168, ranked plan (a
-  subagent's analysis): 1. the static allocator object 0x008bb760 (vtable 0x007c4d90: +4 alloc 0x94120,
-  +8 free 0x94140) behind FxPtrArray_InitFill etc., ~27; 2. pin hooks 0x009098e8 (Mem_AlignedAlloc) and
-  0x009098dc (nglFreeFileBuffer); 3. log stubs for import slots in .bss (0x009284f4-0x00928578 cgame,
-  0x0095e6b0, 0x0095e634, 0x0092f138), ~10; 4. log stubs for D3D setters our C calls by title address,
+  there is explained (title callee's uninitialized 4th lane). Then the blocked 128 (was 168: items 1-3
+  done, 476 eligible, all pass; FxStage/EmitterTable_Resize compute their loop end once, as the original;
+  a full run with LEAF_JOBS=2 under load ran past ctest's 1800 s timeout: run the binary directly then), ranked
+  plan: 4. log stubs for D3D setters our C calls by title address,
   ~14; 5. fake vtables on argument objects (stub page; callee-pop byte counts), ~32; 6. callback
   arguments. 29 call trees reach callees outside any section (misdisassembly in some symbol ranges?).
 
