@@ -27,7 +27,17 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-25, day 21b): naming push with subagents, named 9549 -> 10393.** Naming files
+**Resume here (decomp, 2026-10-25, day 21c): naming pass over .text finished, named 10393 -> 11498/16517 · matched 1952/16517.**
+Fresh ExportNaming first, then read-only subagents (one fresh agent per ~100-function list, 2 at a time) read
+every remaining unnamed .text function outside library code: 208 call trees (unnamed 1-caller chains under an
+unnamed root), 537 zero-caller functions (vtable/table/script-slot targets) and 61 functions whose callers got
+names during the pass. Correction: NAL_PackedPosOri_* is NAL_Packed16EntropyIKSpin_* (channel descriptor table
+0x008bb130), renamed in Ghidra, sources and CSVs (build + quick ctest pass; the long leaf test was not rerun).
+Findings per list: docs/naming.md, "Tree pass". Left: ~700 .text functions read and skipped as needing their
+module's decompile, ~2,320 level-section functions (deferred). Next: decompiling - renderer remainder, then
+client/UI (memory "renderer next").
+
+**Earlier (decomp, 2026-10-25, day 21b): naming push with subagents, named 9549 -> 10393.** Naming files
 synced first (day 20f rows applied, ParamList_* fixed, full ExportNaming redone). Then read-only subagents (shared
 brief; each writes its own CSV; the coordinator merges, applies in Ghidra, sorts modules, smoke-tests, commits per
 batch) read every unnamed .text hub (3+ callers), every aligned 2-caller function and every 1-caller function whose
