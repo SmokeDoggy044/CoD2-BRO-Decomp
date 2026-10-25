@@ -36,6 +36,10 @@ each host range counts as host. D3D log stubs (item 4): 40 setters/draws stubbed
 D3D shadow state (blocked as "writes SDK state"), net +3: 497 eligible. Items 5-6 dropped: a simulation with
 XAPI and CRT-allocator stand-ins frees 1 of the 134 blocked (their trees reach CRT locks, SEH, _getptd, file I/O).
 Debug aid worth reusing: copy [heap] before each untraced run, compare after, print the input (not committed).
+Full run after the fixes: 497 functions, exit 0, no worker deaths, no mismatches; counter 1954 -> 1952 because offline
+coverage varies run to run around the 90% bar (10 functions lost "offline", 8 gained + nglSetPaletteCached). Open:
+LEAF_CSV should keep each function's best clean row (most coverage, no mismatch) instead of the last run's; check
+Cmd_ArgsFrom (96% -> 36% coverage, larger than the usual spread).
 Next: hub naming (naming.md, memory "hubs, then decompile"); apply day 20f's manual_names.csv rows in Ghidra first.
 
 **Earlier (decomp, 2026-10-24, day 20e/f): matched 1911 -> 1954.** Pending entries fixed; CG_Draw2D's whole tree
