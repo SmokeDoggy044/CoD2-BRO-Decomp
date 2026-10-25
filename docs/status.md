@@ -58,13 +58,13 @@ Full run about 13 min (765 s, ctest timeout 1800 s). Details: docs/comparison-ha
 - HudElem setters (day 20e): HudElem_ClearAll, HudElem_SetDefaults (matched offline), HudElem_SetTimerKind and
   HudElem_SetShaderTimer (not reached in missions 1/4/5/6: no scripted timer there; offline blocked by the CRT's FS
   read in __ceil_default/_ftol paths). New platform_x87_mul_double / platform_x87_int_mul_double (FSTP QWORD).
-- **Next:** the blocked 168, ranked plan (a
-  subagent's analysis): 1. the static allocator object 0x008bb760 (vtable 0x007c4d90: +4 alloc 0x94120,
-  +8 free 0x94140) behind FxPtrArray_InitFill etc., ~27; 2. pin hooks 0x009098e8 (Mem_AlignedAlloc) and
-  0x009098dc (nglFreeFileBuffer); 3. log stubs for import slots in .bss (0x009284f4-0x00928578 cgame,
-  0x0095e6b0, 0x0095e634, 0x0092f138), ~10; 4. log stubs for D3D setters our C calls by title address,
+- Offline tests widened (day 20e, subagent): the blocked 128 (was 168: items 1-3 done - allocator object
+  0x008bb760's vtable slots followed, hooks 0x009098e8/0x009098dc pinned, Swap_Init byte-order presets, cgame import
+  slots as log stubs; 476 eligible, all pass; FxStage/EmitterTable_Resize compute their loop end once, as the
+  original). A full run with LEAF_JOBS=2 under load ran past ctest's 1800 s timeout: run the binary directly then.
+- **Next:** NAL_Float1_CopyState in leaf_pending.csv (worker heap corrupted by a rare input since the merge, layout-dependent); then the ranked plan for the blocked 144 (494 eligible after the merge): 4. log stubs for D3D setters our C calls by title address,
   ~14; 5. fake vtables on argument objects (stub page; callee-pop byte counts), ~32; 6. callback
-  arguments. 29 call trees reach callees outside any section (misdisassembly in some symbol ranges?).
+  arguments. 29 call trees reach callees outside any section (misdisassembly in some symbol ranges?). CG_ParseConfigStringFloat9 tests nothing (its slot returns on the x87, the stub pushes none); R_DrawPic matches only because the stub leaves its out-parameters unwritten.
 
 **Earlier (decomp, 2026-10-24, day 20f, client subagent; branch client-b2): CG_Draw2D's last part, UIText.** Named
 (manual_names.csv, not applied in Ghidra yet): 0x00285260 CG_DrawWeaponReticle, 0x00282620 CG_DrawAdsOverlay,
