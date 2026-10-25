@@ -34,7 +34,7 @@ Windows profiler's busy is the thread's cycles, and it samples only threads that
 a quarter of the tick (0.1.8 reported every thread at 100%). Not yet on real Windows.
 Issue #9: the reporter's codmp_xboxf.xbe (fr/es/it disc) is another build (.rdata
 0x20 later, RDTSC sites from 0x2074fa on differ), so every MP address misses. The loader
-now checks each XBE's time stamp and size and refuses other builds (`--any-release`).
+now refuses other builds (`--any-release`). After 0.1.9: the check compared the header time stamp and size, which also refused the EU French/Spanish/Italian campaign XBE that ran fine on 0.1.8 (issue #9 comments); it now compares a fingerprint of the section table (names, addresses, sizes, header SHA-1 digests of code sections; data sections by place and size only) and logs every section on a mismatch. Not yet confirmed on that disc.
 Issue #10: pictures wider than 16:9 (`--aspect 21:9` etc., launcher choices marked
 experimental), campaign only, see docs/rendering.md "Wider than 16:9". The PC menu (`
 key, Dear ImGui in-game) with a field of view slider (campaign; issue #5), docs/rendering.md.
