@@ -36,6 +36,12 @@ stay on record. Fixed: nglReadBackBufferSize dereferenced the 0x00902d84 slot on
 refused the bogus surface: 255/255 inconclusive) - now 2/2 matched (one test per boot). The other 8 inconclusive
 renderer functions are boot-time and blocked in the original's host calls (PersistDisplay/Reset, device creation,
 XGetVideoFlags' EEPROM read, XAPI heap page commits, swizzle) - they need kernel/D3D stand-ins (item 3).
+Decision (user, 2026-10-25): stale-stack mismatches are accepted (tools/data/accepted.csv, progress.py state
+`accepted`, docs/comparison-harness.md step 5): the 4 above plus NAL_AnimTrack_Sample / AnimTree_CalcPose_r (same
+w word) - matched 1953 -> 1959 by reclassification, no new C. Still mismatched, not checked yet: SV_UserMove and
+SV_PacketEvent (a .data byte at 0x00929b40, b0 vs 70 - likely a real bug), CG_ClipMoveToEntities and the SV_ trace
+family (SV_Trace, SV_CapsuleTrace, SV_SectorSightTrace_r, SV_PointTraceToEntities_r, SV_ClipMoveToEntities_r,
+SV_TraceStaticModels_r: stack words, look stale but unverified). Next: renderer step 2 (the 225 left).
 
 **Earlier (decomp, 2026-10-25, day 21c): naming pass over .text finished, named 10393 -> 11498/16517 · matched 1952/16517.**
 Fresh ExportNaming first, then read-only subagents (one fresh agent per ~100-function list, 2 at a time) read
