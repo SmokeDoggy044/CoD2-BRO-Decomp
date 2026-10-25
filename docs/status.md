@@ -53,7 +53,7 @@ Full run about 13 min (765 s, ctest timeout 1800 s). Details: docs/comparison-ha
   registered and called by our C. All matched in missions 1/4/5/6; the timers and CG_FillRect start with a call
   (unhookable) and Loc_CountChars/SubstituteLabel are not reached in game - matched offline (Loc_CountChars at 32%
   coverage: the multi-byte path needs 0x0093e750 and a language record). Left in CG_Draw2D: 0x00285260 (2.2 KB weapon
-  hud/crosshair) with its callees 0x00282620 (1.7 KB) and 0x002b4d80 (0.5 KB, also FireWeapon's). CG_Draw2D's one
+  hud/crosshair) with its callees 0x00282620 (1.7 KB) and 0x002b4d80 (0.5 KB, also FireWeapon's) - done in day 20f (CG_DrawWeaponReticle, CG_DrawAdsOverlay, BG_GetWeaponSpread). CG_Draw2D's one
   mismatch (CG_DrawStatusLabel's second colour: alpha 0.7, not blue) fixed and its row reset.
 - **Next:** the blocked 168, ranked plan (a
   subagent's analysis): 1. the static allocator object 0x008bb760 (vtable 0x007c4d90: +4 alloc 0x94120,
@@ -62,6 +62,17 @@ Full run about 13 min (765 s, ctest timeout 1800 s). Details: docs/comparison-ha
   0x0095e6b0, 0x0095e634, 0x0092f138), ~10; 4. log stubs for D3D setters our C calls by title address,
   ~14; 5. fake vtables on argument objects (stub page; callee-pop byte counts), ~32; 6. callback
   arguments. 29 call trees reach callees outside any section (misdisassembly in some symbol ranges?).
+
+**Earlier (decomp, 2026-10-24, day 20f, client subagent; branch client-b2): CG_Draw2D's last part, UIText.** Named
+(manual_names.csv, not applied in Ghidra yet): 0x00285260 CG_DrawWeaponReticle, 0x00282620 CG_DrawAdsOverlay,
+0x002b4d80 BG_GetWeaponSpread (bg_misc.cpp; FireWeapon's too). CG_Draw2D now calls the C. All three settled in
+missions 1/4/5/6 (`--only --every 4`: 4591 / 1303 / 1262 matched), BG_GetWeaponSpread also offline (1663, 61%
+coverage; leafscan emits only untested rows, so it was added to the table for that run alone). Not checked
+separately: CG_DrawAdsOverlay's scope picture and reticle modes 2-4 (only reached while aiming down a scoped
+sight; level runs do not aim). CG_DrawAdsOverlay keeps x87 for cx - w * 0.5, cy - h * 0.5, w * 0.75 and cy - 1 (no
+MXCSR flags); BG_GetWeaponSpread's entry saves XMM2-7 (FireWeapon keeps XMM2 across the call). fe.cpp:
+UIText_Init (settled, 195) and UIText_Construct (25 matched; its caller's ECX/EDX low bytes are UIText_Init's
+flag arguments, and nglGetTextExtent's height lands in an argument slot holding -1).
 
 **Earlier (decomp, 2026-10-24, day 20, client subagent; branch client-b2): client batch 2, 32 functions.** cl.cpp:
 console commands (CL_Setenv_f, CL_ShellExecute_URL_f, CL_ForwardToServer_f, Key_Bindlist_f, Key_Unbind/Unbindall_f,
