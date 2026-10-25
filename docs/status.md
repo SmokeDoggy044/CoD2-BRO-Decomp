@@ -48,7 +48,9 @@ Open:
 
 **Renderer testing, 2026-10-25 (day 23), in progress:**
 - Group 1 sweep, missions 0,2,3,7,8 (build/compare/r146a, --only the 146, --every 1): only cdOcean_SetWaveOrigin and
-  nglCreateSysFont new; the 7 boot functions stay inconclusive (call host code). Missions 9-14 not run yet.
+  nglCreateSysFont new; the 7 boot functions stay inconclusive (call host code). Missions 9-13 (r146b/c; there is
+  no mission 14): FxRenderer_NewOpd5/dd, RE_RegisterModel, FxOpd5_AddToList (m11, settled). The sweep is exhausted:
+  the rest is never reached by an unattended level run.
 - leaf_test coverage bug fixed (e64366e): tracing stopped for good when the original called out of the image
   (stand-ins' `push target; ret` thunks, log stubs), so everything after a Z_Malloc call counted as unreached - the
   82 leaf-eligible renderer functions had matched for days at 22-86% coverage. Now a resume trampoline re-arms TF on
