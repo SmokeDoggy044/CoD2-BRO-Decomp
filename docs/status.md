@@ -27,7 +27,22 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-25, day 22): renderer mismatch/inconclusive review, matched 1952 -> 1953.**
+**Resume here (decomp, 2026-10-25, day 22b): every named renderer function has C, matched 1959 -> 2035.**
+Two subagents (worktrees cod_bro/wt/fx, wt/rest; shared brief cod_bro/wt/decomp_brief.md, fresh agent per batch)
+decompiled the 97 named renderer functions in 6 batches: FX system/components/domains/memory/command queue/draw ops
+(fx*.cpp), ngl vertex writers, pass walkers, debug-draw queue/flush, ocean wave sets, XModel_TraceParts,
+R_SampleLightGridStatic, XModel_CalcBoneChildrenOrtho, DObj_GetRootAnimDelta and others. Harness-found fixes:
+FxSystem_AllocArray (a counted-down cdecl argument wrote its compared slot at -O0), R_AddSimpleInstancesToScene
+(rebuilds the original's frame for cdSimpleInstance_AddListToScene's partly written block). Offline leaf list +42,
+all matched. Renderer left: 141 untested (debug paths, unload, script-set ocean values, FxOp31_Draw: menu/played run),
+8 inconclusive (boot-time host calls), 6 bare-ret stubs that cannot be hooked. Ghidra applied: renames
+nglMeshSection_CreateVertexWriter -> nglPosMaterial_CreateVertexWriter, FxSystem_ResetView -> FxView_Reset,
+FxOp_SetTextures -> FxOp_SetInstances, XModel_GetTransformedBounds -> DObj_GetTransformedBounds; DebugDraw_MakeTriangle
+and 12 globals/vtables (manual_names.csv). 0x0024f840 (SV_ClearConfigstrings10_1F, uncalled) is a gap function:
+named in manual_names.csv only, not created (memory "gap functions deferred"). Next: client module (cl.cpp, 590 left)
+or a user-steered run for the untested renderer functions.
+
+**Earlier (decomp, 2026-10-25, day 22): renderer mismatch/inconclusive review, matched 1952 -> 1953.**
 The 4 renderer mismatches re-run with `--only` (build/compare/mm4, missions 1/4/5/6): all are the recorded
 stale-stack causes (nglRenderSceneTree/TranslucentList: an uninitialized shader-constant lane, words 21 and 52 -
 dead stack: the original's 0x0007553c / old values vs a host return address in our library; R_RenderView: unset
