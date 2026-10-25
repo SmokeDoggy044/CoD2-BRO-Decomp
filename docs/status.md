@@ -55,6 +55,9 @@ Full run about 13 min (765 s, ctest timeout 1800 s). Details: docs/comparison-ha
   coverage: the multi-byte path needs 0x0093e750 and a language record). Left in CG_Draw2D: 0x00285260 (2.2 KB weapon
   hud/crosshair) with its callees 0x00282620 (1.7 KB) and 0x002b4d80 (0.5 KB, also FireWeapon's). CG_Draw2D's one
   mismatch (CG_DrawStatusLabel's second colour: alpha 0.7, not blue) fixed and its row reset.
+- HudElem setters (day 20e): HudElem_ClearAll, HudElem_SetDefaults (matched offline), HudElem_SetTimerKind and
+  HudElem_SetShaderTimer (not reached in missions 1/4/5/6: no scripted timer there; offline blocked by the CRT's FS
+  read in __ceil_default/_ftol paths). New platform_x87_mul_double / platform_x87_int_mul_double (FSTP QWORD).
 - **Next:** the blocked 168, ranked plan (a
   subagent's analysis): 1. the static allocator object 0x008bb760 (vtable 0x007c4d90: +4 alloc 0x94120,
   +8 free 0x94140) behind FxPtrArray_InitFill etc., ~27; 2. pin hooks 0x009098e8 (Mem_AlignedAlloc) and
