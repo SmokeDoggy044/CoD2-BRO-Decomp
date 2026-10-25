@@ -27,7 +27,11 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-24, day 20d): offline tests widened 298 -> 436 functions; matched 1830 -> 1911.**
+**Resume here (decomp, 2026-10-24, day 20e/f): matched 1911 -> 1954.** Pending entries fixed; CG_Draw2D's whole tree
+(cgame HUD, weapon reticle) and client batch 2 (cl.cpp commands, fe.cpp front end) decompiled; offline tests 494
+eligible. Next: the bullet "**Next:**" below; front-end functions (fe.cpp, 15 untested) want a user-steered menu run.
+
+**Earlier (decomp, 2026-10-24, day 20d): offline tests widened 298 -> 436 functions; matched 1830 -> 1911.**
 Full run about 13 min (765 s, ctest timeout 1800 s). Details: docs/comparison-harness.md, "Offline tests".
 - Inputs: fault-learned pointer fields, a mutation corpus of quick non-crashing inputs (arguments stay
   distinct chunks), per-function budget (15 s once 1000 inputs ran), 10 ms timeout untraced.
