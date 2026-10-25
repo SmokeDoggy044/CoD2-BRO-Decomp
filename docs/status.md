@@ -63,6 +63,20 @@ Full run about 13 min (765 s, ctest timeout 1800 s). Details: docs/comparison-ha
   ~14; 5. fake vtables on argument objects (stub page; callee-pop byte counts), ~32; 6. callback
   arguments. 29 call trees reach callees outside any section (misdisassembly in some symbol ranges?).
 
+**Earlier (decomp, 2026-10-24, day 20, client subagent; branch client-b2): client batch 2, 32 functions.** cl.cpp:
+console commands (CL_Setenv_f, CL_ShellExecute_URL_f, CL_ForwardToServer_f, Key_Bindlist_f, Key_Unbind/Unbindall_f,
+CL_Dec/IncAnimWeight_f), CL_ShutdownInput, SCR_RedrawFrontBuffer, CL_ExecControllerConfig. New fe.cpp (front end):
+the FE_Bonus* labels/texts, FE_FormatPlayTime(2), FE_CommandDisplayName, FE_SaveSlotsUpdateText, FE_AspectOptionLabel,
+FE_SetDifficultyPicture, UIMenu_Init/FreeItems, Panel_FindText/FindPicture, Profile_SetDefaults, UI_PlayTypeSound,
+PauseMenu_ReloadCheckpoint. Matched in game (missions 1/4/5/6): Key_Unbind_f, Panel_FindText, Panel_FindPicture,
+Profile_SetDefaults, UIMenu_FreeItems. Offline (leaf_test, all matched): the cl.cpp commands except
+SCR_RedrawFrontBuffer/CL_ExecControllerConfig, FE_FormatPlayTime(2), FE_CommandDisplayName, Profile_SetDefaults
+(CL_IncAnimWeight_f needs LEAF_ITERS=40000: random cvar pointers crash most inputs). Not tested (front-end only, vtable
+calls block the offline test): the other 15. Skipped: ret-only stubs (CL_Disconnect_f, IN_SprintUp/Down), the
+FE_Bonus*FreeImage functions (CALL in the first 5 bytes), CL_ResumeFromPause (tail-jumps through a vtable),
+Panel_GetDefaultPicture. FE_BonusVehicle/WeaponSetText: 0x00312e30 is stdcall (ret 8), so the counts are words 10-15 /
+0-9 of its buffer. Next: the user-steered menu run for the front-end functions.
+
 **Earlier (decomp, 2026-10-24, day 20c): the offline test passes on all 298 functions; matched 1826 -> 1830.**
 `tools/data/leaf_pending.csv` is empty: the 9 pending functions and 4 rare-input finds are fixed or explained.
 `tools/leafscan.py` now also takes decompiled gap functions (no symbol, state `unsorted`): 298 eligible.
