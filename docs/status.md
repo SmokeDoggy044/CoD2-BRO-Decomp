@@ -27,7 +27,17 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-25, day 21c): naming pass over .text finished, named 10393 -> 11498/16517 · matched 1952/16517.**
+**Resume here (decomp, 2026-10-25, day 22): renderer mismatch/inconclusive review, matched 1952 -> 1953.**
+The 4 renderer mismatches re-run with `--only` (build/compare/mm4, missions 1/4/5/6): all are the recorded
+stale-stack causes (nglRenderSceneTree/TranslucentList: an uninitialized shader-constant lane, words 21 and 52 -
+dead stack: the original's 0x0007553c / old values vs a host return address in our library; R_RenderView: unset
+mesh-record matrix lanes; DObj_UpdateSkeletons: the unwritten quaternion w byte, ≡ 0xc mod 16). No C fix; they
+stay on record. Fixed: nglReadBackBufferSize dereferenced the 0x00902d84 slot once too often (the GetDesc stand-in
+refused the bogus surface: 255/255 inconclusive) - now 2/2 matched (one test per boot). The other 8 inconclusive
+renderer functions are boot-time and blocked in the original's host calls (PersistDisplay/Reset, device creation,
+XGetVideoFlags' EEPROM read, XAPI heap page commits, swizzle) - they need kernel/D3D stand-ins (item 3).
+
+**Earlier (decomp, 2026-10-25, day 21c): naming pass over .text finished, named 10393 -> 11498/16517 · matched 1952/16517.**
 Fresh ExportNaming first, then read-only subagents (one fresh agent per ~100-function list, 2 at a time) read
 every remaining unnamed .text function outside library code: 208 call trees (unnamed 1-caller chains under an
 unnamed root), 537 zero-caller functions (vtable/table/script-slot targets) and 61 functions whose callers got
