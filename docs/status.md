@@ -38,8 +38,16 @@ frames or while they changed in the last 60. Linux/DXVK A/B (missions 1 and 9, f
 10 s window): texture_for_stage 11-13% -> under 2% of main-thread samples, memcpy
 roughly halved, pictures unchanged. Windows' own D3D9 not measured (Wine untested so
 far). Also: the PC menu's ImGui init asserted in Linux debug builds (InitForD3D).
-`tools/resolve_profile.py --summary` sums each report per place. Next idea if the
-draws still dominate: vertices in their real types instead of a float4 per attribute.
+`tools/resolve_profile.py --summary` sums each report per place. Re-created on one core
+shared with two busy loops (mission 9): land ~28 fps, sea 60, land through binoculars 57;
+F12 draw dumps: a land frame ~800 draws / 100k vertices / 7 MB converted, sea ~170 / 30k
+/ 1.7 MB. Now static vertex sources (unchanged for 3 frames; sample hash per frame, whole
+every 8 or while recently changed, as textures) stay converted in their own GPU buffers
+(256 MB, LRU, unused 600 frames go), and the rest converts straight into the locked draw
+buffer. A/B vs 0.1.10 (missions 1, 9, fixed window): draw_streams 6.5-8.5% -> 1.3-1.9%,
+memcpy 7.6-8.5% -> 2.5%, main thread busy 55-67% -> 47-48%, pictures unchanged. Next
+idea if the draws still dominate: vertices in their real types instead of a float4 per
+attribute.
 v0.1.10 (test pre-release, 2026-10-25): the release check by code fingerprint, other releases' campaigns start (issue #9). v0.1.9 (test pre-release, 2026-10-24) has everything below. After 0.1.8 (issue #8 logs): the frame end's spin on the vblank flag (SP 0x000651c3, MP
 0x00066123) sleeps until the next vertical blank instead (one core less: 102 s -> 51 s
 CPU in 100 s of mission 1 at 30 fps; Linux, Wine checked); late frames are shown at once
