@@ -27,7 +27,26 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-25, day 22b): every named renderer function has C, matched 1959 -> 2035.**
+**Resume here (decomp, 2026-10-25, day 22c): user-steered menu walk + one full level, matched 2035 -> 2047.**
+Two `--compare --diag` runs, optimized build, on copies of the user's saves: build/compare/menu_user2 (81 s, every
+main-menu screen plus the multiplayer XBE and back) and build/compare/level_user (662 s, one whole mission to its end
+reboot). First-time matched: FE_FormatPlayTime, FE_FormatPlayTime2, FE_CommandDisplayName, FE_SetDifficultyPicture,
+UI_PlayTypeSound, FxOp31_Draw (29; not reached in missions 0-7 before), FX_EffectComponentsFinished,
+FXCmd_PlayWeaponSoundLoop, NAL_Skeleton_Release, Actor_Negotiation_Start, Path_GetNegotiationEndNode,
+Actor_GrenadeTargetClear, Use_trigger_use, CG_HasWeapon, CG_BobCycleVertical, CG_DrawHudElemClock,
+HudElem_SetShaderTimer. Every other mismatch was an on-record one (SV_ trace family, stale-stack anim/renderer words).
+Open:
+- FE_SaveSlotsUpdateText mismatches 8/8 (build/compare/fess, XBCMP_SHOW=8): heap word 0x100006a8 gets a STACK
+  address from a title callee (vtable +0x30/+0x34 set-text method): 0xf650a414 vs our 0xf650a3e4 (esp f650a718),
+  i.e. our frame is 0x30 deeper. Not stale stack - stack-position dependence. Options: rebuild the original's frame
+  for the two method calls (R_RenderView remedy) or accept (asked the user).
+- Optimized-build-only drift: in the linux-loader-release build nglRenderSceneTree gets "float drift" at frame memory
+  0x80054290/0x800542a4 (bytes 1-3: ffff7f orig vs 000080 ours, i.e. ~0x7fffffxx vs 0x800000xx - looks like a
+  float->int/saturation or NaN case compiled differently at -O2); the -O0 linux-loader build shows none (same
+  mission-1 run, build/compare/rst_*). Find the writer in nglRenderSceneTree's subtree; matters before Replaced in
+  release builds. Keep compare runs on the linux-loader preset until then (steered runs used release for frame rate).
+
+**Earlier (decomp, 2026-10-25, day 22b): every named renderer function has C, matched 1959 -> 2035.**
 Two subagents (worktrees cod_bro/wt/fx, wt/rest; shared brief cod_bro/wt/decomp_brief.md, fresh agent per batch)
 decompiled the 97 named renderer functions in 6 batches: FX system/components/domains/memory/command queue/draw ops
 (fx*.cpp), ngl vertex writers, pass walkers, debug-draw queue/flush, ocean wave sets, XModel_TraceParts,
