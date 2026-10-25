@@ -27,7 +27,16 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-25, day 21): offline-test harness fixed; next is hub naming.** Two worker-heap
+**Resume here (decomp, 2026-10-25, day 21b): naming push with subagents, named 9549 -> 10140+.** Naming files
+synced first (day 20f rows applied, ParamList_* fixed, full ExportNaming redone). Then every unnamed .text hub (3+
+callers) and every aligned 2-caller function was read by read-only subagents writing their own CSVs (brief: shared
+file; coordinator merges, applies, sorts modules, smoke-tests, commits per batch); the front-end UI class hierarchy
+and the HUD component classes were named from their vtables. Details and struct findings: docs/naming.md, "Hub pass
+3". In progress: 1-caller functions whose caller is named (522; two halves split at 0x248000). After that: the
+remaining ~560 1-caller functions with unnamed callers and ~720 0-caller (pointer/vtable/script) functions, the
+level sections stay deferred; skipped bodies that need their module are listed in naming.md.
+
+**Earlier (decomp, 2026-10-25, day 21): offline-test harness fixed; next is hub naming.** Two worker-heap
 corruptions found and fixed in tests/leaf_test.cpp (details in docs/comparison-harness.md, "Offline tests"):
 wide-text arena words were never filtered against host memory (NAL_Float1_CopyState stored into malloc's chunks;
 off the pending list now), and computed pointers can reach the brk heap (NAL_Quat_BeginBlock's loop overwrites its
