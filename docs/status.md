@@ -58,6 +58,12 @@ Open:
   Counter 2051 -> 2117 -> 2141 (second run, with the null-alloc inputs); renderer untested 138 -> 65. Still low: switch/compare-constant branches (FxRenderer_NewOp5b/d5 ~40%, RE_ParseButtonToken,
   XModel_CalcBoneChildren, nglSkipList_Remove*, FxConst*_Within equal floats): compare-constant input seeding is
   being built on branch leaf-const (worktree cod_bro/wt/leafconst).
+- Forced calls (3a278e4, group 4 mechanism): `--force "NAME(ARGS)@S*N?W"` works (docs/comparison-harness.md);
+  each target needs its own argument recipe (a live object with work to do - check the `force:` log values).
+  Dead code is not tested (user, 2026-10-25): no CALL/JMP, no pointer in data, no immediate in code (xbefind imm;
+  fnpack's "callers (0)" alone misses `mov [x], offset` callbacks): FXCmd_Type2AtOrigin, FxEffectStage_Release,
+  nglDebugDrawAxes, nglDebugDrawSphereMesh, nglDrawSingleQuadFrame, nglDumpCamera, nglDumpSceneMeshes,
+  R_EntityLodDistance, R_FindEffectByName, XModel_FreeAnimStates. Renderer left after them: 57 (50 untested, 7 boot).
 - Rare pre-existing flake: "worker crashed outside a call" (NAL_Quat_BeginBlock, nglSkipList_RemoveTexture once
   each); the named function passes alone, the committed binary shows the same. Second run: two workers died of
   SIGALRM outside a call (after apsActionPlaneBounce_Apply, CM_FloodAreaConnections); retries passed - watch for it.
