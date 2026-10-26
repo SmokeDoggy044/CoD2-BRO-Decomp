@@ -27,7 +27,7 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-26, day 24, autonomous 4 h session): client module, matched 2152 -> 2399+.**
+**Resume here (decomp, 2026-10-26, day 24, autonomous 4 h session): client module, matched 2152 -> 2411/16517.**
 Two subagents (worktrees wt/fx, wt/rest; brief cod_bro/wt/decomp_brief.md, now with the offline leaf-test step),
 one fresh agent per batch, coordinator merges (`tools/merge_functions_csv.py` resolves functions.csv conflicts by
 adding both sides' counts; functions.cpp conflicts: keep both, address order).
@@ -50,7 +50,8 @@ adding both sides' counts; functions.cpp conflicts: keep both, address order).
 - Before Replaced: UIPicture_GetBoundsMin/Max need entries saving XMM6/XMM7 (SetQuadCorners keeps values there).
 - Later batches (same session): UIText family (40), menu framework ui_menu.cpp (47), panels/dialogs ui_panel.cpp
   (44), CL/SCR core (33), pad input + movie gap functions (26), every front-end menu class (fe_menus/fe_options/
-  fe_profile/fe_bonus/fe_special.cpp, ~210), FE_* helpers (27), FE_Setup* (fe_setup.cpp, last batch). Client left: ~0
+  fe_profile/fe_bonus/fe_special.cpp, ~210), FE_* helpers (27), 10 of 33 FE_Setup* (fe_setup.cpp: register-argument
+  helpers FE_SetupPanel calls at level start, so the other 23 are testable in level runs - next batch). Client left: the 23,
   named functions undecompiled except what the last batch lists; ~250 decompiled client functions are untested
   because unattended --level runs never show the front end. NEXT: a user-steered `--compare` menu walk
   (memory "user steers coverage runs") over every main-menu screen, bonus/special/chapter/profile/save menus, then
@@ -61,6 +62,8 @@ adding both sides' counts; functions.cpp conflicts: keep both, address order).
   reaches a text setter runs its title calls at the original's ESP (FE_GAP_ENTRY, FE_FRAME_ENTRY in fe.cpp).
 - Tools: fnpack no longer flags a relative CALL/JMP in the first 5 bytes (the trampoline re-encodes it);
   merge_functions_csv.py merges functions.csv counts and unions kFunctions/#include/CMake-source conflicts.
+- Final missions 1/4 regression (build/compare/day24_final): only on-record mismatches, plus CL_Init's first test:
+  refimport slots 0x12/0x17 the original never sets (stale pushed Cmd_AddCommand names vs our zeros) - accepted.csv row.
 - Loader patch to update before Replaced: 0x0031fc10 (UIScreenMgr_HandleInput entry, loader/patches.cpp).
 - More proposed names (Ghidra, not applied): 0x0030ea00 UI_StickDirectionHeld; 0x0032de50 CL_PauseIntoFrontEnd;
   CL_ResumeFromPause/0x0032df90 = pause overlay update; FE_BonusStopMovie (0x00333060) = SpecialMaterialsMenu_PlayMovie;
