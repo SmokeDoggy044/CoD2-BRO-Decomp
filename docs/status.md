@@ -27,6 +27,28 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
+**Resume here (decomp, 2026-10-26, day 24, autonomous 4 h session): client module, matched 2152 -> 2237.**
+Two subagents (worktrees wt/fx, wt/rest; brief cod_bro/wt/decomp_brief.md, now with the offline leaf-test step),
+one fresh agent per batch, coordinator merges (`tools/merge_functions_csv.py` resolves functions.csv conflicts by
+adding both sides' counts; functions.cpp conflicts: keep both, address order).
+- UI primitives in fe.cpp: UIElement/UIQuad/Color_Modulate (19), UIPicture/UIMeshList/UIWorldPicture (23). All
+  matched (in game or offline) or unreached; UIElement_GetDepth unhookable (4-byte stub).
+- Movie: the video decoder (37 MovieVid_*, movie_vid.cpp: MMX results reloaded through asm helpers, the harness
+  compares ST/MM registers) and the player (20 Movie/MovieBase/Subtitle, movie.cpp; file/DirectSound ones
+  inconclusive). Movies play in --level runs of missions 1 and 6 only.
+- Fixed: the -O2-only nglRenderSceneTree drift = GCC folding 1.0f/320.0f (nglMatrixScreenToClip) at build time while
+  the title's MXCSR does not round to nearest -> game_code builds with -frounding-math (found by bisecting ngl.cpp
+  with per-range `#pragma GCC optimize("O0")`). Release compare runs are now as good as -O0 ones.
+- Fixed: GAME_GAP_ESP (day 23) made 17 entry epilogues wrong: they undid the gap with `addl $gap, %esp`, but the body
+  ESP is aligned down or moved below the host floor -> wrong EDI/ESI/return address (release: segfault in our
+  R_AddEntitySurfaces under R_RenderView tests). The macro now pushes the entry's ESP; epilogues `popl %esp`.
+  game_body_esp keeps the body clear of the macro's scratch (the pushed word clobbered it in the nested case).
+- Proposed names (not applied in Ghidra yet): UIQuad_GetMaxCorner -> UIQuad_GetMaxUV, UIPictureBlock_SetVertexUVs ->
+  UIQuad_SetVertexUVs; FUN_000cfb20 MovieVid_Idct, FUN_000cea00 MovieVid_ReadMotionDelta, FUN_000d0860
+  MovieVid_ConvertYuv8; FUN_003173e0 (fills a UI quad), FUN_00322b30 (texture by name, language prefix first),
+  FUN_00316480 (reads 3 LE floats). Struct notes are in the batch commit messages / headers (movie.h, fe.h).
+- Before Replaced: UIPicture_GetBoundsMin/Max need entries saving XMM6/XMM7 (SetQuadCorners keeps values there).
+
 **Resume here (decomp, 2026-10-25, day 22c): user-steered menu walk + one full level, matched 2035 -> 2049.**
 Two `--compare --diag` runs, optimized build, on copies of the user's saves: build/compare/menu_user2 (81 s, every
 main-menu screen plus the multiplayer XBE and back) and build/compare/level_user (662 s, one whole mission to its end
