@@ -78,6 +78,12 @@ Open:
   renderer 40, client 24, ... Static only: pointers computed at run time are invisible (nglDrawQuad, FxMem_Alloc/Free
   ran in-game with no reference) - functions the harness saw called are excluded and listed as a warning. Not
   removed from the progress counter (ask the user first).
+- User-steered Prologue run, whole mission (build/compare/prologue_user, 54 live renderer functions): only
+  FXCmd_Type6AtTransform new (22/22). The "LoadZoneSync reaches 6 zone-load functions" lead was wrong: GScr_LoadZoneSync
+  only loops on Stream_Update (the per-frame streamer) - levelreach paths through such hubs over-approximate. The 6
+  (nglReadFile, nglFreeFileBuffer, FxEffectDef_Release, FxRenderer_NewOp5b, nglMeshFile_RelocateSection3,
+  nglMeshBuilder_AddPosSection) depend on content: next is a data scan of the .cod packs (effect op 0x5b, mesh files with
+  section 3, zones whose unload releases effects), then a run of the level that has it.
 - Rare pre-existing flake: "worker crashed outside a call" (NAL_Quat_BeginBlock, nglSkipList_RemoveTexture once
   each); the named function passes alone, the committed binary shows the same. Second run: two workers died of
   SIGALRM outside a call (after apsActionPlaneBounce_Apply, CM_FloodAreaConnections); retries passed - watch for it.
