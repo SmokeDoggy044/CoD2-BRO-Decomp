@@ -57,6 +57,24 @@ a quarter of the tick (0.1.8 reported every thread at 100%). Not yet on real Win
 Issue #9: the reporter's codmp_xboxf.xbe (fr/es/it disc) is another build (.rdata
 0x20 later, RDTSC sites from 0x2074fa on differ), so every MP address misses. The loader
 now refuses other builds (`--any-release`). After 0.1.9: the check compared the header time stamp and size, which also refused the EU French/Spanish/Italian campaign XBE that ran fine on 0.1.8 (issue #9 comments); it now compares a fingerprint of the section table (names, addresses, sizes, header SHA-1 digests of code sections; data sections by place and size only) and logs every section on a mismatch. Another campaign XBE starts anyway with a warning (multiplayer stays refused without `--any-release`). Not yet confirmed on that disc.
+Issue #9, after 0.1.11: other releases through a release map (loader/release_map.h).
+On a build with another fingerprint the loader matches the supported build's functions
+(tools/data/<xbe>_signatures.txt: hashes of each function's first 32 bytes and of all
+of it, with rel32 targets and in-image addresses masked) at every byte of the other
+build's code sections; then neighbours' offsets for the rest. Data addresses come from
+the same code there: each variable the code refers to has one recorded site, read in
+the other build; addresses between two known variables that moved alike move alike.
+Every title address in patches.cpp/main.cpp goes through title_address(); the symbol
+table is relocated. Unfound addresses are logged; multiplayer then refuses to start
+(`--any-release` overrides). Tested on a Collector's Edition dump (testing only; kept
+outside the repo in cod_bro/Collectors editions/): its campaign code sections equal
+ours (only .rdata and the title image differ, so the fingerprint matches); its
+multiplayer has identical code but part of .data (0x49c790-0x49e7b0) in another order
+(code references -0x68 / +0x1e98): 11490/11493 functions unchanged, all port
+addresses found, the menus work. The EU multiplayer XBE (issue #9 logs) has the CE's
+.rdata/.data sizes, .text 0x30 longer and everything after it 0x20 later; its campaign
+equals the CE's except the LIBEATOR section (same size). Not yet confirmed by the
+reporters. The map costs 0.27 s (MP, release build) per start of another build.
 Issue #10: pictures wider than 16:9 (`--aspect 21:9` etc., launcher choices marked
 experimental), campaign only, see docs/rendering.md "Wider than 16:9". The PC menu (`
 key, Dear ImGui in-game) with a field of view slider (campaign; issue #5), docs/rendering.md.
