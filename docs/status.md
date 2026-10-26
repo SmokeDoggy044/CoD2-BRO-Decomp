@@ -64,6 +64,14 @@ Open:
   fnpack's "callers (0)" alone misses `mov [x], offset` callbacks): FXCmd_Type2AtOrigin, FxEffectStage_Release,
   nglDebugDrawAxes, nglDebugDrawSphereMesh, nglDrawSingleQuadFrame, nglDumpCamera, nglDumpSceneMeshes,
   R_EntityLodDistance, R_FindEffectByName, XModel_FreeAnimStates. Renderer left after them: 57 (50 untested, 7 boot).
+- Fixed: nested gap entries (an asm entry of ours reached through title_call_at* at the original's ESP, e.g. our
+  FX_FlushSpawnQueue -> our FX_SpawnQueuedEffect) put their C frame on the caller's (both 0x20000 below nearly the
+  same ESP). Now title_call_at/_regs keep a per-thread host-stack floor and the 46 gap entries use GAME_GAP_ESP
+  (title_data.h), which stays below it; first version saved registers below the gap and clobbered the outer saved
+  EBP (found with --force; reports now name host code with dladdr). FX_FlushSpawnQueue 30/30 with
+  --force "FX_FlushSpawnQueue(eax=[0x95f5b4])@5*30?[[0x95f5b4]+0x910]" (the FX command queue, count +0x910); missions
+  1/4 regression run clean. tools/levelreach.py: which level scripts reach a function (LoadZoneSync in PROLOGUE/
+  LIBEATOR reaches 6 untested zone-load functions - a longer or steered run there is next).
 - Rare pre-existing flake: "worker crashed outside a call" (NAL_Quat_BeginBlock, nglSkipList_RemoveTexture once
   each); the named function passes alone, the committed binary shows the same. Second run: two workers died of
   SIGALRM outside a call (after apsActionPlaneBounce_Apply, CM_FloodAreaConnections); retries passed - watch for it.
