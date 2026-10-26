@@ -84,6 +84,7 @@ Open:
   (nglReadFile, nglFreeFileBuffer, FxEffectDef_Release, FxRenderer_NewOp5b, nglMeshFile_RelocateSection3,
   nglMeshBuilder_AddPosSection) depend on content: next is a data scan of the .cod packs (effect op 0x5b, mesh files with
   section 3, zones whose unload releases effects), then a run of the level that has it.
+  User-steered Liberator run (15 min, build/compare/liberator_user): nothing new either - confirms it.
 - Rare pre-existing flake: "worker crashed outside a call" (NAL_Quat_BeginBlock, nglSkipList_RemoveTexture once
   each); the named function passes alone, the committed binary shows the same. Second run: two workers died of
   SIGALRM outside a call (after apsActionPlaneBounce_Apply, CM_FloodAreaConnections); retries passed - watch for it.
