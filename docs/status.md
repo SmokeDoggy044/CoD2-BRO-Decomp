@@ -72,7 +72,7 @@ Open:
   --force "FX_FlushSpawnQueue(eax=[0x95f5b4])@5*30?[[0x95f5b4]+0x910]" (the FX command queue, count +0x910); missions
   1/4 regression run clean. tools/levelreach.py: which level scripts reach a function (LoadZoneSync in PROLOGUE/
   LIBEATOR reaches 6 untested zone-load functions - a longer or steered run there is next).
-- Dead code, all modules (`tools/levelreach.py --dead`, 2026-10-25): 2,122 functions nothing in the XBE reaches (no
+- Dead code, all modules (`tools/levelreach.py --dead`, 2026-10-25): 2,121 functions nothing in the XBE reaches (no
   CALL/JMP, data pointer or code address, or only from dead ones): script 559 + levelscript 457 (compiler-generated
   field accessors and script-library functions no level uses), ~830 in the 14 level sections, game 81, qcommon 62,
   renderer 40, client 24, ... Static only: pointers computed at run time are invisible (nglDrawQuad, FxMem_Alloc/Free
