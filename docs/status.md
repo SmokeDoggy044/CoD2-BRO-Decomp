@@ -27,7 +27,7 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-26, day 24, autonomous 4 h session): client module, matched 2152 -> 2411/16517.**
+**Resume here (decomp, 2026-10-26, day 24, autonomous 4 h session): client module, matched 2152 -> 2414/16517.**
 Two subagents (worktrees wt/fx, wt/rest; brief cod_bro/wt/decomp_brief.md, now with the offline leaf-test step),
 one fresh agent per batch, coordinator merges (`tools/merge_functions_csv.py` resolves functions.csv conflicts by
 adding both sides' counts; functions.cpp conflicts: keep both, address order).
@@ -62,6 +62,11 @@ adding both sides' counts; functions.cpp conflicts: keep both, address order).
   reaches a text setter runs its title calls at the original's ESP (FE_GAP_ENTRY, FE_FRAME_ENTRY in fe.cpp).
 - Tools: fnpack no longer flags a relative CALL/JMP in the first 5 bytes (the trampoline re-encodes it);
   merge_functions_csv.py merges functions.csv counts and unions kFunctions/#include/CMake-source conflicts.
+- FE_Setup*: 16 of 33 done (fe_setup.cpp). Left: Options, Chapter (menu as stack arg, slot reused as loop counter),
+  MissionSuccessFail, Pause, SpecialConcept, Gameplay, BonusMaterials/Concepts/Vehicles/Characters/Weapons,
+  SpecialMaterials, ControllerConfig, Liberator, AdvancedOptions, FE_SetupPanel. FE_SetupLoginStatus is written but out
+  of kFunctions: 4/4 mismatches on heap byte 0x100006a8 (1f vs 17) - its tail jump to the +0x6c setter must run at the
+  original's position (it reuses its argument slot as the text argument); its mismatch row stays on record.
 - Final missions 1/4 regression (build/compare/day24_final): only on-record mismatches, plus CL_Init's first test:
   refimport slots 0x12/0x17 the original never sets (stale pushed Cmd_AddCommand names vs our zeros) - accepted.csv row.
 - Loader patch to update before Replaced: 0x0031fc10 (UIScreenMgr_HandleInput entry, loader/patches.cpp).
