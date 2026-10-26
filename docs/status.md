@@ -85,6 +85,14 @@ Open:
   nglMeshBuilder_AddPosSection) depend on content: next is a data scan of the .cod packs (effect op 0x5b, mesh files with
   section 3, zones whose unload releases effects), then a run of the level that has it.
   User-steered Liberator run (15 min, build/compare/liberator_user): nothing new either - confirms it.
+  Data scan of every .cod pack (sp/mp/bonus): no .xbmesh of 3,919 has a type-3 section (only 1 materials, 2
+  meshes) -> nglMeshFile_RelocateSection3 unreachable with shipped data; no .bpe of 966 uses renderer code 'CBlb'
+  (ColorBillboardRenderer = FxRenderer_NewOp5b; renderer type = Stream_ReadUInt FourCC, LE: CUVA 863 files, UVAR
+  397, cUVr 123, UVRe 87, SMsh 31, Shmp 28, Blbo 9, Rect 1, CRct 1) -> unreachable. nglMeshBuilder_AddPosSection
+  only from CM_DrawWorldTreeDebug (debug draw); nglReadFile/nglFreeFileBuffer = loose-file loading (host file API,
+  always inconclusive in tests). FxEffectDef_Release settled with --force on loaded effect definitions:
+  `FxEffectDef_Release(ecx=[[[[0x95f630]+0x5c]+0xd4]+4+j*8])` (zone 0 of the stream table 0x0095f630: +0xd0
+  count, +0xd4 {?, def} pairs), 205/205.
 - Rare pre-existing flake: "worker crashed outside a call" (NAL_Quat_BeginBlock, nglSkipList_RemoveTexture once
   each); the named function passes alone, the committed binary shows the same. Second run: two workers died of
   SIGALRM outside a call (after apsActionPlaneBounce_Apply, CM_FloodAreaConnections); retries passed - watch for it.
