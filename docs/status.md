@@ -27,7 +27,7 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-26, day 24, autonomous 4 h session): client module, matched 2152 -> 2237.**
+**Resume here (decomp, 2026-10-26, day 24, autonomous 4 h session): client module, matched 2152 -> 2399+.**
 Two subagents (worktrees wt/fx, wt/rest; brief cod_bro/wt/decomp_brief.md, now with the offline leaf-test step),
 one fresh agent per batch, coordinator merges (`tools/merge_functions_csv.py` resolves functions.csv conflicts by
 adding both sides' counts; functions.cpp conflicts: keep both, address order).
@@ -48,6 +48,32 @@ adding both sides' counts; functions.cpp conflicts: keep both, address order).
   MovieVid_ConvertYuv8; FUN_003173e0 (fills a UI quad), FUN_00322b30 (texture by name, language prefix first),
   FUN_00316480 (reads 3 LE floats). Struct notes are in the batch commit messages / headers (movie.h, fe.h).
 - Before Replaced: UIPicture_GetBoundsMin/Max need entries saving XMM6/XMM7 (SetQuadCorners keeps values there).
+- Later batches (same session): UIText family (40), menu framework ui_menu.cpp (47), panels/dialogs ui_panel.cpp
+  (44), CL/SCR core (33), pad input + movie gap functions (26), every front-end menu class (fe_menus/fe_options/
+  fe_profile/fe_bonus/fe_special.cpp, ~210), FE_* helpers (27), FE_Setup* (fe_setup.cpp, last batch). Client left: ~0
+  named functions undecompiled except what the last batch lists; ~250 decompiled client functions are untested
+  because unattended --level runs never show the front end. NEXT: a user-steered `--compare` menu walk
+  (memory "user steers coverage runs") over every main-menu screen, bonus/special/chapter/profile/save menus, then
+  the client gap functions the batches found (bonus 0x00012ff0/0x00013000/0x00013040/0x0031ba90/0x0031bb50/
+  0x0031bc10/0x00335640, 0x0031c430-0x0031c5d0, 0x0031d110-0x0031d250, 0x0031d752-0x0031d820; options 0x0031ec90,
+  0x00012c60/70, 0x000127a0/b0; profile 0x00338a40; chapter 0x00337e00).
+- Gap entries for set-text callers: UIText stores a stack address in heap word 0x100006a8, so every function that
+  reaches a text setter runs its title calls at the original's ESP (FE_GAP_ENTRY, FE_FRAME_ENTRY in fe.cpp).
+- Tools: fnpack no longer flags a relative CALL/JMP in the first 5 bytes (the trampoline re-encodes it);
+  merge_functions_csv.py merges functions.csv counts and unions kFunctions/#include/CMake-source conflicts.
+- Loader patch to update before Replaced: 0x0031fc10 (UIScreenMgr_HandleInput entry, loader/patches.cpp).
+- More proposed names (Ghidra, not applied): 0x0030ea00 UI_StickDirectionHeld; 0x0032de50 CL_PauseIntoFrontEnd;
+  CL_ResumeFromPause/0x0032df90 = pause overlay update; FE_BonusStopMovie (0x00333060) = SpecialMaterialsMenu_PlayMovie;
+  FE_BonusMovieFileName (0x003330f0) = SpecialMaterialsMenu_HandleSelect; FE_MainMenu_UpdateSignIn = MainMenu_Update;
+  FE_DrawLoadingQuote = loading-screen Draw; 0x00313610/0x00313360/0x00313120 Loading/LoadAfrica/LoadSicilyMenu_
+  ShowMissions; 0x0030cfb0 MissionSuccessFailMenu_ClearTexts; 0x0030e390/0x0030e4c0 Gameplay/AdvancedOptionsMenu_
+  UpdateLabelColors; 0x0031ee10 AdvancedOptionsMenu_SetSliderBar; 0x0031e9d0/0x0031e810 ControllerConfigMenu_
+  UpdateSliderA/B; 0x0030f950 UI_GetTextWidth; 0x00315cd0 UIText_FadeColour; 0x00012480 UITextLine_VectorDeletingDtor;
+  0x0031a390 SpecialConceptMenu next item; 0x003307a0 is MissionSuccessFailMenu_ReloadCheckpoint in the symbols but
+  PauseMenu_ReloadCheckpoint in the code (reconcile). Vtables: UITextBase 0x008298b8, UIText 0x0082a450, UIPicture
+  0x0082a2c0, UIWorldPicture 0x00828df8, UIRootMenu 0x00829280, InGameScreens 0x008286cc, FrontEndMenu 0x0082905c,
+  Movie 0x007cf390, MovieBase 0x007cf600. Struct layouts are in the module headers (fe.h, ui_menu.h, ui_panel.h,
+  movie.h, fe_*.h).
 
 **Resume here (decomp, 2026-10-25, day 22c): user-steered menu walk + one full level, matched 2035 -> 2049.**
 Two `--compare --diag` runs, optimized build, on copies of the user's saves: build/compare/menu_user2 (81 s, every
