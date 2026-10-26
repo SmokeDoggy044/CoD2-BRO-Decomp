@@ -93,6 +93,11 @@ Open:
   always inconclusive in tests). FxEffectDef_Release settled with --force on loaded effect definitions:
   `FxEffectDef_Release(ecx=[[[[0x95f630]+0x5c]+0xd4]+4+j*8])` (zone 0 of the stream table 0x0095f630: +0xd0
   count, +0xd4 {?, def} pairs), 205/205.
+- Merged leaf-const (compare-constant input seeding, subagent; LEAF_SEED=N). Its post-merge full run caught a
+  GAME_GAP_ESP regression: the macro's scratch just below the entry is where some C rebuilds the original's frame
+  (NAL_Packed16EntropyIKSpin_Dequantize copied the saved registers out: 0/3482). Scratch now 64 KB below the gap.
+  Full leaf run 531/531, 0 mismatches; missions 1/4 regression clean (SV_Trace family rates within their history:
+  SV_ClipMoveToEntities_r 36%, SV_CapsuleTrace 54% before today); FX_FlushSpawnQueue 91/91 forced.
 - Rare pre-existing flake: "worker crashed outside a call" (NAL_Quat_BeginBlock, nglSkipList_RemoveTexture once
   each); the named function passes alone, the committed binary shows the same. Second run: two workers died of
   SIGALRM outside a call (after apsActionPlaneBounce_Apply, CM_FloodAreaConnections); retries passed - watch for it.
