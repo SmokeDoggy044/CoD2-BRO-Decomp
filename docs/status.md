@@ -58,7 +58,7 @@ adding both sides' counts; functions.cpp conflicts: keep both, address order).
   ESP is aligned down or moved below the host floor -> wrong EDI/ESI/return address (release: segfault in our
   R_AddEntitySurfaces under R_RenderView tests). The macro now pushes the entry's ESP; epilogues `popl %esp`.
   game_body_esp keeps the body clear of the macro's scratch (the pushed word clobbered it in the nested case).
-- Proposed names (not applied in Ghidra yet): UIQuad_GetMaxCorner -> UIQuad_GetMaxUV, UIPictureBlock_SetVertexUVs ->
+- Proposed names (applied in Ghidra and the code 2026-10-26; FUN_003173e0 = UIQuad_Fill, FUN_00322b30 = UI_FindLocalizedTexture, FUN_00316480 = Panel_ReadVec3): UIQuad_GetMaxCorner -> UIQuad_GetMaxUV, UIPictureBlock_SetVertexUVs ->
   UIQuad_SetVertexUVs; FUN_000cfb20 MovieVid_Idct, FUN_000cea00 MovieVid_ReadMotionDelta, FUN_000d0860
   MovieVid_ConvertYuv8; FUN_003173e0 (fills a UI quad), FUN_00322b30 (texture by name, language prefix first),
   FUN_00316480 (reads 3 LE floats). Struct notes are in the batch commit messages / headers (movie.h, fe.h).
@@ -86,7 +86,7 @@ adding both sides' counts; functions.cpp conflicts: keep both, address order).
 - Final missions 1/4 regression (build/compare/day24_final): only on-record mismatches, plus CL_Init's first test:
   refimport slots 0x12/0x17 the original never sets (stale pushed Cmd_AddCommand names vs our zeros) - accepted.csv row.
 - Loader patch to update before Replaced: 0x0031fc10 (UIScreenMgr_HandleInput entry, loader/patches.cpp).
-- More proposed names (Ghidra, not applied): 0x0030ea00 UI_StickDirectionHeld; 0x0032de50 CL_PauseIntoFrontEnd;
+- More proposed names (applied 2026-10-26: CL_ResumeFromPause -> CL_UpdatePauseOverlay, FE_DrawLoadingQuote -> ChapterMenu_Draw (ChapterMenu slot 10), 0x003307a0 = MissionSuccessFailMenu_ReloadCheckpoint (both callers are that menu), 0x0031a390 SpecialConceptMenu_NextItem): 0x0030ea00 UI_StickDirectionHeld; 0x0032de50 CL_PauseIntoFrontEnd;
   CL_ResumeFromPause/0x0032df90 = pause overlay update; FE_BonusStopMovie (0x00333060) = SpecialMaterialsMenu_PlayMovie;
   FE_BonusMovieFileName (0x003330f0) = SpecialMaterialsMenu_HandleSelect; FE_MainMenu_UpdateSignIn = MainMenu_Update;
   FE_DrawLoadingQuote = loading-screen Draw; 0x00313610/0x00313360/0x00313120 Loading/LoadAfrica/LoadSicilyMenu_
