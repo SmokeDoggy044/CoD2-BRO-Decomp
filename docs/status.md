@@ -35,6 +35,12 @@ text-setter stack address: their setter calls need the original's ESP, FE_GAP_EN
 galleries, pause menu dialogs, autosave slots, Sound/Screen/Advanced options. Inconclusive ones call XAPI file code.
 Quit: the retail game has no quit option; CL_Shutdown only via the console "quit" (Com_Quit_f) - test with --force.
 
+**Cheat-unlocked menu runs 2026-10-26 (menu_user4/5):** the chapter-select cheat (hold both triggers, Up Up Down
+Down Left Left Right Right X Right X Right X) opens every chapter and bonus; the unlock lives in the profile block
+(file 0x30 / 0x40) but these runs did not write it to disk. 44 functions first tested, matched 2462 -> 2469. To fix
+(text-setter stack word 0x100006a8): FE_BonusCharacterSetText, FE_BonusVehicleSetText, FE_BonusWeaponSetText (plus the
+three above). Bonus gallery handlers / image loaders are inconclusive only (they call XAPI file code).
+
 **Resume here (decomp, 2026-10-26, day 24, autonomous 4 h session): client module, matched 2152 -> 2414/16517.**
 Two subagents (worktrees wt/fx, wt/rest; brief cod_bro/wt/decomp_brief.md, now with the offline leaf-test step),
 one fresh agent per batch, coordinator merges (`tools/merge_functions_csv.py` resolves functions.csv conflicts by
