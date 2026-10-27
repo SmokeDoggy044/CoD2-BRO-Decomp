@@ -40,6 +40,25 @@ runs (only a front-end text dialog calls them). Next:
   it still counts a stored code address as live, and forced tests as "ran".
 - Content: cdWater_Draw / cdWorldVertexLit_Draw only in Omaha Beach (mission 9: zones omaha06/07/10/12) and Mons (10:
   mons01b) - later zones, not reached by 110 s unattended runs: a user-steered run through those levels. No pack uses cddebug.
+- User-steered Omaha Beach run (build/compare/omaha_user, 97 min, release, XBCMP_ONLY = all 307 untested, every call):
+  cdWater_Draw 13857/13857 and cdWorldVertexLit_Draw 45636/45636 settled, 22 more first-time matches (HUD timers,
+  LoadingMenu_Draw settled, Sound/Screen menu setup, menu dtors, CL_InitRef, nglMaterial_ReleaseTwoTexturesClear), no
+  mismatches; 4 save/zone functions inconclusive (XAPI file code). Matched 2504 -> 2524.
+- `--force "scene:..."` (new): call site inside R_RenderView with the main scene open (docs/comparison-harness.md).
+  First use found a real bug: nglColorToVec4's `1.0f / 255.0f` is no longer folded under -frounding-math and rounds
+  down with the title's MXCSR (0x3b808080, so 255 -> 0.99999994); now the original's constant as a hex float. Same fix for
+  1/3 (cgame text scale, 0x3eaaaaab), 1/640 and 1/480 (nglInit). nglColorToVec4 offline 3817/3817 (was 961 mismatched),
+  nglDebugDrawLine 30/30 at the scene site (pre-fix drift row dropped). R_RenderView's mismatch is the on-record one.
+- Not tested by decision (user, 2026-10-27): the boot/device functions (nglInit, nglSelectVideoMode, nglInitFrameBuffers,
+  nglInitMultisample, nglResetDevice, nglInitShaders, Anim_InitManagers) - the native engine replaces them with its own
+  back ends - and paths no shipped data reaches (FxRenderer_NewOp5b / FxOp5b_AddToList 'CBlb', nglMeshFile_RelocateSection3,
+  cdDebug_AddToList/Draw: no pack uses cddebug). Their C stays.
+- Renderer left to test (live, 2026-10-27): debug/dev only - nglVertexWriter_Init, nglMeshBuilder_AddPosSection
+  (CM_DrawWorldTreeDebug), nglDebugLineBatch_Draw, nglDebugShader_Draw, nglDumpPrintf, nglGetFreeMemory (fps display);
+  host file/screenshot - nglSaveScreenshot, nglSaveTextureTGA, nglWriteTGA, nglReadFile, nglFreeFileBuffer; vtable slots -
+  nglTextureManager/MeshManager/ResourceManager_ForEachPass, nglMaterial_LoadTextureRef; FX - FxAction_Destroy/
+  DeletingDtor (shutdown), FxOpdd_AddToList (mission 11 data); other - nglGenerateRenderTargetMips, nglRestoreRenderStates,
+  nglCreateNormalCubeMap, nglLockPalette, nglSkipList_RemoveIndirect (offline 68-84%), RE_ParseButtonToken (offline 46%).
 - Offline coverage (tests/leaf_test LEAF_REACHED=DIR, new): nglFreeFileBuffer 86% = everything but the two tail jumps
   through file-hook pointers 0x009098dc/0x009098ec (set only by FUN_000938f0 from Sys_Main); RE_ParseButtonToken 46% =
   no random string holds both '{' and '}'. Coverage per LEAF_SEED is not reproducible across LEAF_ONLY sets.
