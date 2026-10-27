@@ -73,8 +73,20 @@ multiplayer has identical code but part of .data (0x49c790-0x49e7b0) in another 
 (code references -0x68 / +0x1e98): 11490/11493 functions unchanged, all port
 addresses found, the menus work. The EU multiplayer XBE (issue #9 logs) has the CE's
 .rdata/.data sizes, .text 0x30 longer and everything after it 0x20 later; its campaign
-equals the CE's except the LIBEATOR section (same size). Not yet confirmed by the
-reporters. The map costs 0.27 s (MP, release build) per start of another build.
+equals the CE's except the LIBEATOR section (same size). The map costs 0.27 s (MP, release build) per start of another build.
+After 0.1.12 (issue #9, EU MP log 2026-10-27): 9899/11493 unchanged, 1094 entry only, 500
+missing, 31 port addresses missed (Direct3D_CreateDevice among them). Cause: the hash
+masked any 4 bytes that read as an image address, left to right, so a window across
+two instructions (85 C9 C7 06 00 = test ecx,ecx; mov [esi],0x003bc800 reads 0x0006c7c9)
+hid the real address after it, and once the data moved the masks differed. Library code
+(D3D/DSOUND/XNET, same in SP and MP at other addresses): 102 of 375 functions differed.
+Now the hash decodes x86 instructions (release_map.cpp `decode`) and masks rel32 and 32-bit
+operands that read as addresses, plus jump-table dwords: 14 of 375 differ (constants
+inside one image's range only). A head match must land in the section of the same name,
+and functions still unmatched are tried at their section's offset (the MP_* map sections
+are code alike, so their heads are not unique; 0.1.12's odd MP_* offsets in the EU log were
+matches into other map sections). CE MP: 11493/11493. Signatures regenerated. Map now
+0.8 s (MP, release build). EU not yet confirmed by the reporters.
 Issue #10: pictures wider than 16:9 (`--aspect 21:9` etc., launcher choices marked
 experimental), campaign only, see docs/rendering.md "Wider than 16:9". The PC menu (`
 key, Dear ImGui in-game) with a field of view slider (campaign; issue #5), docs/rendering.md.
