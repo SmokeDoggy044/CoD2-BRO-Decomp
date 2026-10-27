@@ -37,9 +37,10 @@ Quit: the retail game has no quit option; CL_Shutdown only via the console "quit
 
 **Cheat-unlocked menu runs 2026-10-26 (menu_user4/5):** the chapter-select cheat (hold both triggers, Up Up Down
 Down Left Left Right Right X Right X Right X) opens every chapter and bonus; the unlock lives in the profile block
-(file 0x30 / 0x40) but these runs did not write it to disk. 44 functions first tested, matched 2462 -> 2469. To fix
-(text-setter stack word 0x100006a8): FE_BonusCharacterSetText, FE_BonusVehicleSetText, FE_BonusWeaponSetText (plus the
-three above). Bonus gallery handlers / image loaders are inconclusive only (they call XAPI file code).
+(file 0x30 / 0x40) but these runs did not write it to disk. 44 functions first tested, matched 2462 -> 2469. Fixed the same day (fix_user1, all matched, pre-fix rows dropped): the
+text-setter stack word 0x100006a8 in UI_ShowDialog (UI_ShowDialogAt: strings in the original's arg / push slots, every
+call at the body ESP), GameplayMenu_Draw / ControllerConfigMenu_Draw (DRAW_GAP_ENTRY) and FE_BonusCharacter/Vehicle/
+WeaponSetText (FE_FRAME_ENTRY). The user's real profile was unlocked with tools/profile_edit.py (confirmed in game). Bonus gallery handlers / image loaders are inconclusive only (they call XAPI file code).
 
 **Resume here (decomp, 2026-10-26, day 24, autonomous 4 h session): client module, matched 2152 -> 2414/16517.**
 Two subagents (worktrees wt/fx, wt/rest; brief cod_bro/wt/decomp_brief.md, now with the offline leaf-test step),
