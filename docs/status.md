@@ -27,6 +27,23 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
+**Renderer finish, 2026-10-27 (day 25), in progress:** renderer left = 32 untested + 7 boot-inconclusive (live only).
+- Forced calls (build/compare/force_r1-r3): FX_FindEvictableEffect 30/30 (`FX_FindEvictableEffect([[[[0x95f630]+0x5c]+0xd4]+4])?[0x98880c]`),
+  FX_PruneComponents settled 120/120 (`esi=[[0x95f5b4]+4]` / `+8`, `?[[0x95f5b4]]`: the active-effect list FX_UpdateEffects
+  walks, count +0, effects from +4), DObj_DebugDrawAnimTrees settled 108 (`edi=[[0x97a968+8k]+0x22c]?` same, k 0-127:
+  entity handle table). Draw-list calls at the client-frame site crash in both versions (nglListAddMesh/AddText read the
+  null current scene 0x0090259c): scene-time functions need another call site.
+- Dead (static, checked with xbefind call/imm): nglDebugDrawLine/BoxMesh/PyramidMesh (only self-recursion, the dead
+  nglDebugDrawAxes and uncalled gap functions 0x0006d200/0x0006d220), RE_DrawTextWithIcons/RE_TextWidthWithIcons/
+  R_ParseTextIcon (refexport slots +0x94/+0x98 of re 0x009284e8; the only reader is the uncalled gap function 0x002b2b40),
+  nglParseDDSPalette/nglCreateDDSPalette (self-recursion). levelreach --dead no longer counts self-recursion as a caller;
+  it still counts a stored code address as live, and forced tests as "ran".
+- Content: cdWater_Draw / cdWorldVertexLit_Draw only in Omaha Beach (mission 9: zones omaha06/07/10/12) and Mons (10:
+  mons01b) - later zones, not reached by 110 s unattended runs: a user-steered run through those levels. No pack uses cddebug.
+- Offline coverage (tests/leaf_test LEAF_REACHED=DIR, new): nglFreeFileBuffer 86% = everything but the two tail jumps
+  through file-hook pointers 0x009098dc/0x009098ec (set only by FUN_000938f0 from Sys_Main); RE_ParseButtonToken 46% =
+  no random string holds both '{' and '}'. Coverage per LEAF_SEED is not reproducible across LEAF_ONLY sets.
+
 **Steered menu run 2026-10-26 (build/compare/menu_user3, 197 s, optimized build, copy of the user's saves):** 55
 functions tested for the first time, matched 2418 -> 2462; no new mismatches in already-tested functions. Covered:
 profiles (load + create keyboard), chapter select, Options/Gameplay/Controller config, loading screen. To fix: UI_ShowDialog
