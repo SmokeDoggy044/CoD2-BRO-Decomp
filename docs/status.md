@@ -62,11 +62,14 @@ adding both sides' counts; functions.cpp conflicts: keep both, address order).
   reaches a text setter runs its title calls at the original's ESP (FE_GAP_ENTRY, FE_FRAME_ENTRY in fe.cpp).
 - Tools: fnpack no longer flags a relative CALL/JMP in the first 5 bytes (the trampoline re-encodes it);
   merge_functions_csv.py merges functions.csv counts and unions kFunctions/#include/CMake-source conflicts.
-- FE_Setup*: 16 of 33 done (fe_setup.cpp). Left: Options, Chapter (menu as stack arg, slot reused as loop counter),
-  MissionSuccessFail, Pause, SpecialConcept, Gameplay, BonusMaterials/Concepts/Vehicles/Characters/Weapons,
+- FE_Setup*: 18 of 33 done (fe_setup.cpp; Options 1/1 and Pause 4/4 matched on 10-26). Left: Chapter (menu as stack
+  arg, slot reused as loop counter), MissionSuccessFail, SpecialConcept, Gameplay, BonusMaterials/Concepts/Vehicles/Characters/Weapons,
   SpecialMaterials, ControllerConfig, Liberator, AdvancedOptions, FE_SetupPanel. FE_SetupLoginStatus is written but out
   of kFunctions: 4/4 mismatches on heap byte 0x100006a8 (1f vs 17) - its tail jump to the +0x6c setter must run at the
   original's position (it reuses its argument slot as the text argument); its mismatch row stays on record.
+- Open (ctest 10-26, leaf_test, new random inputs; unrelated to the batch): nglColorToVec4 961/3857 mismatches, 1 ulp
+  plus MXCSR PE (7f80 vs 7fa0) - check the -frounding-math change against its float->int path; NAL_Packed16Entropy-
+  IKSpin_BeginChannel 1/1007 (arena word 00000700 vs ffffff90). offline.csv had both at 100%.
 - Final missions 1/4 regression (build/compare/day24_final): only on-record mismatches, plus CL_Init's first test:
   refimport slots 0x12/0x17 the original never sets (stale pushed Cmd_AddCommand names vs our zeros) - accepted.csv row.
 - Loader patch to update before Replaced: 0x0031fc10 (UIScreenMgr_HandleInput entry, loader/patches.cpp).
