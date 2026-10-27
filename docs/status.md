@@ -27,6 +27,14 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
+**Steered menu run 2026-10-26 (build/compare/menu_user3, 197 s, optimized build, copy of the user's saves):** 55
+functions tested for the first time, matched 2418 -> 2462; no new mismatches in already-tested functions. Covered:
+profiles (load + create keyboard), chapter select, Options/Gameplay/Controller config, loading screen. To fix: UI_ShowDialog
+(ui_menu.cpp), GameplayMenu_Draw and ControllerConfigMenu_Draw (fe_options.cpp) mismatch on heap word 0x100006a8 (the
+text-setter stack address: their setter calls need the original's ESP, FE_GAP_ENTRY). Not reached yet: bonus/special
+galleries, pause menu dialogs, autosave slots, Sound/Screen/Advanced options. Inconclusive ones call XAPI file code.
+Quit: the retail game has no quit option; CL_Shutdown only via the console "quit" (Com_Quit_f) - test with --force.
+
 **Resume here (decomp, 2026-10-26, day 24, autonomous 4 h session): client module, matched 2152 -> 2414/16517.**
 Two subagents (worktrees wt/fx, wt/rest; brief cod_bro/wt/decomp_brief.md, now with the offline leaf-test step),
 one fresh agent per batch, coordinator merges (`tools/merge_functions_csv.py` resolves functions.csv conflicts by
