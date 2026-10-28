@@ -38,6 +38,11 @@ rest set aside by decision). It stays Compare until the switch to Replaced (need
 - Sorted out of the renderer: ClientActive_Ctor (client; static init gap 0x00376450), HashStrMap_Ctor (qcommon; static
   init gaps 0x003784c0/0x003784e0/0x00378750/0x00378770). Gap 0x0029d620 = slot 6 of vtable 0x008376fc.
 - Release build rechecked: no drift (below).
+- Final checks (user, 2026-10-27): `--compare-all` missions 1/4/5/6 (build/compare/rall, 40k tests): renderer 0 mismatches
+  outside accepted.csv. Full leaf_test (build/leaf_full_1027.txt, first since the chain-mutation generator): 570 of 574 clean;
+  4 real differences on overlapping arguments, fixed: FxOp53_Init/FxOpGrid_Init (16-byte copies now load before storing,
+  copy16; columns/rows re-read per store like the original) and NAL dequantize3 (all inputs read before the first
+  store); FxOp*_Init and both dequantizers clean over seeds 0-2. Renderer matched 1025 -> 1028.
 
 **Sorting the leftovers, 2026-10-27 (user: option b + provisional sorting):** unsorted .text 2,633 -> 63.
 - Microsoft library blocks the signature matcher missed are now sorted by address range into `mslib`
