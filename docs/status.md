@@ -38,6 +38,8 @@ runs (only a front-end text dialog calls them). Next:
   prepared save folders; Collector's-edition screens -> not testable with this XBE (user to decide).
 - Other modules by size left: collision (2 unnamed, 38 named), streaming, xanim, server (8 on-record mismatches).
 - Untouched suggestions (user: "nothing now"): renderer struct typing, D3D call inventory, CPU-overhead cuts.
+- Plan for the next sessions (user, 2026-10-27): name and decompile module by module in big concentrated pushes - one
+  module to complete (named, sorted, decompiled, tested or set aside), then the next.
 
 **Steered client menu run, 2026-10-27 (build/compare/menu_user6, 508 s, release, copy of the user's saves, XBCMP_ONLY = the
 152 untested client functions + SV_SetSkillEasy/Hard, every call):** route: bonus movies/concepts/characters/vehicles,
