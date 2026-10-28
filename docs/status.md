@@ -102,7 +102,12 @@ up/down/either); settings.ini `keys = action=input ...` (only changed actions) -
 `--keys`; sdl_devices reads them, then the style remap as before; key prompts show each
 action's first input. Launcher Controls tab: table, click + press, right-click clears,
 a key moves from the action that had it; menu keys/Esc/Tab/F10-F12 fixed.
-bindings_test. Not yet played with changed keys by the user.
+bindings_test. User-tested (melee on mouse 5). 0.1.14 published 2026-10-28; issues #9/#14 answered.
+Open: under Wine, the Windows ctest's kernel tests (audio, critical_section, dispatcher,
+filesystem, memory) fail at start with "cannot reserve contiguous memory at 80000000"
+in both Windows presets (the packaged loader runs fine: its stub reserves the ranges
+first). Not caused by 0.1.14's changes (no xbox/ code touched); not yet checked
+whether it predates them or comes from the Wine version.
 Issue #10: pictures wider than 16:9 (`--aspect 21:9` etc., launcher choices marked
 experimental), campaign only, see docs/rendering.md "Wider than 16:9". The PC menu (`
 key, Dear ImGui in-game) with a field of view slider (campaign; issue #5), docs/rendering.md.
