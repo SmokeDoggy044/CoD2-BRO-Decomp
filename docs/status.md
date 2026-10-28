@@ -96,6 +96,13 @@ address are recorded; an address inside a changed code-section symbol (not its s
 is looked up like data, bounded by that symbol. Their sites are in .text that the EU
 log shows unchanged (+0x0). Signatures regenerated (MP 19010 / SP 44805 references). CE
 MP still 11493/11493, all found. EU not yet confirmed by the reporters.
+Issue #14 (2026-10-28, for 0.1.14): key bindings. input/bindings.h: 22 actions (the
+default layout's pad controls + move/look keys), 2 inputs each (keys, mouse 1-5, wheel
+up/down/either); settings.ini `keys = action=input ...` (only changed actions) ->
+`--keys`; sdl_devices reads them, then the style remap as before; key prompts show each
+action's first input. Launcher Controls tab: table, click + press, right-click clears,
+a key moves from the action that had it; menu keys/Esc/Tab/F10-F12 fixed.
+bindings_test. Not yet played with changed keys by the user.
 Issue #10: pictures wider than 16:9 (`--aspect 21:9` etc., launcher choices marked
 experimental), campaign only, see docs/rendering.md "Wider than 16:9". The PC menu (`
 key, Dear ImGui in-game) with a field of view slider (campaign; issue #5), docs/rendering.md.
