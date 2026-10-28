@@ -43,6 +43,11 @@ rest set aside by decision). It stays Compare until the switch to Replaced (need
   4 real differences on overlapping arguments, fixed: FxOp53_Init/FxOpGrid_Init (16-byte copies now load before storing,
   copy16; columns/rows re-read per store like the original) and NAL dequantize3 (all inputs read before the first
   store); FxOp*_Init and both dequantizers clean over seeds 0-2. Renderer matched 1025 -> 1028.
+- Set aside (user, 2026-10-27): the 48 renderer functions not tested by decision are listed in tools/data/set_aside.csv
+  (kind: dead/boot/no data/debug/host/exit) and get their own progress state and README column; not counted as
+  rewritten. Still waiting for a conclusive test (live, no mismatch on record): nglSkipList_RemoveTexture (offline 68%),
+  nglSkipList_RemoveIndirect, nglFindFontAddRef, FxPool_SetSlotTag, XModel_GetBoneCount (offline 87%),
+  XModel_CalcBoneChildren, FXCmd_Type2AtTransform.
 
 **Sorting the leftovers, 2026-10-27 (user: option b + provisional sorting):** unsorted .text 2,633 -> 63.
 - Microsoft library blocks the signature matcher missed are now sorted by address range into `mslib`
