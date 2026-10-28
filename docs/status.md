@@ -70,6 +70,14 @@ runs (only a front-end text dialog calls them). Next:
   unreadable even in the main process - find which list is indirect in practice, or build consistent skip lists in leaf_test), FxOpdd_AddToList
   (op dd exists in mission 11 data; needs an op object at the scene site), nglCreateNormalCubeMap / nglLockPalette (D3D
   resource creation / lock: host code - not tested by decision, user 2026-10-27, like the boot functions).
+- Focused pass (user, 2026-10-27): nglSkipList_RemoveIndirect offline 1805/1805 at 94% (leaf_test's new chain mutation:
+  an argument 1-3 pointer steps from another, so the removed object is in the list; RemoveTexture/AnimManager_SkipListRemove
+  also reach 94-95% on some seeds). FxOpdd_AddToList settled 108/108 at the scene site on live emitters:
+  `scene:FxOpdd_AddToList(ecx=[E],[E+0xbc],[E+0xc0],E+0x84,E+0x60,0,0)?[E+0xc0]`, E = `[[[[[0x988ce8]+4j]+4]+0x54]+4k]`
+  (effect list 0x00988ce8 / count 0x00988cf0, effect +4 = system, system +0x54 = emitters; FxEmitter_Draw's argument
+  recipe; the op's type is not checked, so any live renderer serves). `?W` guards that cannot be read yet now wait.
+  Renderer: every live function tested except those set aside by decision. Not run since the generator change: the
+  full leaf_test (ask first).
 - Offline coverage (tests/leaf_test LEAF_REACHED=DIR, new): nglFreeFileBuffer 86% = everything but the two tail jumps
   through file-hook pointers 0x009098dc/0x009098ec (set only by FUN_000938f0 from Sys_Main); RE_ParseButtonToken 46% =
   no random string holds both '{' and '}'. Coverage per LEAF_SEED is not reproducible across LEAF_ONLY sets.
