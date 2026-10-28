@@ -59,6 +59,16 @@ runs (only a front-end text dialog calls them). Next:
   nglTextureManager/MeshManager/ResourceManager_ForEachPass, nglMaterial_LoadTextureRef; FX - FxAction_Destroy/
   DeletingDtor (shutdown), FxOpdd_AddToList (mission 11 data); other - nglGenerateRenderTargetMips, nglRestoreRenderStates,
   nglCreateNormalCubeMap, nglLockPalette, nglSkipList_RemoveIndirect (offline 68-84%), RE_ParseButtonToken (offline 46%).
+- The 13 (user, 2026-10-27; the 11 debug/dev and host file/screenshot functions above are not tested by decision, like
+  the boot ones). Matched with forced calls (build/compare/force_r4-r6): nglTexture/Resource/MeshManager_ForEachPass
+  (ecx = [0x009025f0] / [0x00903d10] / [0x009028d0] / [0x00902a80/84/88]: those globals hold manager pointers),
+  FxAction_Destroy / FxAction_DeletingDtor (an effect definition's first stage action: `[[[def+0x50]+0x14]]`, the stage's
+  +0x14 is an apsPtrVector), nglRestoreRenderStates (ecx=0x00902f08), nglGenerateRenderTargetMips (scene:, the scene's
+  render target [[0x0090259c]+0x2f8]), RE_ParseButtonToken and nglMaterial_LoadTextureRef (`&N`, new). Matched 2524 -> 2534.
+  Left: nglSkipList_RemoveIndirect (offline 1821 matched, 84%: the unlink loop needs a consistent list; the mesh
+  managers' +4 list nodes do not hold object pointers at +0 as read - check the node layout in Ghidra), FxOpdd_AddToList
+  (op dd exists in mission 11 data; needs an op object at the scene site), nglCreateNormalCubeMap / nglLockPalette (D3D
+  resource creation / lock: host code, inconclusive at best - same class as the boot functions).
 - Offline coverage (tests/leaf_test LEAF_REACHED=DIR, new): nglFreeFileBuffer 86% = everything but the two tail jumps
   through file-hook pointers 0x009098dc/0x009098ec (set only by FUN_000938f0 from Sys_Main); RE_ParseButtonToken 46% =
   no random string holds both '{' and '}'. Coverage per LEAF_SEED is not reproducible across LEAF_ONLY sets.
