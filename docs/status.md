@@ -27,6 +27,18 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
+**Resume here (decomp, 2026-10-28, day 26): module pushes - collision complete, server nearly, matched 2564 -> 2616/16517.**
+- Collision complete (push-coll): every function decompiled; 15 set aside (14 dead, AtExit_FreeWorldTrees), CM_DrawWorldTreeDebug
+  debug-only; CM_RayHitsWorldMeshes live but not reached (vehicle wheel traces all took CM_RetestCachedMeshTriangle).
+- Server (push-srv): 26 decompiled + tested; trace walkers' box w-lane stale stack accepted (CM_TempBoxModel copies stack
+  slots it never writes); pre-fix rows of SV_PacketEvent/SV_UserMove/SV_InitGameProgs/SV_RestartClient dropped. Open:
+  SV_SpawnServer, SV_Trace (stale stack under our C frame), SV_LocationalTrace (needs real arguments), SV_ClientCommand
+  (indirect via VM_Call), 6 inconclusive on title file I/O (same XAPI file stand-ins question as the client).
+- Names applied: CM_SectorTree_UnlinkOwner_r, CM_RetestCachedMeshTriangle, FxSystem_FreeLevel, SV_GameRestartFrame,
+  SV_ClearWorld, SV_FreeClientFrames, SV_ClearServer, SndBankList_IsLoaded (sound module, sort later), LevelPersist_Free;
+  0x002aa480 MSG_ReadString -> MSG_ReadStringLine.
+- Gap 0x00376670: static initializer (table 0x008976dc) setting 0x009638b0 = 42.5f, not created.
+
 **Resume here (decomp, 2026-10-27, day 25): renderer complete, matched 2536 -> 2564/16517.**
 - Done today: leftovers sorted (mslib ranges, module_hints.csv via tools/sort_unnamed.py, 74 static initializers named);
   renderer finished (last 23, compare-all clean, full leaf_test: 4 overlapping-argument fixes); set-aside state
