@@ -32,8 +32,11 @@ runs (only a front-end text dialog calls them). Next:
   debug-only; CM_RayHitsWorldMeshes live but not reached (vehicle wheel traces all took CM_RetestCachedMeshTriangle).
 - Server (push-srv): 26 decompiled + tested; trace walkers' box w-lane stale stack accepted (CM_TempBoxModel copies stack
   slots it never writes); pre-fix rows of SV_PacketEvent/SV_UserMove/SV_InitGameProgs/SV_RestartClient dropped. Open:
-  SV_SpawnServer, SV_Trace (stale stack under our C frame), SV_LocationalTrace (needs real arguments), SV_ClientCommand
-  (indirect via VM_Call), 6 inconclusive on title file I/O (same XAPI file stand-ins question as the client).
+  SV_ClientCommand (indirect via VM_Call, not reached) and 8 inconclusive on title file I/O / SndHw host code (SV_SpawnServer,
+  SV_Map_f, SV_MapRestart, SV_Shutdown*, SV_RestartGameProgs, SV_CheckAutosave, SV_LoadLastSave_f) - same XAPI file stand-ins
+  question as the client. Second push: SV_Trace 959/0 and SV_LocationalTrace 80/0 (forced, empty candidate lists) after
+  frame-rebuild entries (callees at the original's ESP); SV_SpawnServer written the same way (SpawnFrame::call). Loading-bar
+  steps 0x00313240/0x003134e0/0x00313790 (chapters 6-8 / 1-5 / 9+, EAX + pushed fraction, ret 4) still unnamed.
 - Names applied: CM_SectorTree_UnlinkOwner_r, CM_RetestCachedMeshTriangle, FxSystem_FreeLevel, SV_GameRestartFrame,
   SV_ClearWorld, SV_FreeClientFrames, SV_ClearServer, SndBankList_IsLoaded (sound module, sort later), LevelPersist_Free;
   0x002aa480 MSG_ReadString -> MSG_ReadStringLine.
