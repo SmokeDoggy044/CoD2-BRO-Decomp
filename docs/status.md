@@ -27,6 +27,18 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
+**Renderer complete, 2026-10-27 (day 25):** every function named, sorted and decompiled (1084; 1025 rewritten, the
+rest set aside by decision). It stays Compare until the switch to Replaced (needs the 60 fps patch fix below).
+- Part 5 (dec-rfin): the last 23. FxSystemPool_Refresh matched 4, DObj_Ctor settled 222 (DObj +0x8c = handle, its
+  slot in the handle table 0x00981370), FxComponent_OwnerGone offline 3820 at 100% (slot 6 of the component base
+  vtable 0x00837624); 4 pure-store static initializers offline 4000 at 100% (game/code/r_static_init.cpp).
+- Dead (no calls, no stored pointer): FxSystem_UpdateBounds, FxSystemPool_Destroy (only caller gap 0x00095640 <- gap
+  0x0009c190, unreferenced), R_DrawBackBufferOverlay.
+- Untestable by design (atexit, the title never exits): the 11 renderer AtExit_* destructors.
+- Sorted out of the renderer: ClientActive_Ctor (client; static init gap 0x00376450), HashStrMap_Ctor (qcommon; static
+  init gaps 0x003784c0/0x003784e0/0x00378750/0x00378770). Gap 0x0029d620 = slot 6 of vtable 0x008376fc.
+- Release build rechecked: no drift (below).
+
 **Sorting the leftovers, 2026-10-27 (user: option b + provisional sorting):** unsorted .text 2,633 -> 63.
 - Microsoft library blocks the signature matcher missed are now sorted by address range into `mslib`
   (modules.csv): XGRAPHICS TrueType rasteriser 0x2bfa1-0x423ad (328 unnamed), XVOICE/UIX 0xd27b9-0x1199d0,
