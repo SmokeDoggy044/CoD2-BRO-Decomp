@@ -27,6 +27,21 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
+**Steered client menu run, 2026-10-27 (build/compare/menu_user6, 508 s, release, copy of the user's saves, XBCMP_ONLY = the
+152 untested client functions + SV_SetSkillEasy/Hard, every call):** route: bonus movies/concepts/characters/vehicles,
+options/advanced/controller, profiles, chapter select, Easy + Hard, pause Restart/Quit, mission failed. 14 first-time
+matched (UI_DialogLayoutButtons, ChapterMenu_Dtor, Bonus*Menu dtors, SV_SetSkillEasy/Hard, FE_BonusCharacterLabel,
+LoadingMenu_SetMissionRange, AdvancedOptionsMenu_ResetDefaults, InGameScreens_Construct, PauseMenu_ShowRestart/QuitDialog),
+0 mismatches, 4 inconclusive (XAPI file / SndHw host code), 134 not called (all hooked; 16 calls lost to "all busy"):
+- ~35 menu destructors: the screens stay allocated (reboots re-exec the loader) - shutdown paths, forced calls.
+- memory-unit error paths (AutosaveMenu/ProfileMenu dialogs, MemDlg_*, FE_CheckStartupStorage, SaveSlot_InitAll): need a
+  full / unformatted / corrupt save device - prepared data folders, not steering.
+- Collector's-edition screens (SpecialConcept/MaterialsMenu, FE_BonusCE*, FE_SetupSpecial*): the CE XBE is another binary
+  ("Collectors editions/", hash differs) - not testable with this build's addresses.
+- Xbox Live screens (InGameLiveOptionsMenu, XboxLiveMenu): need a Live sign-in.
+- console commands / CL_Shutdown: exec_sweep / --force. MovieVid_Predict{FieldMotion,DualPrime}: MPEG-2 modes the
+  shipped movies may not use - offline test. The rest: UIText/UIMenu/UITextTable helpers of screens not visited.
+
 **Renderer complete, 2026-10-27 (day 25):** every function named, sorted and decompiled (1084; 1025 rewritten, the
 rest set aside by decision). It stays Compare until the switch to Replaced (needs the 60 fps patch fix below).
 - Part 5 (dec-rfin): the last 23. FxSystemPool_Refresh matched 4, DObj_Ctor settled 222 (DObj +0x8c = handle, its
