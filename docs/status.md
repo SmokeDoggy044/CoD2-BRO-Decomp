@@ -27,6 +27,14 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
+**Own renderer, 2026-10-28 (user):** the renderer is replaced by our own instead of switching to Replaced with a 60 fps
+patch fix (the patch disappears with native pacing). Stages: 1 inventory of the graphics library use (done:
+[renderer-inventory.md](renderer-inventory.md), tools/d3d_inventory.py); 2 our graphics interface + a D3D9 back end with
+the same picture (screenshot diffs); 3 native 60 fps and beyond; then D3D11, Vulkan, D3D12 (Vulkan/D3D12 nearer the native
+build); extras as they come easily; texture pack stays on hold. Found by step 1: 8 unnamed FX draw functions
+0x000a7930-0x000ac3b0 (vtable slots, "unassigned") still call D3D - the renderer is not D3D-complete without them.
+The 60 fps fix notes below (day 25) are obsolete.
+
 **Resume here (decomp, 2026-10-28, day 26): module pushes, matched 2564 -> 3031/16517.**
 - Complete (every function rewritten, tested or set aside): collision, streaming, xanim, cgame, zlib (+ renderer
   from day 25). Coordinated pushes: one worktree + fresh agent per module push (briefs in cod_bro/wt/).
