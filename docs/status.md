@@ -86,7 +86,16 @@ inside one image's range only). A head match must land in the section of the sam
 and functions still unmatched are tried at their section's offset (the MP_* map sections
 are code alike, so their heads are not unique; 0.1.12's odd MP_* offsets in the EU log were
 matches into other map sections). CE MP: 11493/11493. Signatures regenerated. Map now
-0.8 s (MP, release build). EU not yet confirmed by the reporters.
+0.8 s (MP, release build).
+After 0.1.13 (EU MP log 2026-10-28): 11468 unchanged, 18 entry only, 7 missing; only 3
+port addresses missed: D3D device pointer/render states/texture states (0x32a358,
+0x32a368, 0x327ca8). The SDK libraries keep their variables after their code in the
+same section (D3D 0x3262d0-0x32b77c is one "function" symbol of data, changed there), and
+data references were only recorded for data sections. Now references to any in-image
+address are recorded; an address inside a changed code-section symbol (not its start)
+is looked up like data, bounded by that symbol. Their sites are in .text that the EU
+log shows unchanged (+0x0). Signatures regenerated (MP 19010 / SP 44805 references). CE
+MP still 11493/11493, all found. EU not yet confirmed by the reporters.
 Issue #10: pictures wider than 16:9 (`--aspect 21:9` etc., launcher choices marked
 experimental), campaign only, see docs/rendering.md "Wider than 16:9". The PC menu (`
 key, Dear ImGui in-game) with a field of view slider (campaign; issue #5), docs/rendering.md.
