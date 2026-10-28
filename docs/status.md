@@ -40,6 +40,9 @@ runs (only a front-end text dialog calls them). Next:
 - Names applied: CM_SectorTree_UnlinkOwner_r, CM_RetestCachedMeshTriangle, FxSystem_FreeLevel, SV_GameRestartFrame,
   SV_ClearWorld, SV_FreeClientFrames, SV_ClearServer, SndBankList_IsLoaded (sound module, sort later), LevelPersist_Free;
   0x002aa480 MSG_ReadString -> MSG_ReadStringLine.
+- Quat_Slerp NaN payloads (user, 2026-10-28: leave until the switch to Replaced): with NaN in both terms of the final
+  add(mul(la,w0), mul(lb,w1)) GCC's swapped commutative SSE operands return b's payload, the original a's; fix = a
+  fixed-destination addps/mulps helper in lanes.h. Settled 647/647 in game.
 - Gap 0x00376670: static initializer (table 0x008976dc) setting 0x009638b0 = 42.5f, not created.
 
 **Resume here (decomp, 2026-10-27, day 25): renderer complete, matched 2536 -> 2564/16517.**
