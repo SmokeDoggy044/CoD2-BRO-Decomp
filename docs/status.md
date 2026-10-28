@@ -27,6 +27,18 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
+**Resume here (decomp, 2026-10-27, day 25): renderer complete, matched 2536 -> 2564/16517.**
+- Done today: leftovers sorted (mslib ranges, module_hints.csv via tools/sort_unnamed.py, 74 static initializers named);
+  renderer finished (last 23, compare-all clean, full leaf_test: 4 overlapping-argument fixes); set-aside state
+  (tools/data/set_aside.csv: 48 renderer + 6 Live screens); steered client menu run (14 first-time matched).
+- Renderer: stays Compare. Switch to Replaced = 60 fps patch fix (below, user: at switch time) + smoke runs (debug and
+  release). 7 live functions still lack a conclusive test (listed under "Set aside" below).
+- Client open (128 untested, 71 inconclusive): the inconclusive ones call XAPI file code - user to choose stand-ins vs
+  set aside as host file code; menu destructors + console commands -> --force / exec_sweep; memory-unit error dialogs ->
+  prepared save folders; Collector's-edition screens -> not testable with this XBE (user to decide).
+- Other modules by size left: collision (2 unnamed, 38 named), streaming, xanim, server (8 on-record mismatches).
+- Untouched suggestions (user: "nothing now"): renderer struct typing, D3D call inventory, CPU-overhead cuts.
+
 **Steered client menu run, 2026-10-27 (build/compare/menu_user6, 508 s, release, copy of the user's saves, XBCMP_ONLY = the
 152 untested client functions + SV_SetSkillEasy/Hard, every call):** route: bonus movies/concepts/characters/vehicles,
 options/advanced/controller, profiles, chapter select, Easy + Hard, pause Restart/Quit, mission failed. 14 first-time
