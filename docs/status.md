@@ -1618,7 +1618,109 @@ adds sharper text (all four game fonts redrawn from bundled OFL fonts; launcher
 toggle, default on); not yet user-playtested. v0.1.3 (private test pre-release) adds
 the mouse in the menus (campaign and multiplayer); v0.1.4 (private test pre-release):
 "Press A to start the game" after loading takes a click too (in-game screen 5, ready flag +0x38;
-user-tested). Next candidates:
+user-tested); v0.1.5 (test pre-release, 2026-10-20): keyboard/mouse button prompts,
+clickable option rows (arrows, sliders), a Language setting (issues #1-#4); v0.1.6
+(test pre-release, 2026-10-21): system Direct3D 9 diagnostics and a software vertex
+processing fallback (issue #6, Intel HD 3000: every CreateVertexShader failed, black
+menu), the player log capped at 8 MB, the launcher's update check (GitHub releases).
+v0.1.7 (test pre-release, 2026-10-21): the issue #6 cause (the vertex shader epilogue read c192 and c193 in one
+mad; Windows' D3D9 runtime allows one constant register per vs_3_0 instruction, DXVK
+does not check), the launcher's Update now (issue #7, launcher/updater.h; tested
+against the v0.1.6 Linux archive, not yet on real Windows). v0.1.8 (test pre-release, 2026-10-23,
+issue #8, Intel HD 3000, drops from 30 to 20 fps): pixel shaders also keep one
+constant register per instruction (C0/C1 inputs failed CreatePixelShader on Windows'
+D3D9); the profiler works on Windows (loader/profiler_win32.cpp: SuspendThread +
+GetThreadContext on threads whose QueryThreadCycleTime moved; Wine lacks that call, so
+there every thread is sampled), `--profile` and the launcher's "Measure performance";
+tools/resolve_profile.py names our offsets from the unstripped build - keep each
+release's build directory binaries for that. Windows side tested under Wine only.
+The launcher has tabs (General, Graphics, Controls, Multiplayer, Help).
+v0.1.14 (test pre-release, 2026-10-28): key bindings in the launcher (issue #14) and variables after a library's code in the release map (issue #9). v0.1.13 (test pre-release, 2026-10-27): the release map hashes code by instruction (issue #9, below). v0.1.12 (test pre-release, 2026-10-26): other releases through the release map (issue #9, below). v0.1.11 (test pre-release, 2026-10-25): everything below up to v0.1.10. After 0.1.10 (issue #8, eight Windows/Intel HD 3000 logs; the 0.1.11 logs showed both cores busy with no hot spot left: answered 2026-10-26 with the 30 fps advice): the
+automatic profile ran once per run, right after the level start, never at the spots
+reported; it now reports at each slow second (at most once a minute, 20 times a run)
+with the mission number. Main thread there: busy only 41-60% at 20-27 fps, 15-25% of
+its samples in driver Lock/Unlock/Render/waits (every draw was DrawPrimitiveUP), 3-13%
+in texture_for_stage (whole-texture hash of every bound texture every frame). Now:
+draws fill our own dynamic vertex/index buffers (NOOVERWRITE, DISCARD on wrap; UP
+remains the fallback), and textures are sample-hashed each frame, whole only every 8
+frames or while they changed in the last 60. Linux/DXVK A/B (missions 1 and 9, fixed
+10 s window): texture_for_stage 11-13% -> under 2% of main-thread samples, memcpy
+roughly halved, pictures unchanged. Windows' own D3D9 not measured (Wine untested so
+far). Also: the PC menu's ImGui init asserted in Linux debug builds (InitForD3D).
+`tools/resolve_profile.py --summary` sums each report per place. Re-created on one core
+shared with two busy loops (mission 9): land ~28 fps, sea 60, land through binoculars 57;
+F12 draw dumps: a land frame ~800 draws / 100k vertices / 7 MB converted, sea ~170 / 30k
+/ 1.7 MB. Now static vertex sources (unchanged for 3 frames; sample hash per frame, whole
+every 8 or while recently changed, as textures) stay converted in their own GPU buffers
+(256 MB, LRU, unused 600 frames go), and the rest converts straight into the locked draw
+buffer. A/B vs 0.1.10 (missions 1, 9, fixed window): draw_streams 6.5-8.5% -> 1.3-1.9%,
+memcpy 7.6-8.5% -> 2.5%, main thread busy 55-67% -> 47-48%, pictures unchanged. Next
+idea if the draws still dominate: vertices in their real types instead of a float4 per
+attribute.
+v0.1.10 (test pre-release, 2026-10-25): the release check by code fingerprint, other releases' campaigns start (issue #9). v0.1.9 (test pre-release, 2026-10-24) has everything below. After 0.1.8 (issue #8 logs): the frame end's spin on the vblank flag (SP 0x000651c3, MP
+0x00066123) sleeps until the next vertical blank instead (one core less: 102 s -> 51 s
+CPU in 100 s of mission 1 at 30 fps; Linux, Wine checked); late frames are shown at once
+(the game's own mode 3/4 flag; `--late-frames wait` = the Xbox's 20 fps step); the
+Windows profiler's busy is the thread's cycles, and it samples only threads that ran
+a quarter of the tick (0.1.8 reported every thread at 100%). Not yet on real Windows.
+Issue #9: the reporter's codmp_xboxf.xbe (fr/es/it disc) is another build (.rdata
+0x20 later, RDTSC sites from 0x2074fa on differ), so every MP address misses. The loader
+now refuses other builds (`--any-release`). After 0.1.9: the check compared the header time stamp and size, which also refused the EU French/Spanish/Italian campaign XBE that ran fine on 0.1.8 (issue #9 comments); it now compares a fingerprint of the section table (names, addresses, sizes, header SHA-1 digests of code sections; data sections by place and size only) and logs every section on a mismatch. Another campaign XBE starts anyway with a warning (multiplayer stays refused without `--any-release`). Not yet confirmed on that disc.
+Issue #9, after 0.1.11: other releases through a release map (loader/release_map.h).
+On a build with another fingerprint the loader matches the supported build's functions
+(tools/data/<xbe>_signatures.txt: hashes of each function's first 32 bytes and of all
+of it, with rel32 targets and in-image addresses masked) at every byte of the other
+build's code sections; then neighbours' offsets for the rest. Data addresses come from
+the same code there: each variable the code refers to has one recorded site, read in
+the other build; addresses between two known variables that moved alike move alike.
+Every title address in patches.cpp/main.cpp goes through title_address(); the symbol
+table is relocated. Unfound addresses are logged; multiplayer then refuses to start
+(`--any-release` overrides). Tested on a Collector's Edition dump (testing only; kept
+outside the repo in cod_bro/Collectors editions/): its campaign code sections equal
+ours (only .rdata and the title image differ, so the fingerprint matches); its
+multiplayer has identical code but part of .data (0x49c790-0x49e7b0) in another order
+(code references -0x68 / +0x1e98): 11490/11493 functions unchanged, all port
+addresses found, the menus work. The EU multiplayer XBE (issue #9 logs) has the CE's
+.rdata/.data sizes, .text 0x30 longer and everything after it 0x20 later; its campaign
+equals the CE's except the LIBEATOR section (same size). The map costs 0.27 s (MP, release build) per start of another build.
+After 0.1.12 (issue #9, EU MP log 2026-10-27): 9899/11493 unchanged, 1094 entry only, 500
+missing, 31 port addresses missed (Direct3D_CreateDevice among them). Cause: the hash
+masked any 4 bytes that read as an image address, left to right, so a window across
+two instructions (85 C9 C7 06 00 = test ecx,ecx; mov [esi],0x003bc800 reads 0x0006c7c9)
+hid the real address after it, and once the data moved the masks differed. Library code
+(D3D/DSOUND/XNET, same in SP and MP at other addresses): 102 of 375 functions differed.
+Now the hash decodes x86 instructions (release_map.cpp `decode`) and masks rel32 and 32-bit
+operands that read as addresses, plus jump-table dwords: 14 of 375 differ (constants
+inside one image's range only). A head match must land in the section of the same name,
+and functions still unmatched are tried at their section's offset (the MP_* map sections
+are code alike, so their heads are not unique; 0.1.12's odd MP_* offsets in the EU log were
+matches into other map sections). CE MP: 11493/11493. Signatures regenerated. Map now
+0.8 s (MP, release build).
+After 0.1.13 (EU MP log 2026-10-28): 11468 unchanged, 18 entry only, 7 missing; only 3
+port addresses missed: D3D device pointer/render states/texture states (0x32a358,
+0x32a368, 0x327ca8). The SDK libraries keep their variables after their code in the
+same section (D3D 0x3262d0-0x32b77c is one "function" symbol of data, changed there), and
+data references were only recorded for data sections. Now references to any in-image
+address are recorded; an address inside a changed code-section symbol (not its start)
+is looked up like data, bounded by that symbol. Their sites are in .text that the EU
+log shows unchanged (+0x0). Signatures regenerated (MP 19010 / SP 44805 references). CE
+MP still 11493/11493, all found. EU not yet confirmed by the reporters.
+Issue #14 (2026-10-28, for 0.1.14): key bindings. input/bindings.h: 22 actions (the
+default layout's pad controls + move/look keys), 2 inputs each (keys, mouse 1-5, wheel
+up/down/either); settings.ini `keys = action=input ...` (only changed actions) ->
+`--keys`; sdl_devices reads them, then the style remap as before; key prompts show each
+action's first input. Launcher Controls tab: table, click + press, right-click clears,
+a key moves from the action that had it; menu keys/Esc/Tab/F10-F12 fixed.
+bindings_test. User-tested (melee on mouse 5). 0.1.14 published 2026-10-28; issues #9/#14 answered.
+Open: under Wine, the Windows ctest's kernel tests (audio, critical_section, dispatcher,
+filesystem, memory) fail at start with "cannot reserve contiguous memory at 80000000"
+in both Windows presets (the packaged loader runs fine: its stub reserves the ranges
+first). Not caused by 0.1.14's changes (no xbox/ code touched); not yet checked
+whether it predates them or comes from the Wine version.
+Issue #10: pictures wider than 16:9 (`--aspect 21:9` etc., launcher choices marked
+experimental), campaign only, see docs/rendering.md "Wider than 16:9". The PC menu (`
+key, Dear ImGui in-game) with a field of view slider (campaign; issue #5), docs/rendering.md.
+Next candidates:
 1. Multiplayer between two PCs, and v0.1.1 on real Windows (firewall prompt).
 2. The full native build plan + a list of every game-code patch and its intent (asked for).
 3. Heavy fights at 60 fps (mission 5 town), missions 7-13 playtests.
