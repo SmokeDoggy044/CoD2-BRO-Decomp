@@ -27,23 +27,30 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
-**Resume here (decomp, 2026-10-28, day 26): module pushes - collision complete, server nearly, matched 2564 -> 2616/16517.**
-- Collision complete (push-coll): every function decompiled; 15 set aside (14 dead, AtExit_FreeWorldTrees), CM_DrawWorldTreeDebug
-  debug-only; CM_RayHitsWorldMeshes live but not reached (vehicle wheel traces all took CM_RetestCachedMeshTriangle).
-- Server (push-srv): 26 decompiled + tested; trace walkers' box w-lane stale stack accepted (CM_TempBoxModel copies stack
-  slots it never writes); pre-fix rows of SV_PacketEvent/SV_UserMove/SV_InitGameProgs/SV_RestartClient dropped. Open:
-  SV_ClientCommand (indirect via VM_Call, not reached) and 8 inconclusive on title file I/O / SndHw host code (SV_SpawnServer,
-  SV_Map_f, SV_MapRestart, SV_Shutdown*, SV_RestartGameProgs, SV_CheckAutosave, SV_LoadLastSave_f) - same XAPI file stand-ins
-  question as the client. Second push: SV_Trace 959/0 and SV_LocationalTrace 80/0 (forced, empty candidate lists) after
-  frame-rebuild entries (callees at the original's ESP); SV_SpawnServer written the same way (SpawnFrame::call). Loading-bar
-  steps 0x00313240/0x003134e0/0x00313790 (chapters 6-8 / 1-5 / 9+, EAX + pushed fraction, ret 4) still unnamed.
-- Names applied: CM_SectorTree_UnlinkOwner_r, CM_RetestCachedMeshTriangle, FxSystem_FreeLevel, SV_GameRestartFrame,
-  SV_ClearWorld, SV_FreeClientFrames, SV_ClearServer, SndBankList_IsLoaded (sound module, sort later), LevelPersist_Free;
-  0x002aa480 MSG_ReadString -> MSG_ReadStringLine.
+**Resume here (decomp, 2026-10-28, day 26): module pushes, matched 2564 -> 3031/16517.**
+- Complete (every function rewritten, tested or set aside): collision, streaming, xanim, cgame, zlib (+ renderer
+  from day 25). Coordinated pushes: one worktree + fresh agent per module push (briefs in cod_bro/wt/).
+- Sound: all C; left 4 vtable-only SoundMenu functions (need a live sound-options menu), S_FreeLevelSounds (not
+  reached), S_WaitForWaveBanks (unhookable: loops into its prologue).
+- Server: SV_ClientCommand (not reached, indirect via VM_Call) + SV_SpawnServer, SV_Map_f (wait on the title's file
+  request thread, then D3D/input host code) + 6 shutdown/restart/save functions no run reaches.
+- Harness today: pass-through file calls and sound calls in test processes (docs/comparison-harness.md "File calls",
+  "Sound calls"), resume slot zeroed, hook refuses branches into its own prologue (6 functions now unhookable),
+  --force: 32 words, nested reads, E*N, ?A=B, XBCMP_POKE, XBCMP_ORIGINAL_TWICE determinism runs. Gap entries
+  whose callees read files need gaps of at least 0x30000.
+- Still inconclusive by host code: D3D getters (nglTextureGetSurfaces), XPP input (IN_Frame, rumble), the file
+  request thread. A renderer/input stand-in would be next if wanted.
+- zlib: zlib 1.1.4 + unzip 0.15 (Q3 copy) in zlib.cpp/unzip.cpp; manual e2e test tests/zlib_e2e (not in CMake).
+- Names applied in Ghidra today: ~50 (manual_names.csv rows dated 2026-10-28); S_StopAllChannels -> S_UpdateChannels,
+  MSG_ReadString (0x002aa480) -> MSG_ReadStringLine. Gap functions stay uncreated; their names live in functions.csv.
+- Unnamed callees seen: FUN_003134e0/00313240/00313790 (front-end loading-bar steps, chapters 1-5/6-8/9+),
+  FUN_0024bce0 (CG_EntityEvent 0xc5), FUN_002e2e40 (prone yaw limit?).
+- Gap 0x00376670: static initializer (table 0x008976dc) setting 0x009638b0 = 42.5f, not created.
+- Next (user to pick): qcommon (727 left), client leftovers (288), game (1348), script; or D3D/input stand-ins.
+
 - Quat_Slerp NaN payloads (user, 2026-10-28: leave until the switch to Replaced): with NaN in both terms of the final
   add(mul(la,w0), mul(lb,w1)) GCC's swapped commutative SSE operands return b's payload, the original a's; fix = a
   fixed-destination addps/mulps helper in lanes.h. Settled 647/647 in game.
-- Gap 0x00376670: static initializer (table 0x008976dc) setting 0x009638b0 = 42.5f, not created.
 
 **Resume here (decomp, 2026-10-27, day 25): renderer complete, matched 2536 -> 2564/16517.**
 - Done today: leftovers sorted (mslib ranges, module_hints.csv via tools/sort_unnamed.py, 74 static initializers named);
