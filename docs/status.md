@@ -41,6 +41,7 @@ runs (only a front-end text dialog calls them). Next:
 - Online module set aside (user, 2026-10-27): all 27 (21 named, 6 unnamed by module hint inside the Live block 0x00220de0-
   0x00224a50 + 0x0002ba90-0x0002bce0) in set_aside.csv kind `live`, not decompiled; set-aside now also applies to
   functions without C, and FUN_ names never count as named. Our own engine has no Live code at all.
+- README progress table: one row per module (user, 2026-10-27), so each push maps onto one row.
 - Plan for the next sessions (user, 2026-10-27): name and decompile module by module in big concentrated pushes - one
   module to complete (named, sorted, decompiled, tested or set aside), then the next.
 
