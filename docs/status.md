@@ -66,9 +66,10 @@ runs (only a front-end text dialog calls them). Next:
   +0x14 is an apsPtrVector), nglRestoreRenderStates (ecx=0x00902f08), nglGenerateRenderTargetMips (scene:, the scene's
   render target [[0x0090259c]+0x2f8]), RE_ParseButtonToken and nglMaterial_LoadTextureRef (`&N`, new). Matched 2524 -> 2534.
   Left: nglSkipList_RemoveIndirect (offline 1821 matched, 84%: the unlink loop needs a consistent list; the mesh
-  managers' +4 list nodes do not hold object pointers at +0 as read - check the node layout in Ghidra), FxOpdd_AddToList
+  managers (0x14 bytes, list embedded at +4, Ghidra nglInitMeshManagers) have live first nodes whose key 0x8383ecb8 is
+  unreadable even in the main process - find which list is indirect in practice, or build consistent skip lists in leaf_test), FxOpdd_AddToList
   (op dd exists in mission 11 data; needs an op object at the scene site), nglCreateNormalCubeMap / nglLockPalette (D3D
-  resource creation / lock: host code, inconclusive at best - same class as the boot functions).
+  resource creation / lock: host code - not tested by decision, user 2026-10-27, like the boot functions).
 - Offline coverage (tests/leaf_test LEAF_REACHED=DIR, new): nglFreeFileBuffer 86% = everything but the two tail jumps
   through file-hook pointers 0x009098dc/0x009098ec (set only by FUN_000938f0 from Sys_Main); RE_ParseButtonToken 46% =
   no random string holds both '{' and '}'. Coverage per LEAF_SEED is not reproducible across LEAF_ONLY sets.
