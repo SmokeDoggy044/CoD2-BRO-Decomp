@@ -40,6 +40,11 @@ runs (only a front-end text dialog calls them). Next:
   get named as each module's decompile reaches them; the 63 left without a hint are mostly caller-less (vtable/table
   slots or dead) and sit between modules - sort them when read.
 - Rerun after renames: `progress.py`, `sort_unnamed.py`, `progress.py --readme`.
+- At the renderer's switch to Replaced (user, 2026-10-27: fix then, not before; the native build replaces the patches
+  later): the 60 fps patch breaks - its nglSetVBlankMode entry jump is overwritten by the Replaced hook (installed
+  after the patches, main.cpp), and its movie-wait thunk sits on tail jumps inside nglVBlankCallback +0x2d and
+  nglDrawFpsCounter +0x258 that the C versions don't run. Fix: install it after the Replaced hooks, move the movie check
+  to nglWaitFrameInterval's entry. Also `--force "scene:"` (hook inside R_RenderView +0x21a) stops firing once R_RenderView is C.
 
 **Renderer finish, 2026-10-27 (day 25), in progress:** renderer left = 32 untested + 7 boot-inconclusive (live only).
 - Forced calls (build/compare/force_r1-r3): FX_FindEvictableEffect 30/30 (`FX_FindEvictableEffect([[[[0x95f630]+0x5c]+0xd4]+4])?[0x98880c]`),
@@ -186,6 +191,8 @@ Open:
   float->int/saturation or NaN case compiled differently at -O2); the -O0 linux-loader build shows none (same
   mission-1 run, build/compare/rst_*). Find the writer in nglRenderSceneTree's subtree; matters before Replaced in
   release builds. Keep compare runs on the linux-loader preset until then (steered runs used release for frame rate).
+  Rechecked 2026-10-27 (build/compare/rst2_release, release, mission 1, --only --every 1): 28205 tests, 0 drift - gone
+  since the -frounding-math constant fixes; the 5632 mismatches are all the accepted constant lane (word 21).
 
 **Renderer testing, 2026-10-25 (day 23), in progress:**
 - Group 1 sweep, missions 0,2,3,7,8 (build/compare/r146a, --only the 146, --every 1): only cdOcean_SetWaveOrigin and
