@@ -38,7 +38,8 @@ LoadingMenu_SetMissionRange, AdvancedOptionsMenu_ResetDefaults, InGameScreens_Co
   full / unformatted / corrupt save device - prepared data folders, not steering.
 - Collector's-edition screens (SpecialConcept/MaterialsMenu, FE_BonusCE*, FE_SetupSpecial*): the CE XBE is another binary
   ("Collectors editions/", hash differs) - not testable with this build's addresses.
-- Xbox Live screens (InGameLiveOptionsMenu, XboxLiveMenu): need a Live sign-in.
+- Xbox Live screens (InGameLiveOptionsMenu, XboxLiveMenu): set aside (user, 2026-10-27: Live is defunct, no sign-in), kind
+  `live` in tools/data/set_aside.csv.
 - console commands / CL_Shutdown: exec_sweep / --force. MovieVid_Predict{FieldMotion,DualPrime}: MPEG-2 modes the
   shipped movies may not use - offline test. The rest: UIText/UIMenu/UITextTable helpers of screens not visited.
 
