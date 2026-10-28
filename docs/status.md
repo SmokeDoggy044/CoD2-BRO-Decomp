@@ -27,6 +27,20 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
+**Sorting the leftovers, 2026-10-27 (user: option b + provisional sorting):** unsorted .text 2,633 -> 63.
+- Microsoft library blocks the signature matcher missed are now sorted by address range into `mslib`
+  (modules.csv): XGRAPHICS TrueType rasteriser 0x2bfa1-0x423ad (328 unnamed), XVOICE/UIX 0xd27b9-0x1199d0,
+  XAPILIB/LIBCMT 0x1e6d14-0x1fa3d5, LIBCMT __CI* 0x33ac80, UIX atexit destructors 0x379dfb. Library-named functions
+  nothing else sorts go to `mslib` too. They stay unnamed (Microsoft code, replaced, not rewritten).
+- 74 C++ static initializers and atexit destructors (0x372ef0-0x379e70, no direct callers: the CRT init table and
+  _atexit) named `StaticInit_*` / `AtExit_*` / `CrtInitStub_*` from the globals they fill or free, module from those
+  globals' readers (manual rows in tools/data/module_hints.csv).
+- Provisional modules for 423 unnamed game functions: `tools/sort_unnamed.py` writes auto rows of module_hints.csv from
+  the neighbours in address order and the sorted .text callers (prefix rules still win once a function is named). They
+  get named as each module's decompile reaches them; the 63 left without a hint are mostly caller-less (vtable/table
+  slots or dead) and sit between modules - sort them when read.
+- Rerun after renames: `progress.py`, `sort_unnamed.py`, `progress.py --readme`.
+
 **Renderer finish, 2026-10-27 (day 25), in progress:** renderer left = 32 untested + 7 boot-inconclusive (live only).
 - Forced calls (build/compare/force_r1-r3): FX_FindEvictableEffect 30/30 (`FX_FindEvictableEffect([[[[0x95f630]+0x5c]+0xd4]+4])?[0x98880c]`),
   FX_PruneComponents settled 120/120 (`esi=[[0x95f5b4]+4]` / `+8`, `?[[0x95f5b4]]`: the active-effect list FX_UpdateEffects
