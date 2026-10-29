@@ -51,6 +51,13 @@ kept original: the three 1-byte stubs (SndArena_EmptyStub, SndSys_EmptyStub, Snd
 overwrite the next function) and S_WaitForWaveBanks (C never tested). Replaced installs only on the supported build
 (release map identity, compare_linux/win32.cpp): the C uses its addresses throughout, so another release keeps its
 own code. Smoke runs (tools/smoke_test.sh, missions 4/1/6, 120 s): no warnings or errors, gameplay reached.
+Steered listening run (release, the user's settings): crash in mission 0 when a squad mate starts talking,
+G_EntityRunNotifyCallbacks reading ECX = faca5d86 (reproduced). Cause: our Scr_Notify and Scr_QueueNotify
+(g_scr_runtime.cpp) called it as stdcall without its callback block in ECX ([ent+0x234]); the -O0 build happened
+to leave it there (386 matched tests), -O2 did not. Now thiscall with the block. They first ran live because the
+Replaced sound C calls them directly. Scan of all 426 title functions the C calls without register arguments:
+no other real case (the rest were rdtsc writes and jump-table bytes the linear scan reads as code).
+XBCMP_ORIGINALS=1 or =name,name keeps originals in place of Replaced functions (finding which one breaks).
 Next: step 2, our own audio interface in place of these DirectSound calls. platform_x87_log10_mul_ftol
 (compiler.h) now holds the volume conversion that was inline asm in movie.cpp.
 
