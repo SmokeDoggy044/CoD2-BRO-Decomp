@@ -32,7 +32,8 @@ patch fix (the patch disappears with native pacing). Stages: 1 inventory of the 
 [renderer-inventory.md](renderer-inventory.md), tools/d3d_inventory.py); 2 our graphics interface + a D3D9 back end with
 the same picture (screenshot diffs); 3 native 60 fps and beyond; then D3D11, Vulkan, D3D12 (Vulkan/D3D12 nearer the native
 build); extras as they come easily; texture pack stays on hold. Found by step 1: 8 unnamed FX draw functions
-0x000a7930-0x000ac3b0 (vtable slots, "unassigned") still call D3D - the renderer is not D3D-complete without them.
+0x000a7930-0x000ac3b0 (vtable slots, "unassigned") still called D3D - decompiled the same day (FxOp*_Draw thunks +
+FxOp*_DrawQuads, one shared body in fx_load.cpp): 10 of 16 matched, 6 (dd/d5/5b) set aside, no shipped data.
 The 60 fps fix notes below (day 25) are obsolete.
 
 **Resume here (decomp, 2026-10-28, day 26): module pushes, matched 2564 -> 3031/16517.**
