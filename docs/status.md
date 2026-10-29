@@ -72,7 +72,7 @@ The 60 fps fix notes below (day 25) are obsolete.
 - Open: Cvar_Restart_f/Reset_f/SetA_f/SetS_f, Cmd_Vstr_f need argv for --force; ResourceManager_Destruct;
   Cvar_WriteNamedValues (writes a file); 12 DynArray/std_list/Pak/Angle*Quantized never reached (callees hit the XAPI heap).
 - Ghidra to check: FUN_00222f70 = empty-queue tail of Sys_GetEvent (merge into it); FUN_00297a69/00297bdf after FS_Write
-  (no callers, boundaries?); Bounds_AddPointSimd 0x0029ea20 dead candidate (pointer search not run).
+  (no callers, boundaries?); Bounds_AddPointSplit 0x0029ea20 dead candidate (pointer search not run).
 - Fields: DynArray {data, capacity, size}; HashMap head +0x08, buckets +0x14, mask +0x20, max_index +0x24, index
   (key ^ 0xdeadbeef) & mask; event queue 0x0095e800 (64 x 24), head 0x0095e7f4, tail 0x0095ee04; cheats 0x00954f34.
 - Renderer: apsOrientToVelocity (fx.cpp) still mismatches offline (438/1002, rest drift; suspect Mat44_FromDirection, 11
