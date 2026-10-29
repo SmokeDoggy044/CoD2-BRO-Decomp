@@ -46,6 +46,11 @@ OnRight/UpdateSliders/Construct/RestoreSelection matched; SoundMenu_Draw mismatc
 takes the row limit: 1 for the sound menu, 5 for gameplay/controller): 460/460. Third run (soundmenu_user3: menu, then a mission
 start, which frees the front-end menus): SoundMenu_Dtor/DeletingDtor matched, SndHw_Update 4137 more every-call
 tests, all matched. The sound module is complete: everything tested except S_WaitForWaveBanks (unhookable).
+**First Replaced module (user, 2026-10-29): sound.** 126 functions run instead of the originals (Status::Replaced);
+kept original: the three 1-byte stubs (SndArena_EmptyStub, SndSys_EmptyStub, Snd_Printf: a 5-byte jump would
+overwrite the next function) and S_WaitForWaveBanks (C never tested). Replaced installs only on the supported build
+(release map identity, compare_linux/win32.cpp): the C uses its addresses throughout, so another release keeps its
+own code. Smoke runs (tools/smoke_test.sh, missions 4/1/6, 120 s): no warnings or errors, gameplay reached.
 Next: step 2, our own audio interface in place of these DirectSound calls. platform_x87_log10_mul_ftol
 (compiler.h) now holds the volume conversion that was inline asm in movie.cpp.
 
