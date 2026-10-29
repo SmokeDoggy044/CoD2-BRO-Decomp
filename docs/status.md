@@ -27,6 +27,76 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
+**Own renderer, 2026-10-28 (user):** the renderer is replaced by our own instead of switching to Replaced with a 60 fps
+patch fix (the patch disappears with native pacing). Stages: 1 inventory of the graphics library use (done:
+[renderer-inventory.md](renderer-inventory.md), tools/d3d_inventory.py); 2 our graphics interface + a D3D9 back end with
+the same picture (screenshot diffs); 3 native 60 fps and beyond; then D3D11, Vulkan, D3D12 (Vulkan/D3D12 nearer the native
+build); extras as they come easily; texture pack stays on hold. Found by step 1: 8 unnamed FX draw functions
+0x000a7930-0x000ac3b0 (vtable slots, "unassigned") still called D3D - decompiled the same day (FxOp*_Draw thunks +
+FxOp*_DrawQuads, one shared body in fx_load.cpp): 10 of 16 matched, 6 (dd/d5/5b) set aside, no shipped data.
+The 60 fps fix notes below (day 25) are obsolete.
+
+**qcommon push 4 (2026-10-29, day 27): 94 functions, 0 mismatches, matched 3273 -> 3352/16531, qcommon 498 -> 420.**
+- Low: 11 manager *_DeletingDtor (forced on stack objects, only the "not registered" path), all ResourceManager_Create*,
+  DynArray/PtrVector/std_list helpers, ShortString/FixedStr64_Printf. High: Com_GetEvent, MatrixToAngles/AxisToAngles, Pak
+  zones, MemContext_*_r, Quat/Mat44, Loc_GetString/TranslateString, Profile_Copy, Com_Shutdown (forced).
+- Ghidra: DynArray_AllocIntsZeroed(_2) extended past their inline int3 to ret 8 / ret 4; created AlignedAllocator_DeletingDtor
+  0x00094100, Pak_HasZoneNamed 0x0028e0b0, FxComponentB_IsOwnerGone 0x0029d620 (renderer, live vtable slot, NO C yet -
+  renderer not complete until it has C), Vec3_RotateByAngles 0x002a2560 (dead). Duplicate names fixed: 0x0029ea20 ->
+  Bounds_AddPointSplit (0x00029380 keeps Bounds_AddPointSimd), 0x00094120 -> AlignedAllocator_Alloc (0x0009be80 keeps apsAlloc).
+- Set aside: Com_Freeze_f (debug: spins on Com_Milliseconds), Sys_GetStackBounds (boot), HandleTable512/EntHandleTable_
+  ReportFull (debug), 7 dead. FUN_0001ec40 = level-manager vtable 0x00832614 slot 0 (unassigned).
+- Fields: manager table 0x009719fc (count 0x009719f8, max 20); std::string 0x1c B (+4 buffer, +0x14 size, +0x18 capacity);
+  DynArray ints from SmallHeap 0x0095f4a4 else heap 0x0095f4a0; memory context heaps +0x90 (count +0x8c), children +0xc4.
+- Left low: File_ init/pumps, std_string/map/set/tree rows, FUN_ 20b80/20fd0/21670/21a00/21b30/21ee0/22460/28bd0/28ed0/d19e0,
+  Save_*, HashMap/HashStr inserts, handle-table allocs. Left high: FS_FOpenFile*/ReadFile/Seek/Startup/AddGameDirectory,
+  FS_Printf, Cmd_/Cbuf_, Com_Frame/Init/EventLoop, RotatePointAroundVector, Matrix_Orthonormalize, Loc_ parsers,
+  ProfileSave callbacks, templates, FUN_002a9c10/0031ac60/002c5780/002c5ac0.
+
+**qcommon push 3 (2026-10-28, day 26 late): 87 functions, 0 mismatches, matched 3202 -> 3273/16527, qcommon 560 -> 498.**
+- Low: dlmalloc heap (Heap_EnsureInit = malloc_consolidate, Heap_FreeBlock = free), SmallHeap, File_ requests. High:
+  vectoangles family, Pak zones, MemContext, event journal, Netchan_Process/Transmit, Loc_, profiles.
+- Ghidra boundaries fixed (user: "we want our work to be correct"): FUN_00222f70 merged into Sys_GetEvent; Heap_InitBins
+  split out of Heap_EnsureInit; FUN_00297bdf replaced by FS_FilesAreEqual 0x00297b90; 12 functions created (Heap_Alloc16_2,
+  Heap_Mallopt/Valloc/Pvalloc/IndependentCalloc/Comalloc, File_OpenMode7/GetSizeByName/QueueRequestMaybeAlt/ReadAtAlt,
+  Msg_TransmitWithEOF split from Mat43_UntransformPoint). Total 16516 -> 16527. Heap_Free/Z_Malloc/Heap_AllocAligned were
+  already right (the inline int3 sits inside their bodies). default_xbe_signatures/matchdata lack the new functions.
+- Fields: dlmalloc state 0x494 B x 8 heaps from 0x008ff638 (top +0x2c, bins +0x34, binmap +0x434); SmallHeap pools 0x28 B;
+  Pak 0x0095f638; Netchan sock +0, remote +8, in seq +0x20, out seq +0x24; loopback 0x00928590 (0x93c per side).
+- Left low: File_ init/pumps (FUN_000c9530/9880/ca150/ca250), STL rows + ~15 FUN_, Save_/ResourceManager_/DeletingDtor rows.
+  Left high: FS_FOpenFile*/ReadFile/Seek/Startup/AddGameDirectory, Cmd_/Cbuf_, Com_Frame/Init/EventLoop/Filter,
+  RotatePointAroundVector, Quat/Mat44 helpers, Loc_ parsers, Noise_Init, Profile_Copy, templates, FUN_ rows.
+
+**qcommon push 2 (2026-10-28, day 26 night): 93 functions + 5 forced console commands, 0 open mismatches, matched 3120 -> 3202, qcommon 641 -> 560.**
+- Low (qcommon_core.cpp): math, Save_, File_/HandlePool. High (qcommon_fs.cpp): q_math, Loc_ text classifiers, FS file handles,
+  Cvar_SetA/SetS/Restart_f, Cmd_Vstr_f, Cvar_Toggle_f forced with cmd_argc/argv poked.
+- Save_PortToDevice: 9 offline mismatches, all port 8 (original reads past its 6-entry table into its return address;
+  both callers handle port 8 first) - accept at the switch. Quat_RotationBetween: NaN-payload only (as Quat_Slerp); it
+  builds a 4x4 matrix, rename to Mat44_RotationBetweenVectors to consider.
+- Set aside: XAPI device layer + Save_CalculateSignature (host), Cvar_Reset_f (kind `crash`: original strlen(NULL)),
+  dead Vec3_Scale, Vec3Distance, Q_strncmp, gap FS_FilesAreEqual 0x00297b90.
+- Ghidra: FUN_00297a69 merged into FS_Write (body 0x00297a60-0x00297ae2, done 2026-10-28).
+- Fields: SaveRequest names[8][64] +0, cursor +0x240, count +0x244; HandlePool data +0, free +4, used +0x10, stride +0x1c,
+  count +0x20, mask +0x24 (handle bit 31 = free); file records 36 B at 0x920820; requests 0x44 B at 0x920810.
+- Left low: Heap_Free/Heap_*, File_Open/QueueRead/Pump, std_string/map/list, ~15 FUN_ (STL static init, tree erase/insert,
+  FileSystem init 0xc9530/0xc9880, device pumps). Left high: FS_FOpenFile*/ReadFile/Seek/Startup, Cmd_/Cbuf_, Com_Frame/Init/
+  EventLoop, Netchan_Process/Transmit, Pak_*, MemContext_*, Profile*, vectoangles family, Loc_ parsers, templates, 9 FUN_.
+
+**qcommon push 1 (2026-10-28, day 26 evening): 111 functions, 0 mismatches, matched 3036 -> 3120/16517, qcommon 727 -> 641.**
+- Split by address over two worktrees: < 0x170000 -> game/code/qcommon_core.cpp, >= 0x170000 -> qcommon_fs.cpp
+  (qcommon.cpp untouched). 18 names applied in Ghidra; jmp thunks, sub-5-byte stubs (kind `unhookable`), Sys_DebugBreak,
+  Sys_ReadTimeStamp (dead), Mem_InitLargeBlockPools (boot) in set_aside.csv.
+- Open: Cvar_Restart_f/Reset_f/SetA_f/SetS_f, Cmd_Vstr_f need argv for --force; ResourceManager_Destruct;
+  Cvar_WriteNamedValues (writes a file); 12 DynArray/std_list/Pak/Angle*Quantized never reached (callees hit the XAPI heap).
+- Ghidra to check: FUN_00222f70 = empty-queue tail of Sys_GetEvent (merge into it); FUN_00297a69/00297bdf after FS_Write
+  (no callers, boundaries?); Bounds_AddPointSplit 0x0029ea20 dead candidate (pointer search not run).
+- Fields: DynArray {data, capacity, size}; HashMap head +0x08, buckets +0x14, mask +0x20, max_index +0x24, index
+  (key ^ 0xdeadbeef) & mask; event queue 0x0095e800 (64 x 24), head 0x0095e7f4, tail 0x0095ee04; cheats 0x00954f34.
+- Renderer: apsOrientToVelocity (fx.cpp) still mismatches offline (438/1002, rest drift; suspect Mat44_FromDirection, 11
+  offline mismatches on record) - renderer not fully clean.
+- Next low half starts at Vec3A_Normalize (float math) through the File_/HandlePool/Save_ group at 0xd0c40; Heap_Free
+  (tail-jumps 0x43260).
+
 **Resume here (decomp, 2026-10-28, day 26): module pushes, matched 2564 -> 3031/16517.**
 - Complete (every function rewritten, tested or set aside): collision, streaming, xanim, cgame, zlib (+ renderer
   from day 25). Coordinated pushes: one worktree + fresh agent per module push (briefs in cod_bro/wt/).
