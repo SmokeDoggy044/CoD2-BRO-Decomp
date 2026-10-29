@@ -27,6 +27,33 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
+**Own audio backend, 2026-10-29 (user): audio first, then the renderer, both staged on the loader's `beta` branch.**
+Goal: better than the original, with one setting that keeps the original sound or turns on our improvements
+(per-level reverb, surround/HRTF, occlusion, more voices, better resampling). Per-category volume and output
+device are plain settings. Found: the retail game has no working reverb. Level scripts send `reverb "%s" %g %g`
+(GScr_SetReverb 0x002fc9d0), the shell-shock mix hands an I3DL2-style preset to the empty 0x000c72f0, and no
+SetI3DL2Listener is linked, so reverb is a cut feature we restore. Step 1: the DirectSound boundary layer in C
+(set aside on 10-28, now reversed). Done: SndHw_Update, SndVoice_SetMixBins, SndVoice_SetupBuffer,
+SndStream_SetFormat/Update/ReadPacket (snd.cpp "Hardware voices"), 967 tests, all matched. The startup path
+(SndSys_Init, SndSys_InitDirectSound, SndSys_CreateVoiceBuffers, SndSys_InitDevice) is on branch snd_boot.
+Fixed the same day: SndHw_Update mismatched 5 of 5723 every-call tests on one host byte; it was the padding
+byte after audio::Format's 8-bit codec, copied from a Format built on the stack (stale bytes differ between our
+frame and the original's). Codec is 16 bits now, Format has no padding: 4474/4474 every-call tests clean. Found by
+bisecting (C calling the original children: SndStream_SetFormat) and dumping the words around the host address.
+Steered sound-menu runs (build/compare/soundmenu_user, soundmenu_user2; release, copy of the saves): SoundMenu_OnLeft/
+OnRight/UpdateSliders/Construct/RestoreSelection matched; SoundMenu_Draw mismatched on the help-bar stack word
+0x100006a8 like the other options Draws, fixed with DRAW_GAP_ENTRY (now in fe_options.h with set_help_bar_at, which
+takes the row limit: 1 for the sound menu, 5 for gameplay/controller): 460/460. Third run (soundmenu_user3: menu, then a mission
+start, which frees the front-end menus): SoundMenu_Dtor/DeletingDtor matched, SndHw_Update 4137 more every-call
+tests, all matched. The sound module is complete: everything tested except S_WaitForWaveBanks (unhookable).
+**First Replaced module (user, 2026-10-29): sound.** 126 functions run instead of the originals (Status::Replaced);
+kept original: the three 1-byte stubs (SndArena_EmptyStub, SndSys_EmptyStub, Snd_Printf: a 5-byte jump would
+overwrite the next function) and S_WaitForWaveBanks (C never tested). Replaced installs only on the supported build
+(release map identity, compare_linux/win32.cpp): the C uses its addresses throughout, so another release keeps its
+own code. Smoke runs (tools/smoke_test.sh, missions 4/1/6, 120 s): no warnings or errors, gameplay reached.
+Next: step 2, our own audio interface in place of these DirectSound calls. platform_x87_log10_mul_ftol
+(compiler.h) now holds the volume conversion that was inline asm in movie.cpp.
+
 **Own renderer, 2026-10-28 (user):** the renderer is replaced by our own instead of switching to Replaced with a 60 fps
 patch fix (the patch disappears with native pacing). Stages: 1 inventory of the graphics library use (done:
 [renderer-inventory.md](renderer-inventory.md), tools/d3d_inventory.py); 2 our graphics interface + a D3D9 back end with
