@@ -36,6 +36,10 @@ SetI3DL2Listener is linked, so reverb is a cut feature we restore. Step 1: the D
 (set aside on 10-28, now reversed). Done: SndHw_Update, SndVoice_SetMixBins, SndVoice_SetupBuffer,
 SndStream_SetFormat/Update/ReadPacket (snd.cpp "Hardware voices"), 967 tests, all matched. The startup path
 (SndSys_Init, SndSys_InitDirectSound, SndSys_CreateVoiceBuffers, SndSys_InitDevice) is on branch snd_boot.
+Fixed the same day: SndHw_Update mismatched 5 of 5723 every-call tests on one host byte; it was the padding
+byte after audio::Format's 8-bit codec, copied from a Format built on the stack (stale bytes differ between our
+frame and the original's). Codec is 16 bits now, Format has no padding: 4474/4474 every-call tests clean. Found by
+bisecting (C calling the original children: SndStream_SetFormat) and dumping the words around the host address.
 Next: step 2, our own audio interface in place of these DirectSound calls. platform_x87_log10_mul_ftol
 (compiler.h) now holds the volume conversion that was inline asm in movie.cpp.
 
