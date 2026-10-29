@@ -36,6 +36,21 @@ build); extras as they come easily; texture pack stays on hold. Found by step 1:
 FxOp*_DrawQuads, one shared body in fx_load.cpp): 10 of 16 matched, 6 (dd/d5/5b) set aside, no shipped data.
 The 60 fps fix notes below (day 25) are obsolete.
 
+**qcommon push 1 (2026-10-28, day 26 evening): 111 functions, 0 mismatches, matched 3036 -> 3120/16517, qcommon 727 -> 641.**
+- Split by address over two worktrees: < 0x170000 -> game/code/qcommon_core.cpp, >= 0x170000 -> qcommon_fs.cpp
+  (qcommon.cpp untouched). 18 names applied in Ghidra; jmp thunks, sub-5-byte stubs (kind `unhookable`), Sys_DebugBreak,
+  Sys_ReadTimeStamp (dead), Mem_InitLargeBlockPools (boot) in set_aside.csv.
+- Open: Cvar_Restart_f/Reset_f/SetA_f/SetS_f, Cmd_Vstr_f need argv for --force; ResourceManager_Destruct;
+  Cvar_WriteNamedValues (writes a file); 12 DynArray/std_list/Pak/Angle*Quantized never reached (callees hit the XAPI heap).
+- Ghidra to check: FUN_00222f70 = empty-queue tail of Sys_GetEvent (merge into it); FUN_00297a69/00297bdf after FS_Write
+  (no callers, boundaries?); Bounds_AddPointSimd 0x0029ea20 dead candidate (pointer search not run).
+- Fields: DynArray {data, capacity, size}; HashMap head +0x08, buckets +0x14, mask +0x20, max_index +0x24, index
+  (key ^ 0xdeadbeef) & mask; event queue 0x0095e800 (64 x 24), head 0x0095e7f4, tail 0x0095ee04; cheats 0x00954f34.
+- Renderer: apsOrientToVelocity (fx.cpp) still mismatches offline (438/1002, rest drift; suspect Mat44_FromDirection, 11
+  offline mismatches on record) - renderer not fully clean.
+- Next low half starts at Vec3A_Normalize (float math) through the File_/HandlePool/Save_ group at 0xd0c40; Heap_Free
+  (tail-jumps 0x43260).
+
 **Resume here (decomp, 2026-10-28, day 26): module pushes, matched 2564 -> 3031/16517.**
 - Complete (every function rewritten, tested or set aside): collision, streaming, xanim, cgame, zlib (+ renderer
   from day 25). Coordinated pushes: one worktree + fresh agent per module push (briefs in cod_bro/wt/).
