@@ -36,6 +36,21 @@ build); extras as they come easily; texture pack stays on hold. Found by step 1:
 FxOp*_DrawQuads, one shared body in fx_load.cpp): 10 of 16 matched, 6 (dd/d5/5b) set aside, no shipped data.
 The 60 fps fix notes below (day 25) are obsolete.
 
+**qcommon push 2 (2026-10-28, day 26 night): 93 functions + 5 forced console commands, 0 open mismatches, matched 3120 -> 3202, qcommon 641 -> 560.**
+- Low (qcommon_core.cpp): math, Save_, File_/HandlePool. High (qcommon_fs.cpp): q_math, Loc_ text classifiers, FS file handles,
+  Cvar_SetA/SetS/Restart_f, Cmd_Vstr_f, Cvar_Toggle_f forced with cmd_argc/argv poked.
+- Save_PortToDevice: 9 offline mismatches, all port 8 (original reads past its 6-entry table into its return address;
+  both callers handle port 8 first) - accept at the switch. Quat_RotationBetween: NaN-payload only (as Quat_Slerp); it
+  builds a 4x4 matrix, rename to Mat44_RotationBetweenVectors to consider.
+- Set aside: XAPI device layer + Save_CalculateSignature (host), Cvar_Reset_f (kind `crash`: original strlen(NULL)),
+  dead Vec3_Scale, Vec3Distance, Q_strncmp, gap FS_FilesAreEqual 0x00297b90.
+- Ghidra to fix: FUN_00297a69 is FS_Write's body (merge into FS_Write; the C already covers it).
+- Fields: SaveRequest names[8][64] +0, cursor +0x240, count +0x244; HandlePool data +0, free +4, used +0x10, stride +0x1c,
+  count +0x20, mask +0x24 (handle bit 31 = free); file records 36 B at 0x920820; requests 0x44 B at 0x920810.
+- Left low: Heap_Free/Heap_*, File_Open/QueueRead/Pump, std_string/map/list, ~15 FUN_ (STL static init, tree erase/insert,
+  FileSystem init 0xc9530/0xc9880, device pumps). Left high: FS_FOpenFile*/ReadFile/Seek/Startup, Cmd_/Cbuf_, Com_Frame/Init/
+  EventLoop, Netchan_Process/Transmit, Pak_*, MemContext_*, Profile*, vectoangles family, Loc_ parsers, templates, 9 FUN_.
+
 **qcommon push 1 (2026-10-28, day 26 evening): 111 functions, 0 mismatches, matched 3036 -> 3120/16517, qcommon 727 -> 641.**
 - Split by address over two worktrees: < 0x170000 -> game/code/qcommon_core.cpp, >= 0x170000 -> qcommon_fs.cpp
   (qcommon.cpp untouched). 18 names applied in Ghidra; jmp thunks, sub-5-byte stubs (kind `unhookable`), Sys_DebugBreak,
