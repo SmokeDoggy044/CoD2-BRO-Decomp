@@ -43,8 +43,9 @@ bisecting (C calling the original children: SndStream_SetFormat) and dumping the
 Steered sound-menu runs (build/compare/soundmenu_user, soundmenu_user2; release, copy of the saves): SoundMenu_OnLeft/
 OnRight/UpdateSliders/Construct/RestoreSelection matched; SoundMenu_Draw mismatched on the help-bar stack word
 0x100006a8 like the other options Draws, fixed with DRAW_GAP_ENTRY (now in fe_options.h with set_help_bar_at, which
-takes the row limit: 1 for the sound menu, 5 for gameplay/controller): 460/460. SoundMenu_Dtor/DeletingDtor not
-reached (backing out keeps the screen).
+takes the row limit: 1 for the sound menu, 5 for gameplay/controller): 460/460. Third run (soundmenu_user3: menu, then a mission
+start, which frees the front-end menus): SoundMenu_Dtor/DeletingDtor matched, SndHw_Update 4137 more every-call
+tests, all matched. The sound module is complete: everything tested except S_WaitForWaveBanks (unhookable).
 Next: step 2, our own audio interface in place of these DirectSound calls. platform_x87_log10_mul_ftol
 (compiler.h) now holds the volume conversion that was inline asm in movie.cpp.
 
