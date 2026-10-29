@@ -36,6 +36,20 @@ build); extras as they come easily; texture pack stays on hold. Found by step 1:
 FxOp*_DrawQuads, one shared body in fx_load.cpp): 10 of 16 matched, 6 (dd/d5/5b) set aside, no shipped data.
 The 60 fps fix notes below (day 25) are obsolete.
 
+**qcommon push 3 (2026-10-28, day 26 late): 87 functions, 0 mismatches, matched 3202 -> 3273/16527, qcommon 560 -> 498.**
+- Low: dlmalloc heap (Heap_EnsureInit = malloc_consolidate, Heap_FreeBlock = free), SmallHeap, File_ requests. High:
+  vectoangles family, Pak zones, MemContext, event journal, Netchan_Process/Transmit, Loc_, profiles.
+- Ghidra boundaries fixed (user: "we want our work to be correct"): FUN_00222f70 merged into Sys_GetEvent; Heap_InitBins
+  split out of Heap_EnsureInit; FUN_00297bdf replaced by FS_FilesAreEqual 0x00297b90; 12 functions created (Heap_Alloc16_2,
+  Heap_Mallopt/Valloc/Pvalloc/IndependentCalloc/Comalloc, File_OpenMode7/GetSizeByName/QueueRequestMaybeAlt/ReadAtAlt,
+  Msg_TransmitWithEOF split from Mat43_UntransformPoint). Total 16516 -> 16527. Heap_Free/Z_Malloc/Heap_AllocAligned were
+  already right (the inline int3 sits inside their bodies). default_xbe_signatures/matchdata lack the new functions.
+- Fields: dlmalloc state 0x494 B x 8 heaps from 0x008ff638 (top +0x2c, bins +0x34, binmap +0x434); SmallHeap pools 0x28 B;
+  Pak 0x0095f638; Netchan sock +0, remote +8, in seq +0x20, out seq +0x24; loopback 0x00928590 (0x93c per side).
+- Left low: File_ init/pumps (FUN_000c9530/9880/ca150/ca250), STL rows + ~15 FUN_, Save_/ResourceManager_/DeletingDtor rows.
+  Left high: FS_FOpenFile*/ReadFile/Seek/Startup/AddGameDirectory, Cmd_/Cbuf_, Com_Frame/Init/EventLoop/Filter,
+  RotatePointAroundVector, Quat/Mat44 helpers, Loc_ parsers, Noise_Init, Profile_Copy, templates, FUN_ rows.
+
 **qcommon push 2 (2026-10-28, day 26 night): 93 functions + 5 forced console commands, 0 open mismatches, matched 3120 -> 3202, qcommon 641 -> 560.**
 - Low (qcommon_core.cpp): math, Save_, File_/HandlePool. High (qcommon_fs.cpp): q_math, Loc_ text classifiers, FS file handles,
   Cvar_SetA/SetS/Restart_f, Cmd_Vstr_f, Cvar_Toggle_f forced with cmd_argc/argv poked.
