@@ -44,7 +44,7 @@ The 60 fps fix notes below (day 25) are obsolete.
   builds a 4x4 matrix, rename to Mat44_RotationBetweenVectors to consider.
 - Set aside: XAPI device layer + Save_CalculateSignature (host), Cvar_Reset_f (kind `crash`: original strlen(NULL)),
   dead Vec3_Scale, Vec3Distance, Q_strncmp, gap FS_FilesAreEqual 0x00297b90.
-- Ghidra to fix: FUN_00297a69 is FS_Write's body (merge into FS_Write; the C already covers it).
+- Ghidra: FUN_00297a69 merged into FS_Write (body 0x00297a60-0x00297ae2, done 2026-10-28).
 - Fields: SaveRequest names[8][64] +0, cursor +0x240, count +0x244; HandlePool data +0, free +4, used +0x10, stride +0x1c,
   count +0x20, mask +0x24 (handle bit 31 = free); file records 36 B at 0x920820; requests 0x44 B at 0x920810.
 - Left low: Heap_Free/Heap_*, File_Open/QueueRead/Pump, std_string/map/list, ~15 FUN_ (STL static init, tree erase/insert,
