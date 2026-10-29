@@ -27,6 +27,18 @@ runs (only a front-end text dialog calls them). Next:
 4. The level sections (~5,000 compiler-generated script functions): a translator,
    not function-by-function decompilation.
 
+**Own audio backend, 2026-10-29 (user): audio first, then the renderer, both staged on the loader's `beta` branch.**
+Goal: better than the original, with one setting that keeps the original sound or turns on our improvements
+(per-level reverb, surround/HRTF, occlusion, more voices, better resampling). Per-category volume and output
+device are plain settings. Found: the retail game has no working reverb. Level scripts send `reverb "%s" %g %g`
+(GScr_SetReverb 0x002fc9d0), the shell-shock mix hands an I3DL2-style preset to the empty 0x000c72f0, and no
+SetI3DL2Listener is linked, so reverb is a cut feature we restore. Step 1: the DirectSound boundary layer in C
+(set aside on 10-28, now reversed). Done: SndHw_Update, SndVoice_SetMixBins, SndVoice_SetupBuffer,
+SndStream_SetFormat/Update/ReadPacket (snd.cpp "Hardware voices"), 967 tests, all matched. The startup path
+(SndSys_Init, SndSys_InitDirectSound, SndSys_CreateVoiceBuffers, SndSys_InitDevice) is on branch snd_boot.
+Next: step 2, our own audio interface in place of these DirectSound calls. platform_x87_log10_mul_ftol
+(compiler.h) now holds the volume conversion that was inline asm in movie.cpp.
+
 **Own renderer, 2026-10-28 (user):** the renderer is replaced by our own instead of switching to Replaced with a 60 fps
 patch fix (the patch disappears with native pacing). Stages: 1 inventory of the graphics library use (done:
 [renderer-inventory.md](renderer-inventory.md), tools/d3d_inventory.py); 2 our graphics interface + a D3D9 back end with
