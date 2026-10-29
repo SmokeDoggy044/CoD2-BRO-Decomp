@@ -36,6 +36,23 @@ build); extras as they come easily; texture pack stays on hold. Found by step 1:
 FxOp*_DrawQuads, one shared body in fx_load.cpp): 10 of 16 matched, 6 (dd/d5/5b) set aside, no shipped data.
 The 60 fps fix notes below (day 25) are obsolete.
 
+**qcommon push 4 (2026-10-29, day 27): 94 functions, 0 mismatches, matched 3273 -> see counter, qcommon 498 -> ~420.**
+- Low: 11 manager *_DeletingDtor (forced on stack objects, only the "not registered" path), all ResourceManager_Create*,
+  DynArray/PtrVector/std_list helpers, ShortString/FixedStr64_Printf. High: Com_GetEvent, MatrixToAngles/AxisToAngles, Pak
+  zones, MemContext_*_r, Quat/Mat44, Loc_GetString/TranslateString, Profile_Copy, Com_Shutdown (forced).
+- Ghidra: DynArray_AllocIntsZeroed(_2) extended past their inline int3 to ret 8 / ret 4; created AlignedAllocator_DeletingDtor
+  0x00094100, Pak_HasZoneNamed 0x0028e0b0, FxComponentB_IsOwnerGone 0x0029d620 (renderer, live vtable slot, NO C yet -
+  renderer not complete until it has C), Vec3_RotateByAngles 0x002a2560 (dead). Duplicate names fixed: 0x0029ea20 ->
+  Bounds_AddPointSplit (0x00029380 keeps Bounds_AddPointSimd), 0x00094120 -> AlignedAllocator_Alloc (0x0009be80 keeps apsAlloc).
+- Set aside: Com_Freeze_f (debug: spins on Com_Milliseconds), Sys_GetStackBounds (boot), HandleTable512/EntHandleTable_
+  ReportFull (debug), 7 dead. FUN_0001ec40 = level-manager vtable 0x00832614 slot 0 (unassigned).
+- Fields: manager table 0x009719fc (count 0x009719f8, max 20); std::string 0x1c B (+4 buffer, +0x14 size, +0x18 capacity);
+  DynArray ints from SmallHeap 0x0095f4a4 else heap 0x0095f4a0; memory context heaps +0x90 (count +0x8c), children +0xc4.
+- Left low: File_ init/pumps, std_string/map/set/tree rows, FUN_ 20b80/20fd0/21670/21a00/21b30/21ee0/22460/28bd0/28ed0/d19e0,
+  Save_*, HashMap/HashStr inserts, handle-table allocs. Left high: FS_FOpenFile*/ReadFile/Seek/Startup/AddGameDirectory,
+  FS_Printf, Cmd_/Cbuf_, Com_Frame/Init/EventLoop, RotatePointAroundVector, Matrix_Orthonormalize, Loc_ parsers,
+  ProfileSave callbacks, templates, FUN_002a9c10/0031ac60/002c5780/002c5ac0.
+
 **qcommon push 3 (2026-10-28, day 26 late): 87 functions, 0 mismatches, matched 3202 -> 3273/16527, qcommon 560 -> 498.**
 - Low: dlmalloc heap (Heap_EnsureInit = malloc_consolidate, Heap_FreeBlock = free), SmallHeap, File_ requests. High:
   vectoangles family, Pak zones, MemContext, event journal, Netchan_Process/Transmit, Loc_, profiles.
