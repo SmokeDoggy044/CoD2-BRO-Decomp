@@ -40,6 +40,11 @@ Fixed the same day: SndHw_Update mismatched 5 of 5723 every-call tests on one ho
 byte after audio::Format's 8-bit codec, copied from a Format built on the stack (stale bytes differ between our
 frame and the original's). Codec is 16 bits now, Format has no padding: 4474/4474 every-call tests clean. Found by
 bisecting (C calling the original children: SndStream_SetFormat) and dumping the words around the host address.
+Steered sound-menu runs (build/compare/soundmenu_user, soundmenu_user2; release, copy of the saves): SoundMenu_OnLeft/
+OnRight/UpdateSliders/Construct/RestoreSelection matched; SoundMenu_Draw mismatched on the help-bar stack word
+0x100006a8 like the other options Draws, fixed with DRAW_GAP_ENTRY (now in fe_options.h with set_help_bar_at, which
+takes the row limit: 1 for the sound menu, 5 for gameplay/controller): 460/460. SoundMenu_Dtor/DeletingDtor not
+reached (backing out keeps the screen).
 Next: step 2, our own audio interface in place of these DirectSound calls. platform_x87_log10_mul_ftol
 (compiler.h) now holds the volume conversion that was inline asm in movie.cpp.
 
