@@ -36,7 +36,7 @@ build); extras as they come easily; texture pack stays on hold. Found by step 1:
 FxOp*_DrawQuads, one shared body in fx_load.cpp): 10 of 16 matched, 6 (dd/d5/5b) set aside, no shipped data.
 The 60 fps fix notes below (day 25) are obsolete.
 
-**qcommon push 4 (2026-10-29, day 27): 94 functions, 0 mismatches, matched 3273 -> see counter, qcommon 498 -> ~420.**
+**qcommon push 4 (2026-10-29, day 27): 94 functions, 0 mismatches, matched 3273 -> 3352/16531, qcommon 498 -> 420.**
 - Low: 11 manager *_DeletingDtor (forced on stack objects, only the "not registered" path), all ResourceManager_Create*,
   DynArray/PtrVector/std_list helpers, ShortString/FixedStr64_Printf. High: Com_GetEvent, MatrixToAngles/AxisToAngles, Pak
   zones, MemContext_*_r, Quat/Mat44, Loc_GetString/TranslateString, Profile_Copy, Com_Shutdown (forced).
