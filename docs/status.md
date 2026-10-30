@@ -217,6 +217,10 @@ by shader variants, particles, fog, mips, clears); paused scenes identical to th
 time. Details in [own-renderer.md](own-renderer.md). Next (user, 2026-10-30): switchable graphics improvements under an
 "Enhanced" master switch, like enhanced sound.
 
+**Enhanced graphics 2026-10-30 (for the user's review):** master switch Original/Enhanced plus switches for FXAA,
+anisotropic filtering, sharpening, colour vibrance and texture detail (amounts default 0); launcher, PC menu, settings.ini,
+--graphics / --graphics-features. Details in [own-renderer.md](own-renderer.md).
+
 **qcommon push 4 (2026-10-29, day 27): 94 functions, 0 mismatches, matched 3273 -> 3352/16531, qcommon 498 -> 420.**
 - Low: 11 manager *_DeletingDtor (forced on stack objects, only the "not registered" path), all ResourceManager_Create*,
   DynArray/PtrVector/std_list helpers, ShortString/FixedStr64_Printf. High: Com_GetEvent, MatrixToAngles/AxisToAngles, Pak
