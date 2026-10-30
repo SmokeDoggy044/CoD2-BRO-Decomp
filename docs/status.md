@@ -212,6 +212,11 @@ draw path at a time (text and quads first), screenshot diffs against the current
 around the 160 state-setting Xbox calls); `XB_GFX_VERIFY=1` finds no difference from the Xbox path's state in missions
 4, 1, 6 and the menus. Next: R4b, the first draws onto GfxDevice (text, quads).
 
+**R4b done 2026-10-30: every renderer draw goes through our interface** (text, quads, meshes with packed normals unpacked
+by shader variants, particles, fog, mips, clears); paused scenes identical to the Xbox path in missions 4, 1, 6; same frame
+time. Details in [own-renderer.md](own-renderer.md). Next (user, 2026-10-30): switchable graphics improvements under an
+"Enhanced" master switch, like enhanced sound.
+
 **qcommon push 4 (2026-10-29, day 27): 94 functions, 0 mismatches, matched 3273 -> 3352/16531, qcommon 498 -> 420.**
 - Low: 11 manager *_DeletingDtor (forced on stack objects, only the "not registered" path), all ResourceManager_Create*,
   DynArray/PtrVector/std_list helpers, ShortString/FixedStr64_Printf. High: Com_GetEvent, MatrixToAngles/AxisToAngles, Pak
