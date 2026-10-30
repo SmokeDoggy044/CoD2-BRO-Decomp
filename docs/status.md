@@ -88,8 +88,12 @@ Step 3b (2026-10-29): reverb, enhanced only, from the place around the listener.
   reverb send (mix-bin request 0x20 never seen in a mission 1 run). No SetI3DL2Listener is linked.
 - Ours: game/code/snd_env.cpp probes from SndHw_Update (every 6th update): 14 CM_BoxTrace world rays (8 level,
   5 up, 1 down; results: endpos +0, plane +0x10, fraction +0x20, surface flags +0x24, contents +0x28). Maps have
-  no sky brushes: an upward ray hitting nothing = open sky. Surface type = flags bits 20-24 in Call of Duty's order
-  (mission 1 ground 6 = dirt; G_RunMissile 0x002740d7 tests 0x1400000 = 20 water). Reverb from room acoustics:
+  no sky brushes: an upward ray hitting nothing = open sky. Surface type = flags bits 20-24, named by the game's
+  surface parameter table 0x008d4e68 (16-byte rows {name, clears solid, surface flags, contents}): 1 bark, 2 brick,
+  3 carpet, 4 cloth, 5 concrete, 6 dirt, 7 flesh, 8 foliage, 9 glass (and opaqueglass), 10 grass, 11 gravel, 12 ice,
+  13 metal, 14 mud, 15 paper, 16 plaster, 17 rock, 18 sand, 19 snow, 20 water, 21 wood, 22 asphalt; foliage, glass
+  and water are not solid (contents 0x2 / 0x10 / 0x20): the probe traces solid | glass. The same table has the
+  Q3-style keywords (nodraw, playerclip, sky, ...) and the languages. Reverb from room acoustics:
   Sabine decay from a box fitted to the rays and absorption by material (open sky / missing walls absorb all),
   reflections after the nearest wall's round trip, late delay from the mean free path, level from enclosure,
   brightness from hardness, reflections panned towards near hard walls (turned with the listener each update;
