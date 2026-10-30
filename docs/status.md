@@ -97,7 +97,9 @@ Step 3b (2026-10-29): reverb, enhanced only, from the place around the listener.
   first and were not heard apart (playtests); the dynamic model was.
 - audio::SoundDevice: Environment (I3DL2 fields + pans), set_environment, set_category, enhanced(); Output: EFX EAX
   reverb slot, per-source send. Categories from the sound entry's group (+0x10, name +0x108): the game's groups
-  are NSL_MASTER, NSL_LISTENER, VOICE, GUI, MUSIC, SFX; enhanced sends SFX + VOICE (the player's gun is two
+  are NSL_MASTER, NSL_LISTENER, VOICE, GUI, MUSIC, SFX (the same in the front end and all 14 missions, checked
+  10-30; no other group name in the 26 bank-carrying packs; an entry without a group name has none, treated as
+  SFX); enhanced sends SFX + VOICE (the player's gun is two
   stereo SFX voices + one mono), MUSIC/GUI stay dry. OpenAL Soft 1.24: a fully focused reverb pan folds back to
   the middle in stereo (capped at 0.6); HRTF pans inconsistently (not handled).
 - PC menu (` key): "Enhanced sound" switches live (audio::set_enhanced; saved to settings.ini on close). Reverb
