@@ -30,9 +30,7 @@ runs (only a front-end text dialog calls them). Next:
 **Own audio backend, 2026-10-29 (user): audio first, then the renderer, both staged on the loader's `beta` branch.**
 Goal: better than the original, with one setting that keeps the original sound or turns on our improvements
 (per-level reverb, surround/HRTF, occlusion, more voices, better resampling). Per-category volume and output
-device are plain settings. Found: the retail game has no working reverb. Level scripts send `reverb "%s" %g %g`
-(GScr_SetReverb 0x002fc9d0), the shell-shock mix hands an I3DL2-style preset to the empty 0x000c72f0, and no
-SetI3DL2Listener is linked, so reverb is a cut feature we restore. Step 1: the DirectSound boundary layer in C
+device are plain settings. Found: the retail game has no working reverb (details under step 3b). Step 1: the DirectSound boundary layer in C
 (set aside on 10-28, now reversed). Done: SndHw_Update, SndVoice_SetMixBins, SndVoice_SetupBuffer,
 SndStream_SetFormat/Update/ReadPacket (snd.cpp "Hardware voices"), 967 tests, all matched. The startup path
 (SndSys_Init, SndSys_InitDirectSound, SndSys_CreateVoiceBuffers, SndSys_InitDevice) is on branch snd_boot.
@@ -82,8 +80,35 @@ game's speaker-mode request: snd_speakerMode 0x008bd650, 2 = stereo at boot from
 may change it in CL_ApplyProfileSettings; any other layout ignores it), `--audio-device NAME` (missing: warning,
 the system's). Enhanced so far: the "23rd order Sinc" resampler on every source (OpenAL's default: cubic).
 Launcher General tab: Sound (Original/Enhanced), Speakers, Output device (audio/output_devices.h, OpenAL only).
-Next: 3b reverb via EFX (GScr_SetReverb presets, the boot/shell-shock I3DL2 presets), 3c per-category volume,
-3d voice limit, 3e occlusion.
+Step 3b (2026-10-29): reverb, enhanced only, from the place around the listener.
+- Retail has none at all: GScr_SetReverb (0x002fc9d0, script slot 452, sends `reverb "%s" %g %g`) is called by no
+  level code (no `call/mov [reg+0x710]` user); FUN_002ad9d0 holds five I3DL2 presets (0 Generic, 3 Hangar, 4 Room,
+  1/2 unidentified; preset in EAX) and nothing calls it; the only live preset is Generic at boot (SoundManager_Ctor)
+  and after shell shock (CG_StopShellShockSound), into the empty SndSys_EmptyStub 0x000c72f0; no voice asks for the
+  reverb send (mix-bin request 0x20 never seen in a mission 1 run). No SetI3DL2Listener is linked.
+- Ours: game/code/snd_env.cpp probes from SndHw_Update (every 6th update): 14 CM_BoxTrace world rays (8 level,
+  5 up, 1 down; results: endpos +0, plane +0x10, fraction +0x20, surface flags +0x24, contents +0x28). Maps have
+  no sky brushes: an upward ray hitting nothing = open sky. Surface type = flags bits 20-24 in Call of Duty's order
+  (mission 1 ground 6 = dirt; G_RunMissile 0x002740d7 tests 0x1400000 = 20 water). Reverb from room acoustics:
+  Sabine decay from a box fitted to the rays and absorption by material (open sky / missing walls absorb all),
+  reflections after the nearest wall's round trip, late delay from the mean free path, level from enclosure,
+  brightness from hardness, reflections panned towards near hard walls (turned with the listener each update;
+  the game's listener "top" is world down, its handedness fix). The game's presets blended by size were tried
+  first and were not heard apart (playtests); the dynamic model was.
+- audio::SoundDevice: Environment (I3DL2 fields + pans), set_environment, set_category, enhanced(); Output: EFX EAX
+  reverb slot, per-source send. Categories from the sound entry's group (+0x10, name +0x108): the game's groups
+  are NSL_MASTER, NSL_LISTENER, VOICE, GUI, MUSIC, SFX; enhanced sends SFX + VOICE (the player's gun is two
+  stereo SFX voices + one mono), MUSIC/GUI stay dry. OpenAL Soft 1.24: a fully focused reverb pan folds back to
+  the middle in stereo (capped at 0.6); HRTF pans inconsistently (not handled).
+- PC menu (` key): "Enhanced sound" switches live (audio::set_enhanced; saved to settings.ini on close). Reverb
+  changes are logged ("reverb: level ..., decay ...", at most once a second).
+- OpenAL errors are logged per call site with the values (output.cpp al_failed). Reason: an original-mode
+  prologue run (10-29) logged "cannot set up a callback buffer" 125 times from 262 s (a dialogue stream's
+  format change) and the squad/scripts stalled afterwards; the old check could not tell a real failure from a
+  left-over error. Not seen again in 25+ min of play; cause open.
+- Open: the sergeant in the prologue cutscene sounds left of centre (also before our sound module; the listener
+  is probably the player, not the cutscene camera).
+Next: 3c per-category volume (the categories exist now), 3d voice limit, 3e occlusion.
 
 **Own renderer, 2026-10-28 (user):** the renderer is replaced by our own instead of switching to Replaced with a 60 fps
 patch fix (the patch disappears with native pacing). Stages: 1 inventory of the graphics library use (done:
