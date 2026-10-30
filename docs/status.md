@@ -179,6 +179,9 @@ Step 3f (2026-10-30, user): close-range boosts and per-improvement switches.
   --enhanced); SoundDevice::has(Feature) = enhanced && on; Output::set_enhanced(resampler, reverb).
 - PC menu: tabs General (FOV) and Sound (volumes; Enhanced sound master with each improvement's switch and its own
   options nested). Launcher: Sound tab (Output, Volume, Enhanced sound). User toggled each live: works.
+- Full ctest 10-30 (35 min, build/ctest_3f.txt): 18/19 pass; leaf_test: Save_PortToDevice 11 (the known port-8 case),
+  NAL_EntropyMode0B 1 mismatch + 1 inconclusive, NAL_EntropyMode10 1 inconclusive - random garbage arena input,
+  untouched code, nal_entropy_test passes; user 10-30: ignore (nonsense input).
 Next: the renderer (own-renderer plan); open: the one NaN crash (above).
 
 **Own renderer, 2026-10-28 (user):** the renderer is replaced by our own instead of switching to Replaced with a 60 fps
