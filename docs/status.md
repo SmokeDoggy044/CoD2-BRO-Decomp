@@ -197,6 +197,13 @@ findings and what is next: [own-renderer.md](own-renderer.md). Found live: the a
 live C frame (fixed in title_data.h GAME_GAP_ESP, floor limit in FS:[0x14]); `tools/bisect_replaced.py` finds a broken
 Replaced function. nglRenderSceneTree's word 27 constant-lane mismatch added to accepted.csv (same dead-stack lane).
 
+**R2 done 2026-10-30: our graphics interface `render::GfxDevice` and its D3D9 back end** (render/gfx_device.h,
+gfx_d3d9.cpp), on the current path's device and targets so converted and unconverted draws mix; details in
+[own-renderer.md](own-renderer.md). tests/gfx_device_test passes (real device, render scales 1 and 2); smoke run mission 4
+clean. Also fixed: the Windows build's link clash of the decompiled MatrixMultiply with SDL3's (the C is now
+MatrixMultiply3x3). Full ctest not run on it. Next: R3, the shader tool (needs `vkd3d-compiler`, Fedora package of that
+name, not installed yet).
+
 **qcommon push 4 (2026-10-29, day 27): 94 functions, 0 mismatches, matched 3273 -> 3352/16531, qcommon 498 -> 420.**
 - Low: 11 manager *_DeletingDtor (forced on stack objects, only the "not registered" path), all ResourceManager_Create*,
   DynArray/PtrVector/std_list helpers, ShortString/FixedStr64_Printf. High: Com_GetEvent, MatrixToAngles/AxisToAngles, Pak
