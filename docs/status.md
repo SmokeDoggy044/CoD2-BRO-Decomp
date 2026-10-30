@@ -120,7 +120,22 @@ Step 3b (2026-10-29): reverb, enhanced only, from the place around the listener.
   left-over error. Not seen again in 25+ min of play; cause open.
 - Open: the sergeant in the prologue cutscene sounds left of centre (also before our sound module; the listener
   is probably the player, not the cutscene camera).
-Next: 3c per-category volume (the categories exist now), 3d voice limit, 3e occlusion.
+Step 3c (2026-10-30): volume per kind of sound, a plain setting (original and enhanced alike), on top of the game's
+one volume slider (0x008dce88): effects, ambience, dialogue, music in percent (gain = percent squared, 50% = -12 dB;
+GUI goes with effects). audio/category_volumes.h (header only), settings.ini `volume = "music=50 ambience=60"`,
+--volume, launcher Sound section, PC menu live sliders (saved on close); audio::set_category_volumes, applied in
+Engine::update. tests/category_volumes_test.
+- Found in a steered run (user's F12: "background effects are categorized as music"): the game plays its level
+  background beds through Music_Play in the MUSIC group. Dumped the prologue's two MUSIC streams: music_mainmenu is
+  tonal, BG_PROLOGUE_BRIEFING only distant battle. The aliases tell them apart: music = music_mainmenu, BG_MX_*,
+  BG_<name>MX; every other BG_* (BG_Battle_Med, BG_Buch_Snow_int, ...) is a bed. Music_Play remembers bed sound ids
+  (snd.cpp is_ambience_alias / set_ambience_sound; the alias id is the voice's sound id +0xc8), S_AmbientPlay's
+  sounds count as ambience too; SndHw_Update gives them Category::Ambience (dry, like music). Sorted by name only,
+  not listened to: BG_Drag_Hot_Action, BG_Mons_4_Battle, BG_Kpass_Rail_Intro, BG_PIANO_INTRO, BG_PIANO_STUKAS,
+  BG_Mons_3b_Shellshock (ambience). User: "Works".
+- Not categorised yet: the movie sound and voice chat (DirectSound translation, no category -> effects) until the
+  client module is Replaced.
+Next: 3d voice limit, 3e occlusion.
 
 **Own renderer, 2026-10-28 (user):** the renderer is replaced by our own instead of switching to Replaced with a 60 fps
 patch fix (the patch disappears with native pacing). Stages: 1 inventory of the graphics library use (done:
