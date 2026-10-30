@@ -94,7 +94,9 @@ Step 3b (2026-10-29): reverb, enhanced only, from the place around the listener.
   13 metal, 14 mud, 15 paper, 16 plaster, 17 rock, 18 sand, 19 snow, 20 water, 21 wood, 22 asphalt; foliage, glass
   and water are not solid (contents 0x2 / 0x10 / 0x20): the probe traces solid | glass. The same table has the
   Q3-style keywords (nodraw, playerclip, sky, ...) and the languages. Reverb from room acoustics:
-  Sabine decay from a box fitted to the rays and absorption by material (open sky / missing walls absorb all),
+  Sabine decay from a box fitted to the rays and absorption by material (open sky / missing walls absorb all;
+  measured mid/high octave-band coefficients per material where published, estimates marked "est." in snd_env.cpp,
+  + 0.07 for what the rays do not see; brightness = high-band Sabine incl. air over mid),
   reflections after the nearest wall's round trip, late delay from the mean free path, level from enclosure,
   brightness from hardness, reflections panned towards near hard walls (turned with the listener each update;
   the game's listener "top" is world down, its handedness fix). The game's presets blended by size were tried
