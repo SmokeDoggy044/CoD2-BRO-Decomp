@@ -76,8 +76,14 @@ again: mission 4, CL_Frame 79 matched (0 mismatched), CL_ClearState/CL_MapLoadin
 The movie C (Movie_StartAudio, Movie_Dtor, Movie_DecodeFrame's stop) stays on DirectSound: it is Compare (client
 module), and onto the device its tests would log device calls where the original logs DirectSound calls. It
 moves to the device when the client module becomes Replaced, as the sound module did.
-Next: the original/enhanced setting and the improvements (reverb via EFX, surround, occlusion, voice limit,
-per-category volume, device).
+Step 3a (2026-10-29): the settings. `--audio original|enhanced` (default enhanced; original with --pc-patches
+off, so --compare too), `--speakers auto|stereo|headphones|quad|5.1|7.1` (ALC_OUTPUT_MODE_SOFT; auto keeps the
+game's speaker-mode request: snd_speakerMode 0x008bd650, 2 = stereo at boot from SoundManager_Ctor, the profile
+may change it in CL_ApplyProfileSettings; any other layout ignores it), `--audio-device NAME` (missing: warning,
+the system's). Enhanced so far: the "23rd order Sinc" resampler on every source (OpenAL's default: cubic).
+Launcher General tab: Sound (Original/Enhanced), Speakers, Output device (audio/output_devices.h, OpenAL only).
+Next: 3b reverb via EFX (GScr_SetReverb presets, the boot/shell-shock I3DL2 presets), 3c per-category volume,
+3d voice limit, 3e occlusion.
 
 **Own renderer, 2026-10-28 (user):** the renderer is replaced by our own instead of switching to Replaced with a 60 fps
 patch fix (the patch disappears with native pacing). Stages: 1 inventory of the graphics library use (done:
