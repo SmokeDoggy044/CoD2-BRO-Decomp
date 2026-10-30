@@ -201,8 +201,12 @@ Replaced function. nglRenderSceneTree's word 27 constant-lane mismatch added to 
 gfx_d3d9.cpp), on the current path's device and targets so converted and unconverted draws mix; details in
 [own-renderer.md](own-renderer.md). tests/gfx_device_test passes (real device, render scales 1 and 2); smoke run mission 4
 clean. Also fixed: the Windows build's link clash of the decompiled MatrixMultiply with SDL3's (the C is now
-MatrixMultiply3x3). Full ctest not run on it. Next: R3, the shader tool (needs `vkd3d-compiler`, Fedora package of that
-name, not installed yet).
+MatrixMultiply3x3). Full ctest not run on it.
+
+**R3 done 2026-10-30: the title's 126 shader programs are HLSL of our own** (render/shaders, tools/shader_hlsl.py from a
+`--dump-shaders` run), compiled with vkd3d-compiler at build time; tests/title_shader_test: all 126 draw the same pixels as
+the Xbox path's translation. Details in [own-renderer.md](own-renderer.md). Next: R4, the renderer C onto GfxDevice one
+draw path at a time (text and quads first), screenshot diffs against the current path.
 
 **qcommon push 4 (2026-10-29, day 27): 94 functions, 0 mismatches, matched 3273 -> 3352/16531, qcommon 498 -> 420.**
 - Low: 11 manager *_DeletingDtor (forced on stack objects, only the "not registered" path), all ResourceManager_Create*,
