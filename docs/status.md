@@ -108,6 +108,10 @@ Step 3b (2026-10-29): reverb, enhanced only, from the place around the listener.
   SFX); enhanced sends SFX + VOICE (the player's gun is two
   stereo SFX voices + one mono), MUSIC/GUI stay dry. OpenAL Soft 1.24: a fully focused reverb pan folds back to
   the middle in stereo (capped at 0.6); HRTF pans inconsistently (not handled).
+- Advanced reverb (user 10-30: the real test is the public; let players tune it): audio/reverb_tuning.h (header
+  only) amount dB, decay x, brightness x, early reflections dB, room clutter (absorption the rays miss, 0.07);
+  settings.ini "reverb = amount=-3 decay=1.2" / --reverb, launcher Sound > Advanced reverb, PC menu live sliders;
+  game::SndEnv_SetTuning. tests/reverb_tuning_test.
 - PC menu (` key): "Enhanced sound" switches live (audio::set_enhanced; saved to settings.ini on close). Reverb
   changes are logged ("reverb: level ..., decay ...", at most once a second).
 - OpenAL errors are logged per call site with the values (output.cpp al_failed). Reason: an original-mode
