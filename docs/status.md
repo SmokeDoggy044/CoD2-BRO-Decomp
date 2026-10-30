@@ -58,8 +58,23 @@ to leave it there (386 matched tests), -O2 did not. Now thiscall with the block.
 Replaced sound C calls them directly. Scan of all 426 title functions the C calls without register arguments:
 no other real case (the rest were rdtsc writes and jump-table bytes the linear scan reads as code).
 XBCMP_ORIGINALS=1 or =name,name keeps originals in place of Replaced functions (finding which one breaks).
-Next: step 2, our own audio interface in place of these DirectSound calls. platform_x87_log10_mul_ftol
-(compiler.h) now holds the volume conversion that was inline asm in movie.cpp.
+platform_x87_log10_mul_ftol (compiler.h) now holds the volume conversion that was inline asm in movie.cpp.
+Step 2a (2026-10-29): our own sound interface, audio/sound_device.h (`audio::SoundDevice`: voices, spatial
+placement, listener, reverb send, Apply::Deferred + commit(), Start::WithSynch + start_synched()), one back end on
+OpenAL Soft (audio/sound_engine.cpp, the voice/listener/distance logic that was in xbox_dsound.cpp). The sound C
+(snd.cpp: SndHw_Update, SndStream_*, SndVoice_*, SndSys_InitDirectSound/CreateVoiceBuffers/InitDevice) calls it
+directly; the loader hands it over (game::set_sound_device). xbox_dsound.cpp is now a translation onto it, kept for
+the code that still calls DirectSound: the movie player (client, Compare), voice chat (XHV), other releases and
+XBCMP_ORIGINALS. A voice id is the address of a DirectSound object, so either side can be given the other's voices
+(the movie buffer: made by the C, played by the original Movie_StartAudio). Found: the second half of every mix bin
+table adds DSMIXBIN_I3DL2 (10), so voice request 0x20 is the voice's reverb send (set_reverb_send, stored; nothing
+plays it until reverb is restored). Kept as title calls: the file media objects (XFileCreateMediaObjectAsync and
+its methods, XAPI), XPhysicalAlloc, XGetVideoStandard. Smoke runs missions 4 and 1: no warnings, gameplay reached.
+Regression until 2b: compare tests of Compare functions that reach SndSys_Update (CL_Frame, CL_MapLoading,
+FE_FadeOut...) end inconclusive again (the C calls host code).
+Next: 2b, record sound calls at the SoundDevice instead of DirectSound in test processes (the original's
+DirectSound calls arrive there through the translation), then the movie C onto it; then the original/enhanced
+setting and the improvements (reverb via EFX, surround, occlusion, voice limit, per-category volume, device).
 
 **Own renderer, 2026-10-28 (user):** the renderer is replaced by our own instead of switching to Replaced with a 60 fps
 patch fix (the patch disappears with native pacing). Stages: 1 inventory of the graphics library use (done:
