@@ -169,7 +169,17 @@ original. No frame-rate cost seen (unattended prologue 60 fps).
   mutes a voice with a non-finite position/level (logged once), occlusion skips non-finite positions.
 - Open: the game's own mix is quiet for distant gunfire (also in original; linear rolloff min..max, low volumes);
   option discussed: an enhanced softer falloff setting - not started (user: the problem was occlusion, not distance).
-Next: audio steps done except 3e follow-ups; then the renderer (own-renderer plan).
+Step 3f (2026-10-30, user): close-range boosts and per-improvement switches.
+- Boosts (enhanced, CategoryVolumes, 0 dB by default - "let players experiment"; user liked +12 for others' fire):
+  close_gunfire (others' shots: alias "*_FIRE_3RD*", "*_GUN_SHOT_3P", "*_GUN_RINGOFF_3P" -> Category::Gunfire),
+  own_gunfire (the player's "*_FIRE_1ST", not placed: always full), close_bullets (impacts "IMP_Bullet_*", flybys
+  "WhizBySound_*"); full within 600 units, fading to none at 1200. Measured: the game mixes others' shots at
+  0.04-0.23 (F12 voice log), also quiet in original.
+- audio/enhanced_features.h: resampler, voices, reverb, occlusion, close_boost each on/off (settings.ini "enhanced",
+  --enhanced); SoundDevice::has(Feature) = enhanced && on; Output::set_enhanced(resampler, reverb).
+- PC menu: tabs General (FOV) and Sound (volumes; Enhanced sound master with each improvement's switch and its own
+  options nested). Launcher: Sound tab (Output, Volume, Enhanced sound). User toggled each live: works.
+Next: the renderer (own-renderer plan); open: the one NaN crash (above).
 
 **Own renderer, 2026-10-28 (user):** the renderer is replaced by our own instead of switching to Replaced with a 60 fps
 patch fix (the patch disappears with native pacing). Stages: 1 inventory of the graphics library use (done:
