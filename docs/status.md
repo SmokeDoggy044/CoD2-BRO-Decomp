@@ -192,6 +192,10 @@ build); extras as they come easily; texture pack stays on hold. Found by step 1:
 0x000a7930-0x000ac3b0 (vtable slots, "unassigned") still called D3D - decompiled the same day (FxOp*_Draw thunks +
 FxOp*_DrawQuads, one shared body in fx_load.cpp): 10 of 16 matched, 6 (dd/d5/5b) set aside, no shipped data.
 The 60 fps fix notes below (day 25) are obsolete.
+**R1 done 2026-10-30: the renderer module runs as C (Replaced, 1086 functions), 30 fps until stage 3 (user).** Steps,
+findings and what is next: [own-renderer.md](own-renderer.md). Found live: the asm entries' scratch could land on a caller's
+live C frame (fixed in title_data.h GAME_GAP_ESP, floor limit in FS:[0x14]); `tools/bisect_replaced.py` finds a broken
+Replaced function. nglRenderSceneTree's word 27 constant-lane mismatch added to accepted.csv (same dead-stack lane).
 
 **qcommon push 4 (2026-10-29, day 27): 94 functions, 0 mismatches, matched 3273 -> 3352/16531, qcommon 498 -> 420.**
 - Low: 11 manager *_DeletingDtor (forced on stack objects, only the "not registered" path), all ResourceManager_Create*,
