@@ -70,11 +70,14 @@ XBCMP_ORIGINALS. A voice id is the address of a DirectSound object, so either si
 table adds DSMIXBIN_I3DL2 (10), so voice request 0x20 is the voice's reverb send (set_reverb_send, stored; nothing
 plays it until reverb is restored). Kept as title calls: the file media objects (XFileCreateMediaObjectAsync and
 its methods, XAPI), XPhysicalAlloc, XGetVideoStandard. Smoke runs missions 4 and 1: no warnings, gameplay reached.
-Regression until 2b: compare tests of Compare functions that reach SndSys_Update (CL_Frame, CL_MapLoading,
-FE_FadeOut...) end inconclusive again (the C calls host code).
-Next: 2b, record sound calls at the SoundDevice instead of DirectSound in test processes (the original's
-DirectSound calls arrive there through the translation), then the movie C onto it; then the original/enhanced
-setting and the improvements (reverb via EFX, surround, occlusion, voice limit, per-category volume, device).
+Step 2b (2026-10-29): the SoundDevice methods are pass-through calls in test processes (kRecordedDeviceCalls,
+audio::device_methods(); results `ret:al`/`ret:void`), so Compare functions that reach SndSys_Update are testable
+again: mission 4, CL_Frame 79 matched (0 mismatched), CL_ClearState/CL_MapLoading/FE_FadeOut matched.
+The movie C (Movie_StartAudio, Movie_Dtor, Movie_DecodeFrame's stop) stays on DirectSound: it is Compare (client
+module), and onto the device its tests would log device calls where the original logs DirectSound calls. It
+moves to the device when the client module becomes Replaced, as the sound module did.
+Next: the original/enhanced setting and the improvements (reverb via EFX, surround, occlusion, voice limit,
+per-category volume, device).
 
 **Own renderer, 2026-10-28 (user):** the renderer is replaced by our own instead of switching to Replaced with a 60 fps
 patch fix (the patch disappears with native pacing). Stages: 1 inventory of the graphics library use (done:
