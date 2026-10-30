@@ -162,7 +162,11 @@ original. No frame-rate cost seen (unattended prologue 60 fps).
 - Diagnostics: an F12 mark logs every playing world voice (audio::log_voices: distance, distance gain, volume,
   occlusion) and, for occluded ones, each line's hit (game::SndEnv_DescribeOcclusion: position, contents, flags).
 - Reverb: enclosed level lowered to -1000 mB (I3DL2 presets; was -300) and the late level max to 0 (was +200):
-  "small stony rooms feel too echoey" (playtest 10-30; not re-checked by the user yet).
+  "small stony rooms feel too echoey"; then + up to 2 dB in enclosed hard places only (by enclosure x hardness,
+  mid absorption 0.03 all .. 0.15 none; user: "Reverb sounded better").
+- Crash once (10-30, prologue 204 s, not reproduced): NAL_AnimTrack_SampleFrame+0x1c (original code, negative index)
+  a second after a sound got a NaN position - an entity gone NaN; cause unknown, not seen before. Guards: the engine
+  mutes a voice with a non-finite position/level (logged once), occlusion skips non-finite positions.
 - Open: the game's own mix is quiet for distant gunfire (also in original; linear rolloff min..max, low volumes);
   option discussed: an enhanced softer falloff setting - not started (user: the problem was occlusion, not distance).
 Next: audio steps done except 3e follow-ups; then the renderer (own-renderer plan).
