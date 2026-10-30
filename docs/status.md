@@ -146,7 +146,26 @@ voices (246 slots) the first time a slot is wanted (so after a live switch too);
 slots; the effects' budget becomes 64 busy (Snd_CountBusyVoices reports busy * 16 / 65). OpenAL context asks for
 480 mono + 32 stereo sources (default 256). Prologue enhanced: 59 3D voices at the peak, 0 refused, 0.1% of effect
 sounds dropped. The slot tables (0x00911548, 0x0090a940) hold 256: going further means moving them.
-Next: 3e occlusion.
+Step 3e (2026-10-30): occlusion, enhanced only. snd.cpp update_occlusion (after SndHw_Update's slot loop): each playing
+3D slot traced when it starts (skipped until placed), then 8 per update in turn, gliding; within 48 units of the
+listener never. game/code/snd_env.cpp SndEnv_Occlusion: volumetric as Steam Audio - 7 points on a 40-unit sphere at
+shoulder height (origin + 48: sound origins are mostly a soldier's feet), one leaning towards the listener (the
+muzzle). In view (centre or listener-side point clear): 0, the direct sound in full (user: bounces only add).
+Hidden: share of the 7 lines blocked, at most the cost of the shortest way over/round the centre line's hit (points
+24-160 above/beside it with both legs clear: 0.2 + 0.8 * extra length / 200 units). Hits within 32 units of the
+listener / 12 of the point, and lines starting inside a wall, do not count; glass 0.35. Device: set_occlusion ->
+low-pass on the direct sound (full: -3 dB, a further -6 dB at 5 kHz) and the reverb send up to +3 dB (source gain up,
+filter down; AL_MAX_GAIN 4). Playtests 10-30 (user's F12 + new voice log): one line, clearest-of-three, five points
+and the first sphere all muffled gunfire in plain sight - the hits were real detail brushes (contents 0x8000001:
+parapets, sills, rubble), not invisible blockers. User: "Sounded much better", directly exposed sounds now equal to
+original. No frame-rate cost seen (unattended prologue 60 fps).
+- Diagnostics: an F12 mark logs every playing world voice (audio::log_voices: distance, distance gain, volume,
+  occlusion) and, for occluded ones, each line's hit (game::SndEnv_DescribeOcclusion: position, contents, flags).
+- Reverb: enclosed level lowered to -1000 mB (I3DL2 presets; was -300) and the late level max to 0 (was +200):
+  "small stony rooms feel too echoey" (playtest 10-30; not re-checked by the user yet).
+- Open: the game's own mix is quiet for distant gunfire (also in original; linear rolloff min..max, low volumes);
+  option discussed: an enhanced softer falloff setting - not started (user: the problem was occlusion, not distance).
+Next: audio steps done except 3e follow-ups; then the renderer (own-renderer plan).
 
 **Own renderer, 2026-10-28 (user):** the renderer is replaced by our own instead of switching to Replaced with a 60 fps
 patch fix (the patch disappears with native pacing). Stages: 1 inventory of the graphics library use (done:
