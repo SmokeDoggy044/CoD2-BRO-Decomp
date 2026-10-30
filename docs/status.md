@@ -135,7 +135,18 @@ Engine::update. tests/category_volumes_test.
   BG_Mons_3b_Shellshock (ambience). User: "Works".
 - Not categorised yet: the movie sound and voice chat (DirectSound translation, no category -> effects) until the
   client module is Replaced.
-Next: 3d voice limit, 3e occlusion.
+Step 3d (2026-10-30): more voices, enhanced only. The original made 90 hardware slots at boot (SndSys_CreateVoiceBuffers
+counts 1,1,1,1,7,36,7,36: 18 stream slots, 36 mono 3D buffer slots (kind 5), 36 stereo (kind 6); SndHw_AllocSlot takes
+the first free slot of the sound's kind and never the last slot; no stealing - a refused voice retries for 10 updates,
+then is freed unless looping). FX_AddSoundComponents (its only caller of Snd_CountBusyVoices, checked in the XBE)
+drops an effect's sounds while more than 15 slots are busy. Measured (temporary counters, 200 s unattended):
+prologue original: 3D slots full (36), 2099 voices refused, 86% of effect sounds dropped; Tunisia 36 full, 35-67%
+dropped; stereo slots: at most 3 in use. Ours: enhanced appends mono 3D slots after the original ones up to 192 3D
+voices (246 slots) the first time a slot is wanted (so after a live switch too); original uses only the original
+slots; the effects' budget becomes 64 busy (Snd_CountBusyVoices reports busy * 16 / 65). OpenAL context asks for
+480 mono + 32 stereo sources (default 256). Prologue enhanced: 59 3D voices at the peak, 0 refused, 0.1% of effect
+sounds dropped. The slot tables (0x00911548, 0x0090a940) hold 256: going further means moving them.
+Next: 3e occlusion.
 
 **Own renderer, 2026-10-28 (user):** the renderer is replaced by our own instead of switching to Replaced with a 60 fps
 patch fix (the patch disappears with native pacing). Stages: 1 inventory of the graphics library use (done:
