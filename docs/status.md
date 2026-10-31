@@ -231,6 +231,19 @@ deflate state; passes on rerun), and NAL_Packed16EntropyIKSpin_Dequantize/_Blend
 GAME_GAP_ESP reads FS:[0x14] and leaf_test had no FS block - it now gets a zeroed one (both 100% matched again).
 User's steered test 10-30: Operation Husky 24 min at 60 fps, plays and sounds good. Next: release 0.2.0.
 
+**v0.2.0 published 2026-10-31 (full release, loader repo).** Found while building it: MinGW's GCC turned calls through
+constant title addresses passed into inlined callees into __builtin_unreachable (Windows mission crash in the original
+CG_SetNextSnap after Snd_SetVoiceVolumeScale lost EBX); title_function now hides the address
+(platform_opaque_address). Windows files have version information. VirusTotal: Gen:Variant.Babar.740485 on the launcher
+(8/71) and the loader stub (7/71), Linux clean; disclosed in the README and release notes (false positive reasoning).
+**The native loader is frozen: bug fixes only (user).** Next: the decompilation, module by module, to completion.
+
+**Our own engine, after the whole game is decompiled (user, 2026-10-31):** built in, with a settings menu in the game
+itself as if it was always there; each improvement under an Enhanced switch as now. Planned: more complex sound
+occlusion (materials, partial cover, diffraction, per-room reverb from geometry); occlusion culling and ambient
+occlusion; lighting added on top of the baked lightmaps (dynamic shadows, better dynamic lights), not a relight; the
+model smoother (TruForm-style). None of it before the decompilation is complete.
+
 **qcommon push 4 (2026-10-29, day 27): 94 functions, 0 mismatches, matched 3273 -> 3352/16531, qcommon 498 -> 420.**
 - Low: 11 manager *_DeletingDtor (forced on stack objects, only the "not registered" path), all ResourceManager_Create*,
   DynArray/PtrVector/std_list helpers, ShortString/FixedStr64_Printf. High: Com_GetEvent, MatrixToAngles/AxisToAngles, Pak
