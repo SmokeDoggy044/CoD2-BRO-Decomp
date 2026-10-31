@@ -244,6 +244,19 @@ occlusion (materials, partial cover, diffraction, per-room reverb from geometry)
 occlusion; lighting added on top of the baked lightmaps (dynamic shadows, better dynamic lights), not a relight; the
 model smoother (TruForm-style). None of it before the decompilation is complete.
 
+**qcommon is Replaced (2026-10-31): 863 functions run as C.** Kept original (Compare): the 70 live untested rows, the 12 host
+rows (Com_Frame, Cmd_ExecuteRegisteredCommand, XAPI save calls), unhookable stubs, 2 thunks, Cvar_Reset_f (original crashes).
+- Fixes the switch needed (smoke runs crashed at level load): MemContext_Pop's entry keeps EDX (0x00290005 pops twice with
+  EDX loaded once); Cmd_Argv keeps ECX/EDX (0x002caef7 reads EDX); Mat34_RotateVector keeps ECX (two rotations, rows loaded
+  once); MatrixTranspose and Q_PrintStrlen keep the XMM registers (callers keep XMM1 / XMM0+XMM2 across them);
+  StringTable_Load's slot bits are 4 words (two bit arrays), not 2 - release-only crash in StreamMem_MoveSlots.
+- Found with tools/bisect_replaced.py and the skill's scripts/keepregs.py (title callers relying on a callee keeping
+  ECX/EDX/XMM - the Replaced hook is a plain jump; after_call.py stops at the next call and missed MemContext_Pop).
+- Smoke runs clean: missions 4/1/6 (debug), 4/1 (release). Full ctest before the switch: 22/23; leaf_test failed on one input
+  each of send_all_trees / compress_block (zlib): not reproducible in isolation, with a replayed input or with one worker -
+  only with parallel workers (a stray host-heap word appears in the "ours" arena); harness timing, not our C (user: zlib gets
+  replaced by our own engine anyway).
+
 **qcommon push 9 (2026-10-31): every qcommon function has C - the module is decompiled. named 11788 · matched 3615/16577.**
 - Last C: 17 gap functions (ZoneGraph_RemoveZone vtable 0x00838214 slot 1, Cvar_SetFromCvar_f, SV_MapRestartInternal_f
   "map_restart_internal" matched; 14 dead; 4 one-byte ret stubs unhookable) + FS_TouchFile_f 0x002a2440, FS_Dir_f 0x002a2480
