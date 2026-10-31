@@ -244,6 +244,18 @@ occlusion (materials, partial cover, diffraction, per-room reverb from geometry)
 occlusion; lighting added on top of the baked lightmaps (dynamic shadows, better dynamic lights), not a relight; the
 model smoother (TruForm-style). None of it before the decompilation is complete.
 
+**qcommon push 6 (2026-10-31): 88 functions, 0 open mismatches, matched 3473 -> 3514/16540, qcommon 293 -> 254 left (120 without C, 131 untested, 3 inconclusive).**
+- High (53): HashMap copy/ctor/Index/Insert instances (linear hashing; layout in qcommon_fs.h), std_list InsertRange/BuyNode/IncSize,
+  StaticInit_LocStrings (boot) + AtExit_LocStrings (exit), Cmd_Exec_f forced (XBCMP_POKE=0x00934248=2,0x0092df94=0x00833cbc).
+- Low (35): HashStr, DynArray_Resize, HandleTable512_Alloc, HashMap/IntHashMap insert, Loc map/set tree inserts (not reached:
+  Loc maps empty in levels), file device code. Forced STL specs: put the data at &0-0x8000 (0x200 below ESP overlaps our frame).
+- Ghidra: 0x000caa81/87/8d/93/99 were case blocks -> FileDevice_StatusName 0x000caa70 (jump table 0x000caaa0); names
+  FileDevice_*, File_Create/DestroyDevice, FileDeviceXapi_Cancel/Poll (XAPI ops 0x008bfeac), LocStrings_Ctor/Dtor 0x0001d930/d9d0.
+- Set aside dead: the 6 file device management functions, Heap_Alloc16_2. Unnamed overlay callees (0x0045xxxx, 0x0078ae80..) not sorted.
+- Left low: std_vector_string, std_list_InsertRange8, std_string_* helpers, StringMap/Loc_HashKey, EntHandleTable_Alloc,
+  DynArray *Aligned, vector Resize/InsertN4_8, Bounds_AddPointSimd, HashStrMap_*, Save_ from 0xd0f10, PtrArray_Reserve.
+  High: push 7 running (DynArray_*HashMap, Sys_*, Cmd_*_f, Loc_ parsers, Com_Init). User 2026-10-31: full ctest only when the module is done.
+
 **qcommon push 5 (2026-10-31): 116 functions, 0 open mismatches, matched 3352 -> 3473/16544, qcommon 351 -> 293 left (199 without C, 91 untested, 3 inconclusive).**
 - High (48): FS_FOpenFileRead/ByMode, FS_ReadFile, FS_AddGameDirectory, FS_Startup/Shutdown/Restart, Cmd_ExecuteString,
   Cbuf_Execute/ExecuteBuffer/ExecuteText, Com_EventLoop, Com_Frame (all inconclusive: a frame reaches host code), vector
