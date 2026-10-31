@@ -219,7 +219,12 @@ time. Details in [own-renderer.md](own-renderer.md). Next (user, 2026-10-30): sw
 
 **Enhanced graphics 2026-10-30 (for the user's review):** master switch Original/Enhanced plus switches for FXAA,
 anisotropic filtering, sharpening, colour vibrance and texture detail (amounts default 0); launcher, PC menu, settings.ini,
---graphics / --graphics-features. Details in [own-renderer.md](own-renderer.md).
+--graphics / --graphics-features. Details in [own-renderer.md](own-renderer.md). User review 2026-10-30: approved.
+
+**R5 2026-10-30 (user: the renderer fully on ours, then 60 fps, the full test, a steered test, release 0.2.0; after it
+the native loader only gets bug fixes):** textures, YUV quads, opening the display and presentation on our interface; no
+draw reaches the Xbox path. Paused A/B scenes as before (a few pixels off by at most 3/255 in missions 1 and 6, already in
+de44ed7: not from R5; not looked into yet). Next: 60 fps.
 
 **qcommon push 4 (2026-10-29, day 27): 94 functions, 0 mismatches, matched 3273 -> 3352/16531, qcommon 498 -> 420.**
 - Low: 11 manager *_DeletingDtor (forced on stack objects, only the "not registered" path), all ResourceManager_Create*,
