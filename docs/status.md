@@ -244,12 +244,23 @@ occlusion (materials, partial cover, diffraction, per-room reverb from geometry)
 occlusion; lighting added on top of the baked lightmaps (dynamic shadows, better dynamic lights), not a relight; the
 model smoother (TruForm-style). None of it before the decompilation is complete.
 
-**Next: the client module (user, 2026-10-31), then the next module.** 761 functions, 281 left: 49 unnamed + 33 named
-without C (decompile, same push workflow: two agents, wt/qc_lo + wt/qc_hi can be reused under new branch names), 128
-untested + 62 inconclusive (mostly front-end menus, movie player, pad input: the user-steered --compare menu run, see
-"Steered client menu run, 2026-10-27"), 3 mismatched to look at first: CL_ApplyFrontEndReturnState 0x002f0750, CL_Init
-0x002f20a0, UIScreenMgr_SetActiveScreen 0x0032e6a0. List: `python3 tools/progress.py --module client`. Before the
-Replaced switch: scripts/keepregs.py (skill) + smoke both builds. The movie C moves from DirectSound to our device then.
+**The client module is decompiled (2026-10-31): every client function has C. named 11841 · matched 3821/16581.**
+Two agents, worktrees wt/cl_lo + wt/cl_hi (briefs wt/decomp_brief.md, module_push_brief.md, client_push_brief.md).
+- Fixes: UIScreenMgr_SetActiveScreen / CL_PauseIntoFrontEnd (S_PlaySoundAlias keeps stack-local addresses: run at the
+  original's ESP); CL_Init (refimport words 0x12/0x17 hold CL_Init's stale name arguments in the original, ri 0x0095e630);
+  CL_ApplyFrontEndReturnState (callees at the original's ESP; now inconclusive: host gfx/CreateFileA); Load*Menu_SetProgress
+  (the finish compare is against the double 2.0 at 0x0083ed38 - CG_SetInitialSnapshot passes 2.0f = done; fnpack showed "0f").
+  Pre-fix rows dropped. Open NaN-only differences: ControllerConfigMenu_UpdateSliderB 7/3320, AdvancedOptionsMenu_SetSliderBar
+  1/3384 (ffc00000 vs ffffffff).
+- Every untested/inconclusive row has a final class: [client_classes.csv](client_classes.csv). Most are "front end" (menu
+  vtable slots; 41 inconclusive ones come from the 10-26 menu runs that predate the file pass-through, so a new steered run
+  should make them conclusive); host rows: IN_Pad*/IN_Frame/Movie_CheckSkipInput (our input back end - an input stand-in
+  would test them), SCR_DrawLoadingScreen/SCR_RedrawFrontBuffer (GfxDevice), bonus FreeImage (CloseHandle).
+- Set aside: disc error screens (Xbox-only), Live_CheckGameInvite, dead rows (UI_RotationZ, UI_EulerMatrix, ...).
+- Ghidra: 50 names; created UI_UpdateLoadingIcon 0x003154a0 (split from UIRoot_DrawFrontEnd), TitleMenu_OnAccept 0x00012280,
+  MissionSuccessFailMenu_DialogReturnTrue 0x0030cf90 (split from AutosaveMenu_MarkSlotsEmpty), CreateProfileMenu_Activate 0x00338ca0.
+- Next: full ctest + leaf_test (ask the user first), the user-steered --compare menu run for the front-end rows, then
+  Replaced (scripts/keepregs.py from the skill + smoke both builds; the movie C moves from DirectSound to our device then).
 
 **qcommon is Replaced (2026-10-31): 863 functions run as C.** Kept original (Compare): the 70 live untested rows, the 12 host
 rows (Com_Frame, Cmd_ExecuteRegisteredCommand, XAPI save calls), unhookable stubs, 2 thunks, Cvar_Reset_f (original crashes).
