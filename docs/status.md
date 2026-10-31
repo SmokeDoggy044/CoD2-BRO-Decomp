@@ -244,6 +244,19 @@ occlusion (materials, partial cover, diffraction, per-room reverb from geometry)
 occlusion; lighting added on top of the baked lightmaps (dynamic shadows, better dynamic lights), not a relight; the
 model smoother (TruForm-style). None of it before the decompilation is complete.
 
+**qcommon push 9 (2026-10-31): every qcommon function has C - the module is decompiled. named 11788 · matched 3615/16577.**
+- Last C: 17 gap functions (ZoneGraph_RemoveZone vtable 0x00838214 slot 1, Cvar_SetFromCvar_f, SV_MapRestartInternal_f
+  "map_restart_internal" matched; 14 dead; 4 one-byte ret stubs unhookable) + FS_TouchFile_f 0x002a2440, FS_Dir_f 0x002a2480
+  (never-registered console commands, dead) + FX_SurfacePlane 0x0023b9c0 (renderer, dead; PlaneFromPoints' only caller).
+- Every untested row has a final class: [qcommon_classes.csv](qcommon_classes.csv) (address,name,class,evidence). The 70
+  still "untested" in progress.py: 48 script-only (templates called only from level-script builtins - BroScr_AnimNotetrack/
+  FaceWait/Flak*/Follow*/AddKeyedEnt...; missions 0-13 standing still never call them), 9 front end (save/profile UI),
+  7 matched offline below the 90% coverage bar, 6 not reached (aps spawn-on-death/orient actions, FileDeviceXapi_Cancel,
+  Sys_ListFiles/ListFilteredFiles, Pak_ReportProgress). Dead/exit/boot/host/no-data rows are in set_aside.csv.
+- Inconclusive by nature: Com_Frame (whole frame), Com_Init (CRT critical sections), Com_Quit_f and
+  Cmd_ExecuteRegisteredCommand (reach our audio back end SndHw_Update) - set aside as host/boot/exit.
+- Next: full ctest + leaf_test on main (user: once the module is done), then qcommon becomes Replaced.
+
 **qcommon pushes 7-8 (2026-10-31): every qcommon function has C except 21 gap functions (push 9); matched 3514 -> 3596/16574.**
 - Push 7 high (47): DynArray HashMap/shuffle/28/52 instances, console commands give/kill/dropweapon/setviewpos/jumptonode
   (cheats flag 0x00954f34=1 via XBCMP_POKE, --exec), Sys_Milliseconds (reads the clock through QueryPerformanceCounter
