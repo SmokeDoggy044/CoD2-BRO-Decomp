@@ -244,6 +244,31 @@ occlusion (materials, partial cover, diffraction, per-room reverb from geometry)
 occlusion; lighting added on top of the baked lightmaps (dynamic shadows, better dynamic lights), not a relight; the
 model smoother (TruForm-style). None of it before the decompilation is complete.
 
+**qcommon push 5 (2026-10-31): 116 functions, 0 open mismatches, matched 3352 -> 3473/16544, qcommon 351 -> 293 left (199 without C, 91 untested, 3 inconclusive).**
+- High (48): FS_FOpenFileRead/ByMode, FS_ReadFile, FS_AddGameDirectory, FS_Startup/Shutdown/Restart, Cmd_ExecuteString,
+  Cbuf_Execute/ExecuteBuffer/ExecuteText, Com_EventLoop, Com_Frame (all inconclusive: a frame reaches host code), vector
+  InsertN4/Resize4 instances (one C body, thin wrapper per instance). Fix: Cbuf_Execute's line buffer address in 0x00927f50
+  must be the original's ((E-4)&~7)-0x1000 (3 pre-fix rows dropped). New generic `qc_call_regs` for register-arg callees.
+- Low (68): std::string core, map/set/tree erase/heads/nodes, File_ pumps/device poll/request pick, Save_ mount/enum.
+  Rows of a bad force spec (b3run1) dropped.
+- Ghidra: 20 names applied (14 low FUN_, Com_ParseError, Loc_TrimQuotedValue, Loc_ResetStringFileState,
+  Save_HasEnoughFreeSpace, std_string_Xran/Xlen 0x001ee881/8c1); renamed 0x00020890 -> std_string_AppendN,
+  0x00021500 -> std_string_AppendSubstr, 0x000227e0 -> std_tree_EraseSubtree29. Created 12 gap functions (unnamed,
+  not yet sorted): file device code 0x000caa00, 0x000caa81/87/8d/93/99 (constant getters, pointer table 0x000caaa0),
+  0x000caab0, 0x000cab60, 0x000cab90, 0x000cac00; file ops slots 0x000cbbe0 (CancelIo) / 0x000cbc00 (SleepEx poll,
+  pointers 0x008bfeb0/b4); static init 0x00376750 (constructs Loc strings 0x0095fe70, atexit 0x00379950).
+- Set aside: Mem_GetPhysicalPoolStart/DebugPool*, File_LayoutMemory/Configure/InitSystem, FS_InitFilesystem (boot), FS_Seek (live).
+- Open: Com_Init 0x002a7490 (2253 B, boot; no C), Cmd_Exec_f needs --force with cmd_argc=2, argv[1]="style_g.cfg"
+  (0x00833cbc); Cmd_ExecuteRegisteredCommand inconclusive (dispatcher). Not reached: FS_CopyFile, FS_FOpenFileWrite/Append
+  (write files), Com_ParseError (error path), map/set erase (Loc maps empty in levels), tree29 (Cmd_RelaunchTitle_f only).
+- Fields: fsh handle 0x120 B (+0xc zip pos, +0x10 size, +0x14 zip info pos, +0x18 zip file, +0x1c streamed, +0x20 name);
+  search path +0 next, +4 pack, +8 dir, +0xc localized, +0x10 language; pack +0x100 base name, +0x194 hash size, +0x198 table;
+  file device 0x008bfe30 (+0x10 ops {issue, cancel, poll}, +0x30 request, +0x40 phase); config globals 0x008bfd70..80;
+  completion list 20 B entries 0x00920818 (count 0x00920814). The `*_PROLOGUE` helpers at 0x0045xxxx look like
+  per-mission overlay copies (ORAN/KASSPASS/BUCHHOLZ).
+- Left: low HashMap/HashStr/handle tables, map/set/tree inserts, std_vector_string/std_list, Save_ from 0xd0f10;
+  high from 0x0017e370 on (HashMap_*, std_list_*, Loc_ parsers, ...). ctest not run on the merged main (ask first).
+
 **qcommon push 4 (2026-10-29, day 27): 94 functions, 0 mismatches, matched 3273 -> 3352/16531, qcommon 498 -> 420.**
 - Low: 11 manager *_DeletingDtor (forced on stack objects, only the "not registered" path), all ResourceManager_Create*,
   DynArray/PtrVector/std_list helpers, ShortString/FixedStr64_Printf. High: Com_GetEvent, MatrixToAngles/AxisToAngles, Pak
