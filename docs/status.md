@@ -244,6 +244,25 @@ occlusion (materials, partial cover, diffraction, per-room reverb from geometry)
 occlusion; lighting added on top of the baked lightmaps (dynamic shadows, better dynamic lights), not a relight; the
 model smoother (TruForm-style). None of it before the decompilation is complete.
 
+**qcommon pushes 7-8 (2026-10-31): every qcommon function has C except 21 gap functions (push 9); matched 3514 -> 3596/16574.**
+- Push 7 high (47): DynArray HashMap/shuffle/28/52 instances, console commands give/kill/dropweapon/setviewpos/jumptonode
+  (cheats flag 0x00954f34=1 via XBCMP_POKE, --exec), Sys_Milliseconds (reads the clock through QueryPerformanceCounter
+  0x001ed6ca: the loader patches its RDTSC sites), FS_InitPackBuffers, Com_InitSmallHeap. Push 7 low (44): vector/string
+  helpers, Loc_HashKey, StringMap_Find, HashStrMap_* (a skip list), Save_ device/cluster code.
+- Push 8 high: Com_Init (boot tests inconclusive: CRT __crtInitCritSecNoSpinCount), Sys_Main (C, not in kFunctions: never
+  returns), StringTable_Load (fix: File_ReadAt is (file, pak offset, memory, size) - the C parameter names of File_ReadAt /
+  File_QueueRequest still say buffer/offset the wrong way round), Cmd_Take_f, Matrix_Orthonormalize, RotatePointAroundVector.
+  Push 8 low: 13 save functions named (Save_ErrorString, Save_BeginDelete, async read/write callbacks, ...).
+- Dead (set aside, C kept): the whole Loc string loader chain (root Loc_LoadStrings 0x002e4800 and Loc_ParseStringBuffer have
+  no reference, so the Loc maps are never filled), the std_tree*29 family (root gap 0x002cfcb0, no reference), RcString pair.
+- Set aside without C (Xbox-only, our own engine replaces them): Cmd_LaunchMultiplayer_f, Cmd_RelaunchTitle_f
+  (XLaunchNewImage), Sys_ReadLaunchInfo (XGetLaunchInfo).
+- Ghidra: 13 + 19 + 4 gap functions created (save code 0x000d0f60..0x000d1f90, 0x0028bb20..0x0028bc40, Loc wrappers,
+  0x002cfc20/70/b0, 0x002fbff0, 0x002ca590/5c0/5d0, Cvar_SetFromCvar_f 0x0029e380); FUN_0030c323 merged into
+  Save_ProfilesDirExists; 0x000209c0 -> std_vector_Assign4.
+- Push 9 (running): C for the 21 gap functions; final class for the 110 untested + 4 inconclusive rows. Then the full ctest
+  + leaf_test (ask the user first), then qcommon is complete.
+
 **qcommon push 6 (2026-10-31): 88 functions, 0 open mismatches, matched 3473 -> 3514/16540, qcommon 293 -> 254 left (120 without C, 131 untested, 3 inconclusive).**
 - High (53): HashMap copy/ctor/Index/Insert instances (linear hashing; layout in qcommon_fs.h), std_list InsertRange/BuyNode/IncSize,
   StaticInit_LocStrings (boot) + AtExit_LocStrings (exit), Cmd_Exec_f forced (XBCMP_POKE=0x00934248=2,0x0092df94=0x00833cbc).
