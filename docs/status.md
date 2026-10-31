@@ -244,6 +244,13 @@ occlusion (materials, partial cover, diffraction, per-room reverb from geometry)
 occlusion; lighting added on top of the baked lightmaps (dynamic shadows, better dynamic lights), not a relight; the
 model smoother (TruForm-style). None of it before the decompilation is complete.
 
+**Next: the client module (user, 2026-10-31), then the next module.** 761 functions, 281 left: 49 unnamed + 33 named
+without C (decompile, same push workflow: two agents, wt/qc_lo + wt/qc_hi can be reused under new branch names), 128
+untested + 62 inconclusive (mostly front-end menus, movie player, pad input: the user-steered --compare menu run, see
+"Steered client menu run, 2026-10-27"), 3 mismatched to look at first: CL_ApplyFrontEndReturnState 0x002f0750, CL_Init
+0x002f20a0, UIScreenMgr_SetActiveScreen 0x0032e6a0. List: `python3 tools/progress.py --module client`. Before the
+Replaced switch: scripts/keepregs.py (skill) + smoke both builds. The movie C moves from DirectSound to our device then.
+
 **qcommon is Replaced (2026-10-31): 863 functions run as C.** Kept original (Compare): the 70 live untested rows, the 12 host
 rows (Com_Frame, Cmd_ExecuteRegisteredCommand, XAPI save calls), unhookable stubs, 2 thunks, Cvar_Reset_f (original crashes).
 - Fixes the switch needed (smoke runs crashed at level load): MemContext_Pop's entry keeps EDX (0x00290005 pops twice with
