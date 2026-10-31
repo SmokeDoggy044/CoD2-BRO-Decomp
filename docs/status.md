@@ -225,7 +225,11 @@ anisotropic filtering, sharpening, colour vibrance and texture detail (amounts d
 the native loader only gets bug fixes):** textures, YUV quads, opening the display and presentation on our interface; no
 draw reaches the Xbox path. Paused A/B scenes as before (a few pixels off by at most 3/255 in missions 1 and 6, already in
 de44ed7: not from R5; not looked into yet). 60 fps back through the C's hooks (mission 4: 59.7 average, movies 30).
-Next: the full test (ctest, user's go), the user's steered test, release 0.2.0.
+Full ctest 10-30 (build/ctest_r5.txt, 36 min): 21/22 pass (title_shader_test skipped without a
+dump); leaf_test: Save_PortToDevice (known port-8 case), copy_block 1 (random input whose output buffer overlaps the
+deflate state; passes on rerun), and NAL_Packed16EntropyIKSpin_Dequantize/_Blend crashing on every case: R1's
+GAME_GAP_ESP reads FS:[0x14] and leaf_test had no FS block - it now gets a zeroed one (both 100% matched again).
+User's steered test 10-30: Operation Husky 24 min at 60 fps, plays and sounds good. Next: release 0.2.0.
 
 **qcommon push 4 (2026-10-29, day 27): 94 functions, 0 mismatches, matched 3273 -> 3352/16531, qcommon 498 -> 420.**
 - Low: 11 manager *_DeletingDtor (forced on stack objects, only the "not registered" path), all ResourceManager_Create*,
