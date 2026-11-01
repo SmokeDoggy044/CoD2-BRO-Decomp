@@ -269,8 +269,26 @@ Two agents, worktrees wt/cl_lo + wt/cl_hi (briefs wt/decomp_brief.md, module_pus
   - Controller config can't be changed in game under the loader: CL_ExecControllerConfig/FE_ApplyControlSettings are
     covered by forced calls only (8/8 each). Left for the own engine. Not called in either run: Special* menus, autosave
     and memory-card dialogs, mission retry, movie gallery.
-- Next: full ctest + leaf_test (ask the user first), then Replaced (scripts/keepregs.py from the skill + smoke both
-  builds; the movie C moves from DirectSound to our device then).
+- Then Replaced (below).
+
+**client is Replaced (2026-11-01): 605 functions run as C** (tools/set_replaced.py: every matched/settled/offline row).
+Kept original (Compare): 86 untested, 29 inconclusive, 44 set aside. named 11844 · matched 3868/16584.
+- Full ctest before the switch (build/ctest_client_1101.txt): 22/23; leaf_test only compress_block 2 of 1675 (the known
+  parallel-worker zlib case, see qcommon). Every client row clean.
+- keepregs: 8 hits, 6 already saved by their entries, Movie_SetState false (0x0005ddb0 zeroes XMM0 first);
+  FE_BonusCEItemGroup now keeps EDX (0x0031a4ab loads the menu once for it and 0x0030bd30).
+- Loader patches inside client code moved to game::client_pc_hooks() (cl.h), set when the function is Replaced
+  (client_c() in loader/patches.cpp): mouse look (CL_CreateCmd), menu render begin/end (UIRoot_Draw*: widescreen menus),
+  menu pointer (UIScreenMgr_HandleInput / UITextBase_Draw entries). --level needs nothing (CL_Frame's C takes the
+  patched call target), nor movie pacing (decode goes through the patched vtable slot) or the RDTSC sites (QPC).
+- Smoke crash mission 4 (loading screen, both builds; tools/bisect_replaced.py -> LoadAfricaMenu_RestoreSelection):
+  fe_menus/fe_profile's g_top (title calls at the original's ESP) stayed set while the original UIMenu_RestoreSelection
+  called back into the C ShowMissions, whose title calls then ran above live title frames. title_call now clears
+  g_top during the call. Also widened the front end's 0x10000 gap entries to 0x30000.
+- Smoke after the fixes: missions 4/1/6 (debug), 4/1 (release), no warnings or errors.
+- Not covered by smoke runs (--level skips the menus): the menu hooks (widescreen menus, menu mouse pointer) -
+  needs a front-end playtest. The movie C still uses DirectSound (works through xbox_dsound); moving it to our
+  sound device is open.
 
 **qcommon is Replaced (2026-10-31): 863 functions run as C.** Kept original (Compare): the 70 live untested rows, the 12 host
 rows (Com_Frame, Cmd_ExecuteRegisteredCommand, XAPI save calls), unhookable stubs, 2 thunks, Cvar_Reset_f (original crashes).

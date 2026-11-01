@@ -26,6 +26,7 @@
 #include "compiler.h"
 #include "crash.h"
 #include "bindings.h"
+#include "cl.h"
 #include "devices.h"
 #include "filesystem.h"
 #include "float_env.h"
@@ -241,8 +242,15 @@ void XB_CDECL mouse_look() {
     }
 }
 
+bool client_c(uint32_t campaign_address);
+
 // pushad; pushfd; call mouse_look; popfd; popad; jmp CL_MouseMove
 void install_mouse_look() {
+    if (client_c(0x002c7a90)) {  // CL_CreateCmd runs as C: it calls the hook
+        game::client_pc_hooks().mouse_look = &mouse_look;
+        LOG_INFO("patches", "mouse look: %.3f degrees per count", g_mouse_degrees_per_count);
+        return;
+    }
     auto* site = reinterpret_cast<uint8_t*>(uintptr_t{g_client.call_mouse_move});
     uint32_t relative;
     std::memcpy(&relative, site + 1, 4);
@@ -470,6 +478,10 @@ bool g_campaign = true;
 // The renderer module runs as C (Status::Replaced): its PC changes go through
 // game::renderer_pc_hooks() instead of patches into its original code, which no longer runs.
 bool g_renderer_c = false;
+// Client code that runs as C: its PC changes go through game::client_pc_hooks() (cl.h).
+bool client_c(uint32_t campaign_address) {
+    return g_campaign && compare::replaced(game::functions(), campaign_address);
+}
 std::string g_exec_text;     // pending until the level is active
 std::vector<TitlePatchConfig::ForcedCall> g_forced_calls;  // count: tests still to start
 uint64_t g_active_ms = 0;    // when the level became active (0: not yet)
@@ -706,6 +718,13 @@ uint8_t* put_preserving_call(uint8_t* t, void (*function)()) {
 }
 
 void install_menu_render_hooks() {
+    if (client_c(0x003153d0) && client_c(0x00315440) && client_c(0x003154b0)) {  // UIRoot_Draw* run as C
+        game::ClientPcHooks& hooks = game::client_pc_hooks();
+        hooks.menu_render_begin = &menu_render_begin;
+        hooks.screen_render_begin = &screen_render_begin;
+        hooks.menu_render_end = &menu_render_end;
+        return;
+    }
     const uint8_t slot = g_menus.render_slot;
     const uint8_t screen_site[8] = {0x8B, 0x01, 0x83, 0xC4, 0x10, 0xFF, 0x50, slot};
     const uint8_t call_site[5] = {0x8B, 0x11, 0xFF, 0x52, slot};
@@ -1600,6 +1619,11 @@ uint8_t* put_hook_thunk(uint8_t* t, void (XB_CDECL* function)(uint32_t), uint32_
 
 void install_menu_pointer() {
     const MenuPointerSites& sites = g_menu_pointer;
+    if (client_c(sites.text_draw) && client_c(sites.screen_poll)) {  // both run as C: they call the hooks
+        game::client_pc_hooks().text_drawn = &text_drawn;
+        game::client_pc_hooks().screen_poll = &menu_pointer;
+        return;
+    }
     auto* thunks = alloc_code(64);
     if (!thunks) return;
     uint8_t* t = put_hook_thunk(thunks, &text_drawn, sites.text_draw,
