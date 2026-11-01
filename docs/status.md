@@ -270,8 +270,8 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   PhysConstraintPoolD0_Alloc, AI_EventTypeFromName, Actor_CopyEyeDirection, 0x0024b620 G_FreeStringTable, 0x0020ec50/80),
   bodies fixed (PhysRagdoll_AddVelocityForce, Use_Multi, G_VehiclePopOut); renames G_QueueEntityRemove -> G_EntityList_QueueAdd,
   G_FindSpawnFunc -> G_InitSpawnFuncMap, Actor_IsInWeaponRange -> Sentient_GetRangeAccuracyScale, Actor_CanShootPoint ->
-  Actor_CanShootEnemy, two BroScr_PanzerIV* level-script helpers. build/naming (offline export) is a week old: agents saw
-  stale boundaries there; re-export before the next naming-heavy push.
+  Actor_CanShootEnemy, two BroScr_PanzerIV* level-script helpers. build/naming (offline export) re-exported at the end
+  of the session (ExportNaming, 3 chunks, 19433 functions): agents had seen stale boundaries in the week-old one.
 - Next: continue the pushes (lists above); full ctest + leaf_test only when the module has no function left without C.
 
 **The client module is decompiled (2026-10-31): every client function has C. named 11841 · matched 3821/16581.**
