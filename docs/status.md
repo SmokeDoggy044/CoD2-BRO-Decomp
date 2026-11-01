@@ -259,8 +259,18 @@ Two agents, worktrees wt/cl_lo + wt/cl_hi (briefs wt/decomp_brief.md, module_pus
 - Set aside: disc error screens (Xbox-only), Live_CheckGameInvite, dead rows (UI_RotationZ, UI_EulerMatrix, ...).
 - Ghidra: 50 names; created UI_UpdateLoadingIcon 0x003154a0 (split from UIRoot_DrawFrontEnd), TitleMenu_OnAccept 0x00012280,
   MissionSuccessFailMenu_DialogReturnTrue 0x0030cf90 (split from AutosaveMenu_MarkSlotsEmpty), CreateProfileMenu_Activate 0x00338ca0.
-- Next: full ctest + leaf_test (ask the user first), the user-steered --compare menu run for the front-end rows, then
-  Replaced (scripts/keepregs.py from the skill + smoke both builds; the movie C moves from DirectSound to our device then).
+- Steered menu runs (build/compare/menu_user7, menu_user8; saves copy with a profile):
+  - Run 1: 16 newly matched, 3 issue types. Fixed: UIRoot_UpdateFrontEnd and the 0x00927f50 byte (stack addresses: run
+    at the original's ESP), and a "host code at 00000000" crash (file calls zero 128 KB below ESP, so frame entries need a
+    0x30000 gap). Added C for ChapterMenu_OnUp/OnDown/Update (the unlock cheat).
+  - Run 2: 30 newly matched, no mismatches (bonus galleries, chapter cheat). 9 inconclusive: the original reaches host
+    stand-ins (SndHw_AllocSlot, XAPI Wide/MultiByte conversion).
+  - Unlock cheat on chapter select: hold LT+RT, then Up Up Down Down Left Left Right Right X Right X Right X.
+  - Controller config can't be changed in game under the loader: CL_ExecControllerConfig/FE_ApplyControlSettings are
+    covered by forced calls only (8/8 each). Left for the own engine. Not called in either run: Special* menus, autosave
+    and memory-card dialogs, mission retry, movie gallery.
+- Next: full ctest + leaf_test (ask the user first), then Replaced (scripts/keepregs.py from the skill + smoke both
+  builds; the movie C moves from DirectSound to our device then).
 
 **qcommon is Replaced (2026-10-31): 863 functions run as C.** Kept original (Compare): the 70 live untested rows, the 12 host
 rows (Com_Frame, Cmd_ExecuteRegisteredCommand, XAPI save calls), unhookable stubs, 2 thunks, Cvar_Reset_f (original crashes).
