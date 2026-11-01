@@ -309,6 +309,10 @@ Kept original (Compare): 86 untested, 29 inconclusive, 44 set aside. named 11844
 - Not a bug (original, 0x0032d83e): DifficultyMenu_StartGame sets 0x00940178 = 1, which makes SV_Map_f skip the
   chapter movie (Baptism by Fire, Operation Husky, The Great Crusade); only Com_Init clears it. A mission started from
   the difficulty screen (chapter select) has no chapter movie until the next title reboot.
+- Next session (user 11-01: "leave it"): optional short steered compare run (profile load, create profile, a save)
+  to retest the XQueryValue rows and ProfileSave_OnSaveOpComplete; the GfxDevice side in tests (gfx() -> null /
+  stand-in: CL_ApplyFrontEndReturnState, CreateProfileMenu_Finish, Stream_StartRequest, SV_SpawnServer); or the
+  next module (user picks; game has ~1348 left). Pre-existing: SV_* trace host-page mismatches (server module).
 
 **qcommon is Replaced (2026-10-31): 863 functions run as C.** Kept original (Compare): the 70 live untested rows, the 12 host
 rows (Com_Frame, Cmd_ExecuteRegisteredCommand, XAPI save calls), unhookable stubs, 2 thunks, Cvar_Reset_f (original crashes).
