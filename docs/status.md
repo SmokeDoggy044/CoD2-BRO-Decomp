@@ -300,6 +300,12 @@ Kept original (Compare): 86 untested, 29 inconclusive, 44 set aside. named 11844
   - a D3D/GfxDevice side; the reboot (Cmd_RelaunchTitle); CL_CharEvent (keyboard only). The front-end rows need a
   steered --compare menu run to retest. User 11-01: Special* untested rows are collector's edition content (not
   owned); mission fail and loading screens were played many times; saves only after a mission or manually.
+- Steered compare run menu_user9 (with the stand-ins): newly matched CreateProfileMenu_Activate, DifficultyMenu_StartGame,
+  FE_ControlsUpdateText, Save_CheckVersion, ProfileSave_PrepareRequest/OnProfilesRead, ... (matched 3871 -> 3879). Next
+  blocker XQueryValue -> ExQueryNonVolatileSetting (now pass-through: TitleMenu_Accept/OnAccept, FE_ProfileSelect,
+  ProfileMenu_CheckStorage, MemDlg_CheckFreeSpace2, Save_ProfilesDirExists). Inconclusive by design (they write):
+  WriteFile (Save_Update), CreateDirectoryA (ProfileMenu_StartLoad/ConfirmLoad). ProfileSave_OnSaveOpComplete
+  mismatched 1/7 on the set-text word 0x100006a8: its callees now run at the original's ESP (entry - 4).
 - Not a bug (original, 0x0032d83e): DifficultyMenu_StartGame sets 0x00940178 = 1, which makes SV_Map_f skip the
   chapter movie (Baptism by Fire, Operation Husky, The Great Crusade); only Com_Init clears it. A mission started from
   the difficulty screen (chapter select) has no chapter movie until the next title reboot.
