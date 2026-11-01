@@ -287,8 +287,13 @@ Kept original (Compare): 86 untested, 29 inconclusive, 44 set aside. named 11844
   g_top during the call. Also widened the front end's 0x10000 gap entries to 0x30000.
 - Smoke after the fixes: missions 4/1/6 (debug), 4/1 (release), no warnings or errors.
 - Not covered by smoke runs (--level skips the menus): the menu hooks (widescreen menus, menu mouse pointer) -
-  needs a front-end playtest. The movie C still uses DirectSound (works through xbox_dsound); moving it to our
-  sound device is open.
+  front-end playtest 11-01 (build/playtest_menus_1101): clean, no marks.
+- Movie sound on our device (2026-11-01): Movie_StartAudio / Movie_Dtor call audio::SoundDevice (game::sound_device(),
+  snd.h); Movie_DecodeFrame's C (Compare) stays on DirectSound, same voice id. platform_x87_log10_mul_ftol removed.
+  Playtest build/playtest_movie_1101: 3 movies, clean.
+- Not a bug (original, 0x0032d83e): DifficultyMenu_StartGame sets 0x00940178 = 1, which makes SV_Map_f skip the
+  chapter movie (Baptism by Fire, Operation Husky, The Great Crusade); only Com_Init clears it. A mission started from
+  the difficulty screen (chapter select) has no chapter movie until the next title reboot.
 
 **qcommon is Replaced (2026-10-31): 863 functions run as C.** Kept original (Compare): the 70 live untested rows, the 12 host
 rows (Com_Frame, Cmd_ExecuteRegisteredCommand, XAPI save calls), unhookable stubs, 2 thunks, Cvar_Reset_f (original crashes).
