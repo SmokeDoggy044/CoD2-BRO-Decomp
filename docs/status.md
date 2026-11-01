@@ -291,6 +291,15 @@ Kept original (Compare): 86 untested, 29 inconclusive, 44 set aside. named 11844
 - Movie sound on our device (2026-11-01): Movie_StartAudio / Movie_Dtor call audio::SoundDevice (game::sound_device(),
   snd.h); Movie_DecodeFrame's C (Compare) stays on DirectSound, same voice id. platform_x87_log10_mul_ftol removed.
   Playtest build/playtest_movie_1101: 3 movies, clean.
+- Stand-ins 2026-11-01 (user: "do file call stand-ins"): the client's 29 inconclusive rows mostly predated the
+  10-28 file pass-through; what still ended them: Rtl string conversions, XcSHA*/XcHMAC, XGetDeviceChanges (all
+  added, comparison-harness.md "File calls"), SoundDevice::has and our other device additions (added), an -O0
+  std::atomic helper bound to the loader's copy (-Bsymbolic-functions). Level run build/compare/standins2:
+  IN_PadCheckDeviceChanges 13776 inconclusive -> 37 matched (settled). Left: gfx() (renderer C asking the loader
+  for the GfxDevice: CL_ApplyFrontEndReturnState, FE_LoadTheatreBackground, Stream_StartRequest, SV_SpawnServer)
+  - a D3D/GfxDevice side; the reboot (Cmd_RelaunchTitle); CL_CharEvent (keyboard only). The front-end rows need a
+  steered --compare menu run to retest. User 11-01: Special* untested rows are collector's edition content (not
+  owned); mission fail and loading screens were played many times; saves only after a mission or manually.
 - Not a bug (original, 0x0032d83e): DifficultyMenu_StartGame sets 0x00940178 = 1, which makes SV_Map_f skip the
   chapter movie (Baptism by Fire, Operation Husky, The Great Crusade); only Com_Init clears it. A mission started from
   the difficulty screen (chapter select) has no chapter movie until the next title reboot.
