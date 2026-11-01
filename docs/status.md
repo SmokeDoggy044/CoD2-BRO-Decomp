@@ -244,6 +244,36 @@ occlusion (materials, partial cover, diffraction, per-room reverb from geometry)
 occlusion; lighting added on top of the baked lightmaps (dynamic shadows, better dynamic lights), not a relight; the
 model smoother (TruForm-style). None of it before the decompilation is complete.
 
+**Resume here: game module pushes (2026-11-01). Game rewritten 280 -> 817 of 1635 (818 left); named 11990 · matched 4416/16592.**
+- Three agents, one worktree each (fresh agent per push of 3 batches, coordinator merges): phys (wt/cl_lo, branch g_phys:
+  physics solver, ragdolls, vehicles, pmove), ai (wt/cl_hi, g_ai: actors, paths, sentients, turrets AI, script threads),
+  ent (wt/g_ent, g_ent: entities, spawns, triggers, movers, damage, items, from G_FreeEntityPhysics 0x00231670 up).
+  Briefs: cod_bro/wt/decomp_brief.md + module_push_brief.md + game_push_brief.md. Lists and where each stands:
+  cod_bro/wt/g_<part>_list.txt and wt/game_push_progress.txt. Coordinator scripts: wt/tools/ (merge_push.sh resolves the
+  usual CSV conflicts, names_files.py updates symbols/functions.csv/manual_names.csv, RenameFromCsv.java renames in Ghidra).
+- Pushes done: phys 10, ai 9, ent 6. Classes for untested rows: docs/game_classes.csv (dead 51+, matched offline 105+, not
+  reached 101+, script-only, thread switch, exit). Pre-fix rows dropped by hand-edited counts after every fix.
+- Open mismatches: Actor_Turret_UpdatePose 43 (after its frame rebuild, other missions; host bone-matrix bytes),
+  G_TouchType14EntitiesInBox 1 (81e23c5c [host] after its fix). ClientDisconnect inconclusive (forced: original faults).
+- Recurring cause, fixed everywhere it showed: callees storing a stack address (0x00929b40 PathNode_FindNearest, traces
+  writing 0x804fff2c / 0x81e23c5c, AStar open-list head) -> gap entry, title callees at the original's ESP, locals at the
+  original's frame offsets (actor.cpp actor_frame_call_raw / call_at_xmm0, g_main.cpp g_ent_call).
+- NaN-only offline differences (phys): all the commutative-SSE payload case (both inputs NaN; GCC -O0 makes the 2nd operand
+  the destination, MSVC the 1st); proven by a temporary b+a respelling of lanes.h add/mul (182->1, 128->0, 160->0 ...).
+  Fix at the Replaced switch with the fixed-destination addps/mulps helper planned for Quat_Slerp.
+- Before Replaced: PhysWorld_Step pushes `last` with EDX's stale upper bytes (carried in C); PhysRagdoll_TakeBody returns
+  null where the original Sys_DebugBreaks and writes through null; the script wait/thread-start functions are not hooked
+  (thread switches, unhookable prologues; set_aside.csv).
+- Coordinator decisions: G_CheckMissionEnd decompiled (not set aside: game code on our decompiled renderer/file C);
+  Phys_ShapeContact and other dead code get C too.
+- Ghidra this session: ~150 names, functions created (PhysRagdoll_SetBodiesFlag1, PhysWorld_AllocConstraintD0,
+  PhysConstraintPoolD0_Alloc, AI_EventTypeFromName, Actor_CopyEyeDirection, 0x0024b620 G_FreeStringTable, 0x0020ec50/80),
+  bodies fixed (PhysRagdoll_AddVelocityForce, Use_Multi, G_VehiclePopOut); renames G_QueueEntityRemove -> G_EntityList_QueueAdd,
+  G_FindSpawnFunc -> G_InitSpawnFuncMap, Actor_IsInWeaponRange -> Sentient_GetRangeAccuracyScale, Actor_CanShootPoint ->
+  Actor_CanShootEnemy, two BroScr_PanzerIV* level-script helpers. build/naming (offline export) is a week old: agents saw
+  stale boundaries there; re-export before the next naming-heavy push.
+- Next: continue the pushes (lists above); full ctest + leaf_test only when the module has no function left without C.
+
 **The client module is decompiled (2026-10-31): every client function has C. named 11841 · matched 3821/16581.**
 Two agents, worktrees wt/cl_lo + wt/cl_hi (briefs wt/decomp_brief.md, module_push_brief.md, client_push_brief.md).
 - Fixes: UIScreenMgr_SetActiveScreen / CL_PauseIntoFrontEnd (S_PlaySoundAlias keeps stack-local addresses: run at the
