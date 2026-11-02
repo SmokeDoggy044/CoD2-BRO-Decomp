@@ -279,6 +279,13 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   family (SV_ClipMoveToEntities_r 15586/77219, SV_CapsuleTrace, SV_PointTraceToEntities_r, SV_SectorSightTrace_r,
   SV_TraceStaticModels_r) on the 804fff2c / 81e23c5c / f3e2b5xx host words - the same stack-depth words the game agents
   fixed with original-ESP calls. Details: cod_bro/wt/game_push_progress.txt.
+- Mismatch review (same day): a real bug - Actor_FindNearbyActor's settled branch had the +0x244 test inverted (the
+  original selects the actor when its +0x39c entity has +0x244 set; 0x0020301f jne), found through Actor_Grenade_Cower's
+  one mismatch (ours wrote +0x1390 = 0x81017f80, the original 0); fixed, 11223 more tests clean (build/compare/nearby_fix).
+  The rest is stale stack, all in never-written trace/box lanes: accepted.csv patterns for the five SV walkers made
+  byte-granular (a partly differing word shows as ..d/e/f [1-3]; SV_TraceStaticModels_r also +0x38..+0x3f), and
+  Actor_CheckGrenadeThrow added (CM_TempBoxModel lanes, as CG_ClipMoveToEntities). NAL_AnimTrack_Sample and
+  CG_ClipMoveToEntities already matched their patterns.
 - Next: continue the pushes (lists above); full ctest + leaf_test only when the module has no function left without C.
 
 **The client module is decompiled (2026-10-31): every client function has C. named 11841 · matched 3821/16581.**
