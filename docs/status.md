@@ -272,6 +272,13 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   G_FindSpawnFunc -> G_InitSpawnFuncMap, Actor_IsInWeaponRange -> Sentient_GetRangeAccuracyScale, Actor_CanShootPoint ->
   Actor_CanShootEnemy, two BroScr_PanzerIV* level-script helpers. build/naming (offline export) re-exported at the end
   of the session (ExportNaming, 3 chunks, 19433 functions): agents had seen stale boundaries in the week-old one.
+- Steered compare run (user, Crucifix Hill, 30 min, build/compare/crucifix_user2): 227 functions tested, 34 for the first
+  time (31 game: every grenade/melee row, Touch_Item, Pickup_Health, hurt_touch, fire_grenade, G_UpdatePlayerHeadEnt ...;
+  their "not reached" class rows removed). New mismatches: Actor_CheckGrenadeThrow 2/15, Actor_Grenade_Cower 1/26 (game);
+  NAL_AnimTrack_Sample 218/572 (xanim, host words 0x822xxxxx), CG_ClipMoveToEntities 1/4 (cgame), and the server trace
+  family (SV_ClipMoveToEntities_r 15586/77219, SV_CapsuleTrace, SV_PointTraceToEntities_r, SV_SectorSightTrace_r,
+  SV_TraceStaticModels_r) on the 804fff2c / 81e23c5c / f3e2b5xx host words - the same stack-depth words the game agents
+  fixed with original-ESP calls. Details: cod_bro/wt/game_push_progress.txt.
 - Next: continue the pushes (lists above); full ctest + leaf_test only when the module has no function left without C.
 
 **The client module is decompiled (2026-10-31): every client function has C. named 11841 · matched 3821/16581.**
