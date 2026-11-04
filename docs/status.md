@@ -244,9 +244,29 @@ occlusion (materials, partial cover, diffraction, per-room reverb from geometry)
 occlusion; lighting added on top of the baked lightmaps (dynamic shadows, better dynamic lights), not a relight; the
 model smoother (TruForm-style). None of it before the decompilation is complete.
 
-**Resume here: game module DECOMPILED; switch steps 1-2 done (11-04: debug ctest + debug AND release leaf_test clean
-apart from classed rows); next: step 3 = progress.py, set_replaced.py game (+ client's 2 rows), keepregs.py, smoke debug
-4/1/6 + release 4/1 (ask the user first - smoke runs open windows).**
+**game is Replaced (2026-11-04): 1312 functions run as C**, plus 13 client rows matched since the client switch
+(RumbleQueue_ClearAll, CL_UpdateLoadingProgress, DifficultyMenu_StartGame, CreateProfileMenu_Activate, ...).
+- keepregs (game,client): 21 functions flagged; 16 already kept by their entries or false positives (the callee writes
+  the register first, or `push ecx` only reserves a stack slot). New entries that keep what the original keeps:
+  Sentient_GetVelocity + PathNode_FromHandle (XMM0-7; callers keep positions in XMM0-2), PM_StartLegsAnim (XMM1-7,
+  0x002aca61), SetClientViewAngle (EDX, passed on at 0x0025bbee), Vehicle_ClearEntityRefs (EDX, 0x002b7897). An asm entry's
+  C target must be PLATFORM_HIDDEN (else "read-only segment has dynamic relocations").
+- Smoke 1 (build/smoke_game_1104): release 4/1 and debug 6 clean; debug 4 and 1 crashed in level start. Debug 1:
+  Actor_InitStateMachine (called by the original GScr_ForceSpawnNamed inside a resumed script thread) read `ent` from its
+  -O0 frame overwritten with a host return address. Debug 4: bisect_replaced.py -> Scr_RunThreads (by elimination;
+  confirmed: clean with it original). Both are the "thread switch" class (game_classes.csv): BRO's compiled level scripts
+  save and restore the x86 stack on a wait, and a gap entry's C frame sits outside that saved range, so a C frame live
+  across a switch can be overwritten (-O2 happened to keep the locals in registers). Actor_InitStateMachine's
+  g_animScriptInit call switches when the spawn runs in a script thread; the exact overwrite under Scr_RunThreads was
+  not traced (unverified). Both kept original (Compare, commented in functions.cpp); the own engine's script runtime
+  replaces this mechanism. Rule for later modules: C that is called from, or resumes, a script thread and reaches a wait
+  stays original.
+- Smoke 2 (build/smoke_game_1104/final, both original, no override): debug 4/1/6 and release 4/1 clean, gameplay reached.
+- Next: the next module push (user picks). Left by module (progress.py): script 1992, levelscript 1446 and levels 5324
+  (the translator), mslib 2071 (library), game 332 / client 152 / qcommon 140 (untested, inconclusive or set aside).
+
+**Earlier (11-04): game module DECOMPILED; switch steps 1-2 done (debug ctest + debug AND release leaf_test clean
+apart from classed rows).**
 - Switch step 2 done (11-04). Debug ctest 22/23, leaf_test left: G_RestorePlayerHealth + G_RestorePlayerLoadout (the same
   out-of-range g_skillLevel class: BRO has skill 0-2, index 3 reads the original's return address 0x002d5b8d) and
   VehiclePhys_AddContacts (unreachable, NaN inputs); one unreproduced Actor_Lmg_Touch word (1 of 2683 in one full run,
