@@ -244,7 +244,17 @@ occlusion (materials, partial cover, diffraction, per-room reverb from geometry)
 occlusion; lighting added on top of the baked lightmaps (dynamic shadows, better dynamic lights), not a relight; the
 model smoother (TruForm-style). None of it before the decompilation is complete.
 
-**Resume here: game module DECOMPILED (2026-11-03); next: full ctest + leaf_test, then Replaced.**
+**Resume here: game module DECOMPILED and leaf_test clean (2026-11-03); next: the Replaced switch (ask the user first -
+smoke runs open windows).**
+- Full ctest 11-03: 22/23 passed; leaf_test fixes since: PhysHinge_AddContacts (x87 divide), PhysConstraint28c_Setup +
+  PhysHinge_Setup (harness zeroes the 64-byte slack above the arguments), VehiclePhys_ApplyDriveInputs (x87 mul/abs),
+  NAL_EntropyMode19 + modes 0F/14/16/18/1A (store before consuming the code), NAL_Quat_BeginBlock (harness makes the
+  host main stack read-only during a call), zlib put_byte/bi_windup store order, PhysAngularMotor_AddContacts (body 1
+  read once). Rerun with LEAF_JOBS=8 (13 min; default stays 4, user 11-03): only G_RestorePlayerHealth's classed
+  out-of-range inputs left. PhysJoint_SolveStep crashes on random NaN-over-pointer inputs (explained, not a bug).
+- Leaf speed (measured 11-03): LEAF_JOBS=8 halves the time (8 real cores); the release build's leaf_test is ~3x faster
+  again but found a release-only float difference: PhysBody_Integrate 51/936 mismatched (debug 0/958) - look at it
+  (players run release) and consider a release leaf_test as a separate check.
 - 2026-11-03: 36 more pushes (3 agents, same worktrees/briefs/scripts as 11-01). Every game function has C and a test or a
   class (docs/game_classes.csv), except the script thread-switch rows (C unregistered, classed) and G_SetupVehiclePool_Thunk
   (set_aside.csv). named 12081 · matched 4922/16612 (was 4416/16592; ~20 functions created in Ghidra as missed gaps or
