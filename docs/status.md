@@ -246,6 +246,18 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
 
 **Resume here: game module DECOMPILED and leaf_test clean (2026-11-03); next: the Replaced switch (ask the user first -
 smoke runs open windows).**
+- Switch step 1 done (11-03, "before Replaced" fixes): lanes.h add/mul/sub are now volatile ADDPS/MULPS/SUBPS with the
+  first operand as destination (platform_addps/mulps/subps in platform/compiler.h; ragdoll's _ba respellings removed):
+  NaN payloads as MSVC's, and -O2 can no longer drop unused lanes. Scalar platform_mulss/addss for the same rule
+  (Mat34_FromAxisSinCos sums, PhysObject1c0_PredictTransform's h). platform_opaque(v) stops -O2 folding a COMISS on a
+  value it proves NaN: that was the release-only PhysBody_Integrate mismatch (missing invalid flag in
+  Mat34_FromRotationVector); also at phys.cpp's 1e-4 length compare, frame_length, cg_view's falloff. Release and debug
+  LEAF_ONLY runs clean over 5 seeds; a rare whole-row NaN payload (0-2 of ~3700, original 7fc00000 vs input NaN) is left
+  in the rotation path (classed nan). PM_CmdScale's entry saves XMM1-7 (the original writes only XMM0). Checked, no change:
+  ClientEvents' EAX (SV_LinkEntity loads EAX first), PhysWorld_Step's stale EDX bytes (Substep reads the low byte), the
+  direct leaf C calls (stale-stack writes only). regscan.py: every game-module hit is an aliased register convention or
+  a false positive (nglBeginFrame rdtsc, _memmove). Next: step 2 (full ctest + leaf_test, ask first) - a release
+  leaf_test too, since -O2 folding can hide elsewhere.
 - Full ctest 11-03: 22/23 passed; leaf_test fixes since: PhysHinge_AddContacts (x87 divide), PhysConstraint28c_Setup +
   PhysHinge_Setup (harness zeroes the 64-byte slack above the arguments), VehiclePhys_ApplyDriveInputs (x87 mul/abs),
   NAL_EntropyMode19 + modes 0F/14/16/18/1A (store before consuming the code), NAL_Quat_BeginBlock (harness makes the
