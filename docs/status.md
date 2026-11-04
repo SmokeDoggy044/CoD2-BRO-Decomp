@@ -269,6 +269,9 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   (C++20 or fibers); a wait suspends instead of copying the x86 stack, and the thread-switch rows (Scr_Wait*,
   Scr_CallThread*, Actor_InitStateMachine, Scr_RunThreads) move over then. Until then they stay original; the script
   push decompiles and tests the rest as usual (module pushes, up to 3 agents, briefs in cod_bro/wt/).
+- **Script push started (11-04 evening):** brief wt/scr_push_brief.md; 3 agents: field (wt/g_ent, branch scr_field:
+  ScrField templates via tools/shapes.py + a generator), gscr (wt/cl_lo, scr_gscr: GScr_ builtins), core (wt/cl_hi,
+  scr_core: runtime). Lists wt/scr_{field,gscr,core}_list.txt. Merge each branch after its push, then progress.py --readme.
 - Other leftovers: mslib 2071 (library: XVOICE/UIX/LIBCMT, set aside by the own-engine plan), game 332 / client 152 /
   qcommon 140 (untested, inconclusive or set aside).
 
