@@ -275,6 +275,9 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   State 11-05: field list DONE (all tested). gscr (wt/cl_lo, scr_gscr) 0x002fdab0..<0x00303600; gscr2 (wt/g_ent, branch
   scr_gscr2, file g_scr_builtins2.cpp) 0x00303600..end; core (wt/cl_hi) 188 rows left from ScriptString_TrimLeftChars /
   ScriptKeyTable_*. Merge with wt/tools/merge_push.sh BRANCH (regenerates leaf_functions.inc), build, ctest -E leaf_test.
+  Before the script Replaced switch: VM_Call (gap entry, C frame 0x30000 below its entry for the whole game frame incl.
+  Scr_RunThreads) - check restored script-thread stacks cannot reach that deep, else keep it original. The 32
+  AeThreadFunctor*_Invoke rows are thread switch (kept original, --keep at the switch).
   Ghidra fixes queued in wt/ghidra_todo.md "Script push". Counter matched 6287/16612.
 - Other leftovers: mslib 2071 (library: XVOICE/UIX/LIBCMT, set aside by the own-engine plan), game 332 / client 152 /
   qcommon 140 (untested, inconclusive or set aside).
