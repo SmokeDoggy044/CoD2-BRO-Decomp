@@ -167,7 +167,10 @@ builds and runs several missions at once and prints one line per function. Detai
 - `compare_test`: the comparison harness itself, against a stand-in library.
 - `nal_entropy_test` and `leaf_test`: rewritten functions against the original
   code from `default.xbe`, on generated inputs (skipped without the game files;
-  `leaf_test` takes about half an hour).
+  `leaf_test` takes about half an hour, 13 minutes with `LEAF_JOBS=8`). Run it in the
+  release build too (`build/linux-loader-release/bin/leaf_test`): the optimizer
+  changes float code in ways -O0 never does (docs/comparison-harness.md, "Release
+  builds"; `tools/x87_narrowing.py` finds two of the three kinds).
 
 They need a 32-bit build because `xbox/` stores the title's pointers as 32-bit
 `XbPtr`; making `xbox/` 64-bit-clean is part of the full native build.

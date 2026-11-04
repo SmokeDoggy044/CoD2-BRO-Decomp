@@ -244,8 +244,19 @@ occlusion (materials, partial cover, diffraction, per-room reverb from geometry)
 occlusion; lighting added on top of the baked lightmaps (dynamic shadows, better dynamic lights), not a relight; the
 model smoother (TruForm-style). None of it before the decompilation is complete.
 
-**Resume here: game module DECOMPILED and leaf_test clean (2026-11-03); next: the Replaced switch (ask the user first -
-smoke runs open windows).**
+**Resume here: game module DECOMPILED; switch steps 1-2 done (11-04: debug ctest + debug AND release leaf_test clean
+apart from classed rows); next: step 3 = progress.py, set_replaced.py game (+ client's 2 rows), keepregs.py, smoke debug
+4/1/6 + release 4/1 (ask the user first - smoke runs open windows).**
+- Switch step 2 done (11-04). Debug ctest 22/23, leaf_test left: G_RestorePlayerHealth + G_RestorePlayerLoadout (the same
+  out-of-range g_skillLevel class: BRO has skill 0-2, index 3 reads the original's return address 0x002d5b8d) and
+  VehiclePhys_AddContacts (unreachable, NaN inputs); one unreproduced Actor_Lmg_Touch word (1 of 2683 in one full run,
+  0 over 7 seeds). The FIRST full release leaf_test: 21 functions failed, all release-only, all fixed (docs/
+  comparison-harness.md "Release builds"): x87 narrowing (GCC makes (float)(long double a*b) a MULSS under MXCSR:
+  FLT_MAX vs inf, denormal vs 0 in the solver; every long double conversion now platform_x87_ld), quiet UCOMISS
+  compares (platform_greater/_equal), dropped lanes (platform_cmpltps_mask, platform_divps/maxps/minps; inside_xyz,
+  less_mask, all_less3, PhysBox_SweepSphere), a MINSS (capsule radius x3). tools/x87_narrowing.py: 0 lines. Final
+  release run: the same 3 classed rows as debug. Known flake: "worker crashed outside a call" (signal 14) 1-4 per run;
+  compress_block once "never finished" (3 workers died in run c; clean standalone and in runs d/e).
 - Switch step 1 done (11-03, "before Replaced" fixes): lanes.h add/mul/sub are now volatile ADDPS/MULPS/SUBPS with the
   first operand as destination (platform_addps/mulps/subps in platform/compiler.h; ragdoll's _ba respellings removed):
   NaN payloads as MSVC's, and -O2 can no longer drop unused lanes. Scalar platform_mulss/addss for the same rule
