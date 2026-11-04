@@ -272,6 +272,10 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
 - **Script push started (11-04 evening):** brief wt/scr_push_brief.md; 3 agents: field (wt/g_ent, branch scr_field:
   ScrField templates via tools/shapes.py + a generator), gscr (wt/cl_lo, scr_gscr: GScr_ builtins), core (wt/cl_hi,
   scr_core: runtime). Lists wt/scr_{field,gscr,core}_list.txt. Merge each branch after its push, then progress.py --readme.
+  State 11-04 night: field list all C (1007/1010 registered, 3 unhookable in set_aside.csv), 921 tested (forced calls,
+  tools/scrfield_force.py); field push 3 = the 86 untested. gscr done through 002f9510 (162/471). core done through
+  0x0011a860 (~267 rows). Merge with wt/tools/merge_push.sh BRANCH (regenerates leaf_functions.inc), build, ctest -E leaf_test.
+  Ghidra fixes queued in wt/ghidra_todo.md "Script push". Counter matched 6071/16612.
 - Other leftovers: mslib 2071 (library: XVOICE/UIX/LIBCMT, set aside by the own-engine plan), game 332 / client 152 /
   qcommon 140 (untested, inconclusive or set aside).
 
