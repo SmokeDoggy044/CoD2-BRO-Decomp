@@ -262,8 +262,15 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   replaces this mechanism. Rule for later modules: C that is called from, or resumes, a script thread and reaches a wait
   stays original.
 - Smoke 2 (build/smoke_game_1104/final, both original, no override): debug 4/1/6 and release 4/1 clean, gameplay reached.
-- Next: the next module push (user picks). Left by module (progress.py): script 1992, levelscript 1446 and levels 5324
-  (the translator), mslib 2071 (library), game 332 / client 152 / qcommon 140 (untested, inconclusive or set aside).
+- **Next module (decided 11-04): script** (2004 rows, 1992 left, nearly all named): ScrField 909 (field accessors -
+  check whether they are uniform enough for tools/scaffold.py first), GScr 471 builtins, ScrActor/ScrCall/ScrEnt/
+  ScrVehNodeField, ScriptString/ScriptKeyTable. Why first: it is the runtime levelscript (1446) and the levels' compiled
+  scripts call, so it comes before the translator. Own engine (user agreed 11-04): script threads become coroutines
+  (C++20 or fibers); a wait suspends instead of copying the x86 stack, and the thread-switch rows (Scr_Wait*,
+  Scr_CallThread*, Actor_InitStateMachine, Scr_RunThreads) move over then. Until then they stay original; the script
+  push decompiles and tests the rest as usual (module pushes, up to 3 agents, briefs in cod_bro/wt/).
+- Other leftovers: mslib 2071 (library: XVOICE/UIX/LIBCMT, set aside by the own-engine plan), game 332 / client 152 /
+  qcommon 140 (untested, inconclusive or set aside).
 
 **Earlier (11-04): game module DECOMPILED; switch steps 1-2 done (debug ctest + debug AND release leaf_test clean
 apart from classed rows).**
