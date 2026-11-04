@@ -244,20 +244,25 @@ occlusion (materials, partial cover, diffraction, per-room reverb from geometry)
 occlusion; lighting added on top of the baked lightmaps (dynamic shadows, better dynamic lights), not a relight; the
 model smoother (TruForm-style). None of it before the decompilation is complete.
 
-**Resume here: game module pushes (2026-11-01). Game rewritten 280 -> 817 of 1635 (818 left); named 11990 · matched 4416/16592.**
-- Three agents, one worktree each (fresh agent per push of 3 batches, coordinator merges): phys (wt/cl_lo, branch g_phys:
-  physics solver, ragdolls, vehicles, pmove), ai (wt/cl_hi, g_ai: actors, paths, sentients, turrets AI, script threads),
-  ent (wt/g_ent, g_ent: entities, spawns, triggers, movers, damage, items, from G_FreeEntityPhysics 0x00231670 up).
-  Briefs: cod_bro/wt/decomp_brief.md + module_push_brief.md + game_push_brief.md. Lists and where each stands:
-  cod_bro/wt/g_<part>_list.txt and wt/game_push_progress.txt. Coordinator scripts: wt/tools/ (merge_push.sh resolves the
-  usual CSV conflicts, names_files.py updates symbols/functions.csv/manual_names.csv, RenameFromCsv.java renames in Ghidra).
-- Pushes done: phys 10, ai 9, ent 6. Classes for untested rows: docs/game_classes.csv (dead 51+, matched offline 105+, not
-  reached 101+, script-only, thread switch, exit). Pre-fix rows dropped by hand-edited counts after every fix.
-- Open mismatches: Actor_Turret_UpdatePose 43 (after its frame rebuild, other missions; host bone-matrix bytes),
-  G_TouchType14EntitiesInBox 1 (81e23c5c [host] after its fix). ClientDisconnect inconclusive (forced: original faults).
-- Recurring cause, fixed everywhere it showed: callees storing a stack address (0x00929b40 PathNode_FindNearest, traces
-  writing 0x804fff2c / 0x81e23c5c, AStar open-list head) -> gap entry, title callees at the original's ESP, locals at the
-  original's frame offsets (actor.cpp actor_frame_call_raw / call_at_xmm0, g_main.cpp g_ent_call).
+**Resume here: game module DECOMPILED (2026-11-03); next: full ctest + leaf_test, then Replaced.**
+- 2026-11-03: 36 more pushes (3 agents, same worktrees/briefs/scripts as 11-01). Every game function has C and a test or a
+  class (docs/game_classes.csv), except the script thread-switch rows (C unregistered, classed) and G_SetupVehiclePool_Thunk
+  (set_aside.csv). named 12081 · matched 4922/16612 (was 4416/16592; ~20 functions created in Ghidra as missed gaps or
+  missing from the symbol export; 3 boundary fixes; G_EntAttach/Detach and GScr_Attach/Detach names were swapped).
+- Real bugs found by the harness: Path_TryDodge (index argument slot reused for a distance), Scr_RunThreads (shadowed local
+  gave a resume a bad ESP), G_PlayerDeathSetup (shake radius 2000 not 1000), VehNodePool_Free (return value),
+  Vehicle_UpdatePhysics (the title's __CIsqrt rounds to nearest; a bare FSQRT under the title's control word chops).
+- Accepted (tools/data/accepted.csv): CM_TempBoxModel never writes its vec4 w lanes (host words 804fff2c/81e23c5c, gdb
+  watchpoint) - all traces; the script thread's stack copy (Scr_SaveThreadLocals) of the running call's return address;
+  inertia/skeleton w lanes. Rows below 100 matches count only when the user approved them (tools/data/accepted_approved.csv).
+- Switch step (as the client on 11-01): full ctest + leaf_test, progress.py, tools/set_replaced.py game (and client for its 2
+  new matched rows: RumbleQueue_ClearAll, CL_UpdateLoadingProgress), keepregs.py, smoke debug 4/1/6 + release 4/1.
+  "Before Replaced" register notes per list are in cod_bro/wt/game_push_progress.txt (ClientEvents EAX, PM_CmdScale
+  XMM5-7, Ragdoll_PoseToBody b+a, leaf C called directly, ...).
+- Not reached, need a played/steered run: grenade reactions, picking up a weapon, bad places, rare actor states. Tank
+  rows are reached in mission 2 (Tunisia) with steady rt presses (scratch press list noted in game_push_progress.txt).
+- gdb lesson: a loader run under gdb with follow-fork can survive gdb's timeout and hold compare.lock with a window open;
+  kill the run's own loader by PID after every gdb run.
 - NaN-only offline differences (phys): all the commutative-SSE payload case (both inputs NaN; GCC -O0 makes the 2nd operand
   the destination, MSVC the 1st); proven by a temporary b+a respelling of lanes.h add/mul (182->1, 128->0, 160->0 ...).
   Fix at the Replaced switch with the fixed-destination addps/mulps helper planned for Quat_Slerp.
