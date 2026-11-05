@@ -299,6 +299,8 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   1 byte at 0x100006a8 (text-setter stack word, original runs - Compare). A gap entry for it moved the difference into
   nested gap entries' host scratch (harness: nested gap frames differ between sides) - reverted, follow-up.
   tools/regpass.py lists C calls passing 0 in a register the original loads (82 "REAL?" candidates, not reviewed).
+  Register review started 11-05: 82 regpass candidates split over 3 agents (brief wt/regpass_brief.md; lists
+  wt/regpass_{a,b,c}.txt; worktrees cl_lo reg_a / cl_hi reg_b / g_ent reg_c). Merge each with wt/tools/merge_push.sh.
   Before the script Replaced switch: VM_Call (gap entry, C frame 0x30000 below its entry for the whole game frame incl.
   Scr_RunThreads) - check restored script-thread stacks cannot reach that deep, else keep it original. The 32
   AeThreadFunctor*_Invoke rows are thread switch (kept original, --keep at the switch).
