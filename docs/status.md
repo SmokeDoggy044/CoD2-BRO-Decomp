@@ -294,6 +294,8 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   Levelscript cleanup before the switch: unhookable/1-byte rows classed in levelscript_classes.csv -> set_aside.csv
   (progress still shows them named); C still missing for SetDirectionalMoveAnims (unhookable), PlayerFeelsImportant_2
   (dead), WeaponClassFor; two helper headers / stub sets / anim-handle generators to unify.
+  Thread-switch rows: after the last push, re-score all with `vc71match --thread-switch --facts --force-inline`
+  (scores before the COFF decoding fix b530d15c were understated).
 - **Resume here (2026-11-05 end): script is Replaced; next module = user picks** (levelscript 1446 = the API the
   levels' compiled scripts call; levels 5324 = translator; mslib set aside; leftovers game 332 / client 152 / qcommon
   140). Counter named 12094/16616 · matched 6576/16616. Switch checklist (learned this module): full ctest + leaf_test
