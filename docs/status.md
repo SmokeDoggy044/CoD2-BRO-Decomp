@@ -262,6 +262,12 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   replaces this mechanism. Rule for later modules: C that is called from, or resumes, a script thread and reaches a wait
   stays original.
 - Smoke 2 (build/smoke_game_1104/final, both original, no override): debug 4/1/6 and release 4/1 clean, gameplay reached.
+- **Levelscript push started (11-05, user picked levelscript):** tools/waitreach.py splits the 1446 rows: 817 can
+  reach a script thread switch (waits, Scr_CallThread*, Scr_Suspend*; byte-scan call graph + interface slots, an
+  over-approximation), 629 cannot. The 629 go to 3 agents (brief wt/ls_push_brief.md; lists wt/ls_{a,b,c}_list.txt;
+  worktrees g_ent/cl_lo/cl_hi, branches ls_a/ls_b/ls_c; C in new game/code/bro_scr_*.cpp; classes
+  docs/levelscript_classes.csv). The 817: open question to the user (thread-switch rule: C written but kept
+  original, untestable until coroutines).
 - **Resume here (2026-11-05 end): script is Replaced; next module = user picks** (levelscript 1446 = the API the
   levels' compiled scripts call; levels 5324 = translator; mslib set aside; leftovers game 332 / client 152 / qcommon
   140). Counter named 12094/16616 · matched 6576/16616. Switch checklist (learned this module): full ctest + leaf_test
