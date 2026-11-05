@@ -284,6 +284,13 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   1/2374 (dead). Known: VehiclePhys_AddContacts, G_RestorePlayerHealth. One release worker died (SIGALRM after
   putShortMSB; putShortMSB itself 1986/1986). Ghidra todo "Script push" applied; ExportSymbols needs the path argument
   (askFile otherwise). Next: set_replaced.py script --keep (thread-switch rows), VM_Call check, keepregs, smoke.
+  Switch step 2 (11-05): stack guard (game/code/stack_guard.cpp, debug builds) + 14-mission sweep with script Replaced
+  (branch script_replaced_test; build/sweep_guard_1105b): no C frame live across a thread switch once Actor_SpawnFromSpawner
+  is original (it was the one case, Replaced since 11-04 - fixed on main); lowest margin 0x1fd24 (Scn_SpawnZone gap), VM_Call
+  never close. User playtest of the sweep (F12 marks): crash on movement = misaligned float[3] mins/maxs in
+  PM_PeriodicContentsEvent (MOVAPS in CM_CandidateCapsuleTrace; latent on main) - fixed + 15 locals aligned; health bar
+  fill offset = widescreen HUD patch (also on main and with the script originals; fine with --pc-patches off): loader bug
+  to fix; m10 low cutscene camera same on main. Next: user movement playtest of the branch, then merge the switch.
   Before the script Replaced switch: VM_Call (gap entry, C frame 0x30000 below its entry for the whole game frame incl.
   Scr_RunThreads) - check restored script-thread stacks cannot reach that deep, else keep it original. The 32
   AeThreadFunctor*_Invoke rows are thread switch (kept original, --keep at the switch).
