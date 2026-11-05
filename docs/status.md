@@ -278,6 +278,12 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   kept original). Next: switch steps like the game module - full ctest + leaf_test debug and release (ask; LEAF_JOBS=8),
   then set_replaced.py script (--keep the thread-switch rows), keepregs.py, smoke debug 4/1/6 + release 4/1. Apply
   wt/ghidra_todo.md "Script push" (names, boundaries, gap functions) with the user's OK.
+  Switch step 1 (11-05): full ctest debug (LEAF_JOBS=8) + release leaf_test. New and fixed: ScriptString text_address
+  (release dropped the rep+6 null test: integer arithmetic now), packed_float3_channel_block (bias/factor reloaded per
+  channel; output may overlap ranges). Classed: GScr_RestorePlayerLoadout (G_RestorePlayerHealth skill), Gjk release
+  1/2374 (dead). Known: VehiclePhys_AddContacts, G_RestorePlayerHealth. One release worker died (SIGALRM after
+  putShortMSB; putShortMSB itself 1986/1986). Ghidra todo "Script push" applied; ExportSymbols needs the path argument
+  (askFile otherwise). Next: set_replaced.py script --keep (thread-switch rows), VM_Call check, keepregs, smoke.
   Before the script Replaced switch: VM_Call (gap entry, C frame 0x30000 below its entry for the whole game frame incl.
   Scr_RunThreads) - check restored script-thread stacks cannot reach that deep, else keep it original. The 32
   AeThreadFunctor*_Invoke rows are thread switch (kept original, --keep at the switch).
