@@ -296,22 +296,19 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   (dead), WeaponClassFor; two helper headers / stub sets / anim-handle generators to unify.
   Thread-switch rows: after the last push, re-score all with `vc71match --thread-switch --facts --force-inline`
   (scores before the COFF decoding fix b530d15c were understated).
-- **Resume here (2026-11-05 night): levelscript in progress (agents a/b/c continue the lists).** Safe part (629 rows,
-  no thread switch): all have C, merged; 7 box-model rows accepted (user). Thread-switch part (817/824 rows, brief
-  wt/tw_push_brief.md, check `vc71match NAME... --facts --force-inline`, C unregistered, class thread_switch):
-  done a 101, b 221, c 118; LEFT a 166 (tw_a_list from FUN_00131180: StukaPlaneCrashMove, PlayExplodeSounds,
-  VehicleMg42Fire, P47PlaneCrashMove, ...), b 126 (big thinkers before 0x00181610: Flak88Think, DroneMain,
-  VehicleRidersThink, AnimNotetrackCommands, AnimLoopGuys/SingleGuys, ShermanTankAnim*; MgBurstFire,
-  TriggeredSpawnerThink, FallbackGoalThink/NodeThink, HelmetPop, HeadLook*; 0x0019f320 on except push 3's),
-  c 85 (Bro_combat__rechamber, AnimScript_Pain, Corner*Run2Alert*, cover anim scripts, FallbackThink, MgTurretThink
-  7.6 KB, SpawnerSetupAI, Bro_run__main, FUN_001cca00, FUN_001d5a50). Branches tw_a/tw_b/tw_c in wt/g_ent, cl_lo,
-  cl_hi = main. Then: cleanup list above, re-score all thread_switch rows, wt/ghidra_todo.md "Levelscript push"
-  (ask user), switch checklist (full ctest + leaf_test ask first, regpass, keepregs, guard sweep, smoke, user play run)
-  and set_replaced.py levelscript --keep the thread_switch rows. Counter named 12094/16616 · matched 6892/16616.
-  Bookkeeping (11-05 night): thread_switch rows with C go into tools/data/set_aside.csv (kind "thread switch", as the
-  script module's Scr_CallThread rows) or progress keeps counting them as named - 429 added + 40 trivial unhookable
-  stubs. Module now: 382 without C = 377 thread-switch rows + SetPoseMovement, GetEntSecondsSince_h05903940 (unhookable
-  bodies), SetDirectionalMoveAnims, PlayerFeelsImportant_2, WeaponClassFor. Each later push adds its rows the same way.
+- **Resume here (2026-11-05 evening): levelscript thread-switch push nearly done.** Left 50 rows without C:
+  a 0x00151cd0-0x0015ac70 (23, FollowLagThink ... SetFlakAutomatedByName), c's own 3 (AnimScript_Death, Bro_run__main,
+  ForceShootThread) + list-a rows 0x0015b6c0-0x001609f0 (19, new file), cleanup 5 (GetEntSecondsSince_h05903940,
+  SetPoseMovement, SetDirectionalMoveAnims unhookable; PlayerFeelsImportant_2 dead; WeaponClassFor). Lists: wt/tw_*_left.txt
+  minus docs/levelscript_classes.csv. Per row: C unregistered, vc71match --facts --force-inline, tools/ts_addrow.py
+  (classes + set_aside rows); tools/stackann.py = stack depth per block. The facts check misses argument bugs (4 found:
+  Mg42AnimTree, TurretCall_1-5, AnimSingleAtNode/AtEnt, rider_tag_anim): check arguments against the pushes.
+  vc71match: XDK5849=.../Tools/xdk5849/XDK/xbox, work dir under build/ (/tmp quota), no lambdas/T v{{}}/<initializer_list>
+  (drops the whole file). Coordinator per round: merge (CSV conflicts = keep both sides), build, apply proposed names +
+  new functions in Ghidra, append to tools/data/manual_names.csv, ExportSymbols, progress --readme, push. Then: re-score
+  all thread_switch rows, wt/ghidra_todo.md (slots 0x009224d0/d8 maybe swapped), switch checklist (full ctest +
+  leaf_test ask first, regpass, keepregs, guard sweep, smoke, user play run), set_replaced.py levelscript --keep the
+  thread_switch rows. Counter named 12152/16623 · matched 6897/16623.
 - (older) **Resume here (2026-11-05 end): script is Replaced; next module = user picks** (levelscript 1446 = the API the
   levels' compiled scripts call; levels 5324 = translator; mslib set aside; leftovers game 332 / client 152 / qcommon
   140). Counter named 12094/16616 · matched 6576/16616. Switch checklist (learned this module): full ctest + leaf_test
