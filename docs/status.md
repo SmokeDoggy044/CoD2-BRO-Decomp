@@ -309,6 +309,14 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   all thread_switch rows, wt/ghidra_todo.md (slots 0x009224d0/d8 maybe swapped), switch checklist (full ctest +
   leaf_test ask first, regpass, keepregs, guard sweep, smoke, user play run), set_replaced.py levelscript --keep the
   thread_switch rows. Counter named 12152/16623 · matched 6897/16623.
+  **Update 11-05 night: every levelscript row has C** (counter named 12158/16626 · matched 6898/16626). Re-score done:
+  tools/data/thread_switch_scores.csv (813 rows, `vc71match --thread-switch --facts --force-inline`): facts same 527,
+  known noise 252, "see note" 34 = float-pool literals the title loads (0x83eXXX, 0x7e5bf0 64.0, 0x7c6490 0.3,
+  0x7fec48), same-file helpers the check expands (SpawnFxCreationOrigin_2Call*, ShellIncomingAtPos,
+  AnimLoopAtNodeArrayCall, ChoosePoseRandom, SpawnerFinishSpawn), anim addresses passed to a helper
+  (StandAnimForTime/_2), inlined title callees (SetAimBlendTimes, the vector-key access in DebugForwardStub) and
+  title reads it never uses (0x922ec0/ed0): no real differences. Next: the 93 untested rows without a class (agent on
+  wt/g_ent), then ghidra_todo + switch checklist (ask before full ctest/leaf_test).
 - (older) **Resume here (2026-11-05 end): script is Replaced; next module = user picks** (levelscript 1446 = the API the
   levels' compiled scripts call; levels 5324 = translator; mslib set aside; leftovers game 332 / client 152 / qcommon
   140). Counter named 12094/16616 · matched 6576/16616. Switch checklist (learned this module): full ctest + leaf_test
