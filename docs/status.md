@@ -299,8 +299,11 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   1 byte at 0x100006a8 (text-setter stack word, original runs - Compare). A gap entry for it moved the difference into
   nested gap entries' host scratch (harness: nested gap frames differ between sides) - reverted, follow-up.
   tools/regpass.py lists C calls passing 0 in a register the original loads (82 "REAL?" candidates, not reviewed).
-  Register review started 11-05: 82 regpass candidates split over 3 agents (brief wt/regpass_brief.md; lists
-  wt/regpass_{a,b,c}.txt; worktrees cl_lo reg_a / cl_hi reg_b / g_ent reg_c). Merge each with wt/tools/merge_push.sh.
+  Register review 11-05: the 82 first-version regpass candidates were all false (3 agents, reasons in
+  wt/regpass_brief.md lists). tools/regpass.py rebuilt on tools/regflow.py (flow-sensitive callee inputs; saves, slot
+  pushes, xor/or -1/cvt writes and alignment no-ops are not reads; original's last write before the call, a site that
+  passes 0 clears it; callee from its own call statement): 0 hits on main, finds the pre-fix RunPendingTouch EDI bug.
+  Run it on each module before its Replaced switch.
   Before the script Replaced switch: VM_Call (gap entry, C frame 0x30000 below its entry for the whole game frame incl.
   Scr_RunThreads) - check restored script-thread stacks cannot reach that deep, else keep it original. The 32
   AeThreadFunctor*_Invoke rows are thread switch (kept original, --keep at the switch).
