@@ -286,6 +286,14 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   slot; GetNodeAtPosition 522/522, PutGunInHand 106/106 after. Left on CanShoot/MuzzleOrigin family: box-model w lanes
   (0x804fff2c, 0x81e23c5c; CM_TempBoxModel never-written slots, like the accepted SV trace rows). 35 rows reset;
   ~30 thread_switch classes rested on the same evidence - re-test running (wt/cl_hi, branch ls_retest).
+- Re-test after the guard fix (merged): all 30 "thread_switch" rows were false (spawns and thread starts do not run
+  the new script at once) - re-registered, 22 matched, 8 not reached; StukaDropBombs fixed (string release order).
+  Left: 7 rows with only CM_TempBoxModel w-lane words (CanShootFromPose, CheckCanShoot, GetMuzzleOrigin(Call),
+  ShouldGoProne_2, MortarThinkWithDefaults, TryLookAtPlayer) - accepted.csv like CG_ClipMoveToEntities/PM_PlayerTrace
+  (user OK for rows under 100 matched). waitreach.py reads the last class row per address.
+  Levelscript cleanup before the switch: unhookable/1-byte rows classed in levelscript_classes.csv -> set_aside.csv
+  (progress still shows them named); C still missing for SetDirectionalMoveAnims (unhookable), PlayerFeelsImportant_2
+  (dead), WeaponClassFor; two helper headers / stub sets / anim-handle generators to unify.
 - **Resume here (2026-11-05 end): script is Replaced; next module = user picks** (levelscript 1446 = the API the
   levels' compiled scripts call; levels 5324 = translator; mslib set aside; leftovers game 332 / client 152 / qcommon
   140). Counter named 12094/16616 · matched 6576/16616. Switch checklist (learned this module): full ctest + leaf_test
