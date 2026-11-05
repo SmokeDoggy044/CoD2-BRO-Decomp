@@ -291,6 +291,14 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   PM_PeriodicContentsEvent (MOVAPS in CM_CandidateCapsuleTrace; latent on main) - fixed + 15 locals aligned; health bar
   fill offset = widescreen HUD patch (also on main and with the script originals; fine with --pc-patches off): loader bug
   to fix; m10 low cutscene camera same on main. Next: user movement playtest of the branch, then merge the switch.
+  **11-05: script is Replaced** (merge 9ec80e8; 1657 rows; kept original: 36 thread-switch rows + VM_Call). Smoke debug
+  4/1/6 + release 1 clean; release 4 crashed on weapon pickup (user-steered): ClientThink_RunPendingTouch passed EDI 0 to
+  G_NotifyWithOwnHandle (game, Replaced since 11-04; original EDI = the touched entity) - fixed (ca129a0), release 4 clean.
+  User-steered --compare-all run (wt/cl_lo build with every non-renderer/sound row back on Compare; renderer/sound C
+  calls our devices, so they cannot be compared that way): 14k tests, only accepted box-lane rows + HudManager_Update
+  1 byte at 0x100006a8 (text-setter stack word, original runs - Compare). A gap entry for it moved the difference into
+  nested gap entries' host scratch (harness: nested gap frames differ between sides) - reverted, follow-up.
+  tools/regpass.py lists C calls passing 0 in a register the original loads (82 "REAL?" candidates, not reviewed).
   Before the script Replaced switch: VM_Call (gap entry, C frame 0x30000 below its entry for the whole game frame incl.
   Scr_RunThreads) - check restored script-thread stacks cannot reach that deep, else keep it original. The 32
   AeThreadFunctor*_Invoke rows are thread switch (kept original, --keep at the switch).
