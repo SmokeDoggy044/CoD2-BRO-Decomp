@@ -262,6 +262,14 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   replaces this mechanism. Rule for later modules: C that is called from, or resumes, a script thread and reaches a wait
   stays original.
 - Smoke 2 (build/smoke_game_1104/final, both original, no override): debug 4/1/6 and release 4/1 clean, gameplay reached.
+- **Resume here (2026-11-05 end): script is Replaced; next module = user picks** (levelscript 1446 = the API the
+  levels' compiled scripts call; levels 5324 = translator; mslib set aside; leftovers game 332 / client 152 / qcommon
+  140). Counter named 12094/16616 · matched 6576/16616. Switch checklist (learned this module): full ctest + leaf_test
+  debug+release, tools/regpass.py (0 hits), keepregs.py, stack-guard sweep (debug, feature_sweep.sh on a branch),
+  smoke debug 4/1/6 + release 4/1, then a user-steered watched --compare-all play run (wt/cl_lo recipe below).
+  Open follow-ups: HudManager_Update 1-byte 0x100006a8 (Compare; nested gap entries), health-bar widescreen offset
+  (deferred by the user), Ghidra: UIRoot vtable 0x82a5f4+0xc = FUN_0030ef00, File_RequestStateToStatus jump table
+  at 0xc94bc read as code.
 - **Next module (decided 11-04): script** (2004 rows, 1992 left, nearly all named): ScrField 909 (field accessors -
   check whether they are uniform enough for tools/scaffold.py first), GScr 471 builtins, ScrActor/ScrCall/ScrEnt/
   ScrVehNodeField, ScriptString/ScriptKeyTable. Why first: it is the runtime levelscript (1446) and the levels' compiled
