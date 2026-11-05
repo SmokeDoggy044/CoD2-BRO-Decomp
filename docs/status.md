@@ -271,7 +271,12 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
 - Levelscript follow-up (ls_c push 1): BroScr_ActorMayMoveToPointForStance_2 (19) and BroScr_GetNodeTypeAtPosition (35)
   mismatch only in [host] scratch words that differ by our C frame depth: callers of gap-entry Replaced callees
   (GScr_ActorMayMoveToPoint, ScrPathNode_CopyType); own gap entries made it worse. Harness question, same family as
-  HudManager_Update's nested gap entries. Kept Compare. Skipped: SetDirectionalMoveAnims (indirect call in first 5 bytes).
+  HudManager_Update's nested gap entries. Kept Compare. Same in ls_b: BroScr_GetNodeAtPosition 145/627,
+  GetNodeOrActorYaw 0/124, GetCoverNodeForward 0/3 (call GScr_ActorUpdateNearestNode, Replaced with a gap entry, which
+  keeps a frame address in .data 0x00929b40: fixed with gap entries; left: [host] dead-stack words below the frame).
+  Recurring: look at the harness for callers of gap-entry Replaced callees before the levelscript switch.
+  Cleanup at module end: two helper headers (bro_scr_util.h a, bro_scr_common.h b) and two empty-stub sets; two
+  anim-handle generators (tools/gen_anim_handle_tables.py a, tools/gen_anim_handles.py b) - unify. Skipped: SetDirectionalMoveAnims (indirect call in first 5 bytes).
 - **Resume here (2026-11-05 end): script is Replaced; next module = user picks** (levelscript 1446 = the API the
   levels' compiled scripts call; levels 5324 = translator; mslib set aside; leftovers game 332 / client 152 / qcommon
   140). Counter named 12094/16616 · matched 6576/16616. Switch checklist (learned this module): full ctest + leaf_test
