@@ -308,6 +308,10 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   cl_hi = main. Then: cleanup list above, re-score all thread_switch rows, wt/ghidra_todo.md "Levelscript push"
   (ask user), switch checklist (full ctest + leaf_test ask first, regpass, keepregs, guard sweep, smoke, user play run)
   and set_replaced.py levelscript --keep the thread_switch rows. Counter named 12094/16616 · matched 6892/16616.
+  Bookkeeping (11-05 night): thread_switch rows with C go into tools/data/set_aside.csv (kind "thread switch", as the
+  script module's Scr_CallThread rows) or progress keeps counting them as named - 429 added + 40 trivial unhookable
+  stubs. Module now: 382 without C = 377 thread-switch rows + SetPoseMovement, GetEntSecondsSince_h05903940 (unhookable
+  bodies), SetDirectionalMoveAnims, PlayerFeelsImportant_2, WeaponClassFor. Each later push adds its rows the same way.
 - (older) **Resume here (2026-11-05 end): script is Replaced; next module = user picks** (levelscript 1446 = the API the
   levels' compiled scripts call; levels 5324 = translator; mslib set aside; leftovers game 332 / client 152 / qcommon
   140). Counter named 12094/16616 · matched 6576/16616. Switch checklist (learned this module): full ctest + leaf_test
