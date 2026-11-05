@@ -268,6 +268,10 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   worktrees g_ent/cl_lo/cl_hi, branches ls_a/ls_b/ls_c; C in new game/code/bro_scr_*.cpp; classes
   docs/levelscript_classes.csv). The 817 (user, 11-05): C written now, unregistered and kept original, class
   thread_switch; tested once script threads are coroutines. They follow the 629.
+- Levelscript follow-up (ls_c push 1): BroScr_ActorMayMoveToPointForStance_2 (19) and BroScr_GetNodeTypeAtPosition (35)
+  mismatch only in [host] scratch words that differ by our C frame depth: callers of gap-entry Replaced callees
+  (GScr_ActorMayMoveToPoint, ScrPathNode_CopyType); own gap entries made it worse. Harness question, same family as
+  HudManager_Update's nested gap entries. Kept Compare. Skipped: SetDirectionalMoveAnims (indirect call in first 5 bytes).
 - **Resume here (2026-11-05 end): script is Replaced; next module = user picks** (levelscript 1446 = the API the
   levels' compiled scripts call; levels 5324 = translator; mslib set aside; leftovers game 332 / client 152 / qcommon
   140). Counter named 12094/16616 · matched 6576/16616. Switch checklist (learned this module): full ctest + leaf_test
