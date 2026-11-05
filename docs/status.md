@@ -277,6 +277,10 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   Recurring: look at the harness for callers of gap-entry Replaced callees before the levelscript switch.
   Cleanup at module end: two helper headers (bro_scr_util.h a, bro_scr_common.h b) and two empty-stub sets; two
   anim-handle generators (tools/gen_anim_handle_tables.py a, tools/gen_anim_handles.py b) - unify. Skipped: SetDirectionalMoveAnims (indirect call in first 5 bytes).
+- Levelscript state (11-05 late): list c done; a push 4 (last 3 + C for 9 classed-only rows) and b push 3 running.
+  Harness study running (wt/cl_hi, branch harness_host): ~17 Compare rows mismatch only in [host] words that shift
+  with C frame depth (callers of gap-entry Replaced callees). Next: thread-switch push, brief wt/tw_push_brief.md,
+  lists wt/tw_{a,b,c}_list.txt (824 rows, ~490 KB): C unregistered, verified statically with tools/vc71match.
 - **Resume here (2026-11-05 end): script is Replaced; next module = user picks** (levelscript 1446 = the API the
   levels' compiled scripts call; levels 5324 = translator; mslib set aside; leftovers game 332 / client 152 / qcommon
   140). Counter named 12094/16616 · matched 6576/16616. Switch checklist (learned this module): full ctest + leaf_test
