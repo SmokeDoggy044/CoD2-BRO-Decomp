@@ -281,6 +281,11 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   Harness study running (wt/cl_hi, branch harness_host): ~17 Compare rows mismatch only in [host] words that shift
   with C frame depth (callers of gap-entry Replaced callees). Next: thread-switch push, brief wt/tw_push_brief.md,
   lists wt/tw_{a,b,c}_list.txt (824 rows, ~490 KB): C unregistered, verified statically with tools/vc71match.
+- **Harness fix (11-05, b72974f):** the [host] f3..ec4 mismatches (0x2c apart) were the Debug stack-guard table
+  t_live (stack_guard_leave never cleared popped slots; contents follow the C caller's depth). Fixed by zeroing the
+  slot; GetNodeAtPosition 522/522, PutGunInHand 106/106 after. Left on CanShoot/MuzzleOrigin family: box-model w lanes
+  (0x804fff2c, 0x81e23c5c; CM_TempBoxModel never-written slots, like the accepted SV trace rows). 35 rows reset;
+  ~30 thread_switch classes rested on the same evidence - re-test running (wt/cl_hi, branch ls_retest).
 - **Resume here (2026-11-05 end): script is Replaced; next module = user picks** (levelscript 1446 = the API the
   levels' compiled scripts call; levels 5324 = translator; mslib set aside; leftovers game 332 / client 152 / qcommon
   140). Counter named 12094/16616 · matched 6576/16616. Switch checklist (learned this module): full ctest + leaf_test
