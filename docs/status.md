@@ -296,7 +296,19 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   (dead), WeaponClassFor; two helper headers / stub sets / anim-handle generators to unify.
   Thread-switch rows: after the last push, re-score all with `vc71match --thread-switch --facts --force-inline`
   (scores before the COFF decoding fix b530d15c were understated).
-- **Resume here (2026-11-05 end): script is Replaced; next module = user picks** (levelscript 1446 = the API the
+- **Resume here (2026-11-05 night, user: no new agents after these): levelscript in progress.** Safe part (629 rows,
+  no thread switch): all have C, merged; 7 box-model rows accepted (user). Thread-switch part (817/824 rows, brief
+  wt/tw_push_brief.md, check `vc71match NAME... --facts --force-inline`, C unregistered, class thread_switch):
+  done a 101, b 221, c 118; LEFT a 166 (tw_a_list from FUN_00131180: StukaPlaneCrashMove, PlayExplodeSounds,
+  VehicleMg42Fire, P47PlaneCrashMove, ...), b 126 (big thinkers before 0x00181610: Flak88Think, DroneMain,
+  VehicleRidersThink, AnimNotetrackCommands, AnimLoopGuys/SingleGuys, ShermanTankAnim*; MgBurstFire,
+  TriggeredSpawnerThink, FallbackGoalThink/NodeThink, HelmetPop, HeadLook*; 0x0019f320 on except push 3's),
+  c 85 (Bro_combat__rechamber, AnimScript_Pain, Corner*Run2Alert*, cover anim scripts, FallbackThink, MgTurretThink
+  7.6 KB, SpawnerSetupAI, Bro_run__main, FUN_001cca00, FUN_001d5a50). Branches tw_a/tw_b/tw_c in wt/g_ent, cl_lo,
+  cl_hi = main. Then: cleanup list above, re-score all thread_switch rows, wt/ghidra_todo.md "Levelscript push"
+  (ask user), switch checklist (full ctest + leaf_test ask first, regpass, keepregs, guard sweep, smoke, user play run)
+  and set_replaced.py levelscript --keep the thread_switch rows. Counter named 12094/16616 · matched 6892/16616.
+- (older) **Resume here (2026-11-05 end): script is Replaced; next module = user picks** (levelscript 1446 = the API the
   levels' compiled scripts call; levels 5324 = translator; mslib set aside; leftovers game 332 / client 152 / qcommon
   140). Counter named 12094/16616 · matched 6576/16616. Switch checklist (learned this module): full ctest + leaf_test
   debug+release, tools/regpass.py (0 hits), keepregs.py, stack-guard sweep (debug, feature_sweep.sh on a branch),
