@@ -296,7 +296,7 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   (dead), WeaponClassFor; two helper headers / stub sets / anim-handle generators to unify.
   Thread-switch rows: after the last push, re-score all with `vc71match --thread-switch --facts --force-inline`
   (scores before the COFF decoding fix b530d15c were understated).
-- **Resume here (2026-11-05 night, user: no new agents after these): levelscript in progress.** Safe part (629 rows,
+- **Resume here (2026-11-05 night): levelscript in progress (agents a/b/c continue the lists).** Safe part (629 rows,
   no thread switch): all have C, merged; 7 box-model rows accepted (user). Thread-switch part (817/824 rows, brief
   wt/tw_push_brief.md, check `vc71match NAME... --facts --force-inline`, C unregistered, class thread_switch):
   done a 101, b 221, c 118; LEFT a 166 (tw_a_list from FUN_00131180: StukaPlaneCrashMove, PlayExplodeSounds,
