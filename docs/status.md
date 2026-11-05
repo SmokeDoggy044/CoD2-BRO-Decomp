@@ -272,13 +272,16 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
 - **Script push started (11-04 evening):** brief wt/scr_push_brief.md; 3 agents: field (wt/g_ent, branch scr_field:
   ScrField templates via tools/shapes.py + a generator), gscr (wt/cl_lo, scr_gscr: GScr_ builtins), core (wt/cl_hi,
   scr_core: runtime). Lists wt/scr_{field,gscr,core}_list.txt. Merge each branch after its push, then progress.py --readme.
-  State 11-05: field list DONE (all tested). gscr (wt/cl_lo, scr_gscr) 0x002fdab0..<0x00303600; gscr2 (wt/g_ent, branch
-  scr_gscr2, file g_scr_builtins2.cpp) 0x00303600..end; core (wt/cl_hi) 188 rows left from ScriptString_TrimLeftChars /
-  ScriptKeyTable_*. Merge with wt/tools/merge_push.sh BRANCH (regenerates leaf_functions.inc), build, ctest -E leaf_test.
+  **11-05: script module DECOMPILED** - all 2004 rows have C or are set aside (8 unhookable in set_aside.csv); rewritten
+  1662, untested 318 (all classed in docs/script_classes.csv: 255 not reached, 42 matched offline below 90% coverage, 17
+  thread switch, 3 exit, 1 dead), inconclusive 12 + mismatched 4 = thread-switch rows (32 Invokes, 4 spawner builtins:
+  kept original). Next: switch steps like the game module - full ctest + leaf_test debug and release (ask; LEAF_JOBS=8),
+  then set_replaced.py script (--keep the thread-switch rows), keepregs.py, smoke debug 4/1/6 + release 4/1. Apply
+  wt/ghidra_todo.md "Script push" (names, boundaries, gap functions) with the user's OK.
   Before the script Replaced switch: VM_Call (gap entry, C frame 0x30000 below its entry for the whole game frame incl.
   Scr_RunThreads) - check restored script-thread stacks cannot reach that deep, else keep it original. The 32
   AeThreadFunctor*_Invoke rows are thread switch (kept original, --keep at the switch).
-  Ghidra fixes queued in wt/ghidra_todo.md "Script push". Counter matched 6287/16612.
+  Ghidra fixes queued in wt/ghidra_todo.md "Script push". Counter matched 6575/16612.
 - Other leftovers: mslib 2071 (library: XVOICE/UIX/LIBCMT, set aside by the own-engine plan), game 332 / client 152 /
   qcommon 140 (untested, inconclusive or set aside).
 
