@@ -378,7 +378,15 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   FriendlyChainThink -> BroLvl_prologue_UpdateObjectives (objectives 1-15 by stage). 107 names applied.
   **API worker pilot dra1 (20 drageeth rows):** two harness bugs of mine (VC7.1 `using` ambiguity, header
   missing scr_access.h) wasted rounds; after `worker.py recheck`: 16/20 facts same, $2.63 total; 4 rows in one
-  more round (run2.log). Next: compare run of its 12 safe rows (wt/api), review, merge branch api_drageeth.
+  more round (run2.log): final 17 ok, 2 explained, 1 failed (to sessions), $3.03.
+- **Plan switch (user, 2026-11-06): engine first, level scripts stay original.** The engine becomes our own C
+  with modern features; the per-level compiled scripts (5324 rows) keep running as original x86 from the
+  player's dump. No new level pushes; prologue C already done stays (Compare). Next: a script-only boundary
+  scan - every engine address level code touches outside its own section (0x00922140 slots, globals such as
+  the level block 0x00921cbc, struct bases/offsets) = the contract the engine must keep (layouts, stack-switching
+  script threads for native level code, 32-bit). Naming from now on: "our own engine implementation" (public
+  READMEs still say native loader - reword after the user sees the text). API worker branch api_drageeth
+  (wt/api): review the 2 explained rows before deciding whether to merge.
 - (older) **Resume here (2026-11-05 end): levelscript Replaced + pushed; next = levels translator PILOT on the prologue**
   (user agreed). Step 1: how many of the prologue's 670 rows (module "prologue", 0x0045xxxx section) reach a thread
   switch (tools/waitreach.py) - if most do, the translator output stays untestable until coroutines, and the
