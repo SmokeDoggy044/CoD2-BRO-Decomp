@@ -315,6 +315,16 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   (refactor families whose engine C is not parameterized yet first). Twins test (mission 0 = prologue, 240 s):
   8 of 14 reached, all matched, 0 mismatches; 6 not reached. 6 new names in manual_names.csv still to apply in
   Ghidra (batch with the near-twin names).
+  SEH handler push masked in levelsdup/near_twins (each copy has its own handler) -> 41 more exact twins.
+  tools/near_twins.py: 39 prologue near twins (wrappers in game/code/{qcommon_fs,scr_class,script_string}_levels.inc,
+  declarations game/code/levels_twins.h); gen_scrfield.py on the prologue list: 3 ScrField rows (drop the alias it
+  makes for engine rows that have their own C, e.g. BroScr_IsValidHandle). User-steered prologue run 11-05
+  (build/play_pro, --compare --level 0 --silent, 484 s, mission completed): the 83 new rows 1191 matched, 0 mismatch,
+  0 drift, 41 not reached; inconclusive = "original called host code" only. Auto marks all known/accepted.
+  Left for (A) in the prologue: 51 near twins skipped (no short C body: DynArray_Assign4, ScrPtrArray_Append,
+  functor Ctors; asm entry Scr_StartThreadFunctorN_entry; fixed-callee C like std_list_Clear_2) - refactor the
+  engine C to take the addresses, then rerun near_twins. manual_names.csv rows from twin/near tools still to apply
+  in Ghidra + ExportSymbols.
 - (older) **Resume here (2026-11-05 end): levelscript Replaced + pushed; next = levels translator PILOT on the prologue**
   (user agreed). Step 1: how many of the prologue's 670 rows (module "prologue", 0x0045xxxx section) reach a thread
   switch (tools/waitreach.py) - if most do, the translator output stays untestable until coroutines, and the
