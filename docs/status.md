@@ -321,10 +321,16 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   makes for engine rows that have their own C, e.g. BroScr_IsValidHandle). User-steered prologue run 11-05
   (build/play_pro, --compare --level 0 --silent, 484 s, mission completed): the 83 new rows 1191 matched, 0 mismatch,
   0 drift, 41 not reached; inconclusive = "original called host code" only. Auto marks all known/accepted.
-  Left for (A) in the prologue: 51 near twins skipped (no short C body: DynArray_Assign4, ScrPtrArray_Append,
-  functor Ctors; asm entry Scr_StartThreadFunctorN_entry; fixed-callee C like std_list_Clear_2) - refactor the
-  engine C to take the addresses, then rerun near_twins. manual_names.csv rows from twin/near tools still to apply
-  in Ghidra + ExportSymbols.
+  **(A) done for the prologue (11-05, 764f2744 + a0d77887):** the 51 skipped near twins have C - near_twins.py
+  expands constexpr instance tables, skips catch(...) rethrow blocks, swaps calls via CALL_SWAPS (HashMap_Find ->
+  _2, Z_Free -> Scr_Free), handles SCRIPT_ARGS_ENTRY, no body-length cap; engine helpers parameterized
+  (dyn_array_assign4, scr_ptr_array_append, vector_tidy4, list_clear, hash_map_index_map find). Unattended
+  prologue compare (build/compare/near51, 240 s): 10 reached, all matched, 41 not reached (a user-steered play
+  run reaches more). Names applied in Ghidra + ExportSymbols. All levels (dry run): 238 near twins makable now;
+  left families: ScrField_* (gen_scrfield.py's job), BroScr_AnimHandles_*, std_vector/Uninitialized*4 copies.
+  twin_register.py rerun guard fixed (14 duplicate rows removed).
+  **Next: (B) lifter pilot** on ~20 prologue script bodies (decompile -> idiom rewrite -> compile ->
+  vc71match/compare, agents fix leftovers).
 - (older) **Resume here (2026-11-05 end): levelscript Replaced + pushed; next = levels translator PILOT on the prologue**
   (user agreed). Step 1: how many of the prologue's 670 rows (module "prologue", 0x0045xxxx section) reach a thread
   switch (tools/waitreach.py) - if most do, the translator output stays untestable until coroutines, and the
