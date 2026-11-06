@@ -303,8 +303,18 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   + _IsDefined, Scr_StartThread_*, WaitTilOutputInst*, per-level singletons like FUN_00464490 x120) but only 0.35 MB
   of 3.7 MB. The rest (~3400 bodies, 3.4 MB) are distinct script bodies: ScriptString temporaries with EH states,
   engine calls through the 0x00922xxx interface slots, hash-switches on string args, Scr_Wait/WaitTill. Plan
-  proposed to the user: (A) templates as C++ templates + a generated per-level table, (B) script bodies via a lifter
-  (decompile -> idiom rewrite -> compile -> vc71match/compare) with agents fixing leftovers. Waiting on the user.
+  agreed with the user (11-05): (A) templates first, (B) then script bodies via a lifter (decompile -> idiom
+  rewrite -> compile -> vc71match/compare) with agents fixing leftovers, pilot ~20 prologue bodies.
+  (A) tools: tools/levelsdup.py writes build/all_body_hashes.csv (masked + exact hash for all 16.6k rows);
+  tools/twin_register.py [--module M] registers exact twins of Replaced engine functions (callees checked
+  recursively) at their level address with the engine entry's code, Compare: 14 in the prologue (~150 all levels).
+  ScrField accessors: tools/gen_scrfield.py already accepts level rows (list = all non-level rows + the level's
+  rows); only 7 in the prologue. Near-twins (masked equal, different callees): 120 prologue rows, 75 HashMap_*;
+  engine C already takes a per-instance callee table (HashMapInstance in qcommon_fs.cpp) -> next: a generator
+  that reads each copy's call targets at the reference's call positions and emits one wrapper per copy
+  (refactor families whose engine C is not parameterized yet first). Twins test (mission 0 = prologue, 240 s):
+  8 of 14 reached, all matched, 0 mismatches; 6 not reached. 6 new names in manual_names.csv still to apply in
+  Ghidra (batch with the near-twin names).
 - (older) **Resume here (2026-11-05 end): levelscript Replaced + pushed; next = levels translator PILOT on the prologue**
   (user agreed). Step 1: how many of the prologue's 670 rows (module "prologue", 0x0045xxxx section) reach a thread
   switch (tools/waitreach.py) - if most do, the translator output stays untestable until coroutines, and the
