@@ -326,6 +326,15 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   (138 levelscript rows are "not reached"), then set_replaced.py levelscript --keep the thread_switch rows. Open: names
   shared by two addresses in Ghidra (BroScr_EmptyFunc_77, BroScr_ReturnFalse, BroScr_WaitFrame x6, File_PumpRequests,
   FxShaderClass_Create, Actor_FreeAllCorpses, ...): vc71match/leafscan look names up - give them unique names.
+  **Switch steps done (11-05 late, branch ls_replaced):** set_replaced.py levelscript = 292 rows Replaced (rewritten
+  rows only; thread-switch rows are set-aside and untested/dead/not-reached rows stay Compare); regpass 0 hits, keepregs
+  0 hits; guard sweep 14 missions debug (build/sweep_guard_ls): 0 errors/warnings, no stack_guard report, lowest margin
+  0x1fd24 (same as script); smoke debug 4/1/6 + release 4/1 (build/smoke_ls): 0, gameplay reached. Shared names: all
+  incremental-link `jmp` thunks Ghidra names after the target (Actor_FreeAllCorpses, File_PumpRequests, SndVoice_Free,
+  Mem_AlignedFree resolved to the thunk) - fnpack.name_index skips them (fnpack, regflow, vc71match, namepack);
+  EmptyFuncStrArg_11-13 were only a stale symbols export. Left clashes are SDK library (D3DX8/XONLINE/CRT FLIRT).
+  **Next:** user-steered watched `--compare-all` play run of the ls_replaced release build (144 "not reached" rows across
+  prologue/Oran/Tunisia/Mons/Buchholz/Gela/Troina, vehicles/turrets/flak), then merge ls_replaced into main + push.
 - (older) **Resume here (2026-11-05 end): script is Replaced; next module = user picks** (levelscript 1446 = the API the
   levels' compiled scripts call; levels 5324 = translator; mslib set aside; leftovers game 332 / client 152 / qcommon
   140). Counter named 12094/16616 · matched 6576/16616. Switch checklist (learned this module): full ctest + leaf_test
