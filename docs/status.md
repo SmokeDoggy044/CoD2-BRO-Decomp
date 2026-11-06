@@ -357,6 +357,16 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   wt/pro_tmpl_list.txt), a/b = bodies (wt/g_ent pro_a, wt/cl_lo pro_b; wt/pro_body_{a,b}_list.txt). Agents report
   wall time + bytes per batch (pace). Merge with wt/tools/merge_push.sh, names to Ghidra, protos re-apply.
   Queued after launch (user asked 11-05): the API-credit decomp worker ([[api-decomp-worker]] memory).
+  **t merged (11-05, 9f798f2e):** 207/305 template rows with C (levels_templates.cpp + near_twins copies,
+  tools/gen_functors.py: ctors, Invokes [kept-original marker], thread starts; 35 unhookable thread starts in
+  set_aside.csv). Compare mission 0: all reached matched except **AeThreadFunctor2_ent_b_Invoke 0x004594e0: 6
+  matched, 5 mismatched on .data byte 0x00929b40 (f0 vs 90)** - probably written by the thread body after a
+  switch, unproven: decide before accepting. Pace: 96 rows/9 KB in ~20 min (incl. first build), 111 rows/11 KB
+  in ~8 min. Left ~88 rows (list in the report: 5 functor dtors, ~30 small helpers 0x45c9c0.., 5 ScrField rows,
+  3 AnimHandles tables - gen_anim_handles.py fails on `add ecx,imm` at 0x41af1f, 7 switch rows, larger rows).
+  Other levels ready: near_twins ~553 copies, gen_functors ~341, gen_scrfield 121 (dry runs). Names to apply in
+  Ghidra: manual_names.csv rows from t (not yet applied).
+  **User 11-05: weekly limit at 87% - agents told to stop after their current batch.**
 - (older) **Resume here (2026-11-05 end): levelscript Replaced + pushed; next = levels translator PILOT on the prologue**
   (user agreed). Step 1: how many of the prologue's 670 rows (module "prologue", 0x0045xxxx section) reach a thread
   switch (tools/waitreach.py) - if most do, the translator output stays untestable until coroutines, and the
