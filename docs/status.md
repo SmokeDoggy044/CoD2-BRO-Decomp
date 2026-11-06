@@ -348,7 +348,15 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   level_ent, BroScr_ArrayElement, hex hashes, `out` result). Notes: 0x00461120 (named HashMap_Index_PROLOGUE_11)
   is shared, really thiscall(map, const uint32_t* key); 0x00922a28 = IntHashMap_FindValue (int id -> char*);
   KellyAllClearLines skips the original's `mov [esp+0x1c],esp` arg-slot store (watch if the harness flags it).
-  Next: those lift.py rules, then a second batch (the other 28 safe prologue bodies) to measure again.
+  **Decision (user, 11-05): option A** - no more translator work; per level generators for templates, agents
+  for script bodies (behaviour-matching C). Cost/benefit: bodies 3.17 MB (~58 h wall at levelscript pace, to be
+  re-measured), templates 1901 rows / 0.48 MB; 79% of level bytes reach a thread switch (C now, unregistered).
+  near_twins.py now takes any row with C as reference (+10 prologue rows) and carries the thread-switch marker
+  (rows "kept original: script thread switch (as its reference)" go in set_replaced.py --keep at the switch).
+  **Prologue push running (11-05 late):** brief wt/pro_push_brief.md; t = templates (wt/cl_hi, pro_t,
+  wt/pro_tmpl_list.txt), a/b = bodies (wt/g_ent pro_a, wt/cl_lo pro_b; wt/pro_body_{a,b}_list.txt). Agents report
+  wall time + bytes per batch (pace). Merge with wt/tools/merge_push.sh, names to Ghidra, protos re-apply.
+  Queued after launch (user asked 11-05): the API-credit decomp worker ([[api-decomp-worker]] memory).
 - (older) **Resume here (2026-11-05 end): levelscript Replaced + pushed; next = levels translator PILOT on the prologue**
   (user agreed). Step 1: how many of the prologue's 670 rows (module "prologue", 0x0045xxxx section) reach a thread
   switch (tools/waitreach.py) - if most do, the translator output stays untestable until coroutines, and the
