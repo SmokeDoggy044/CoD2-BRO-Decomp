@@ -335,8 +335,20 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   decompile + prototypes + global/string addresses; tools/lift.py turns that into drafts (build/lift/draft,
   report.txt): of the 48 safe prologue bodies without C, 7 compile as they are, 15 more with 1-2 errors.
   Pilot: 20 bodies (wt/lift_{a,b}_list.txt, brief wt/lift_pilot_brief.md, worktrees g_ent/cl_lo on branches
-  lift_a/lift_b); agents fix the drafts and measure how much survived. Then: merge, improve lift.py from their
-  suggestions, decide the scale-up (the 183 prologue bodies that reach a thread switch wait for coroutines).
+  lift_a/lift_b); agents fix the drafts and measure how much survived.
+  **Pilot result (merged 11-05):** 20/20 bodies have C (game/code/levels_prologue_{a,b}.cpp, Compare); prologue
+  compare 7 reached, all matched, 0 mismatched, 13 not reached (BroLvl_prologue_LaunchVelocity 0x00425510 is
+  dead: no xref, no immediate). vc71match --facts: same for 16, the rest differ only by inlined accessors
+  (ScrField_*, BroScr_ArrayElement). Drafts gave structure, strings, keys and globals; 14 of 20 had a silent
+  semantic error that compiled: 12-byte vector copies collapsed to one word, arguments dropped where Ghidra's
+  level-callee prototypes are guessed (chained thiscalls lose ECX = the previous call's result), hidden `out`
+  results returned as void, code addresses read as globals. lift.py fixes in agent-rank order: (1) LAB_ labels
+  stay labels; (2) code addresses -> literals; (3) argument count + convention from the call-site pushes /
+  `add esp` / `ret N`, not Ghidra's guess; (4) 3-word copies -> uint32_t v[3]; (5) idioms (int_slot,
+  level_ent, BroScr_ArrayElement, hex hashes, `out` result). Notes: 0x00461120 (named HashMap_Index_PROLOGUE_11)
+  is shared, really thiscall(map, const uint32_t* key); 0x00922a28 = IntHashMap_FindValue (int id -> char*);
+  KellyAllClearLines skips the original's `mov [esp+0x1c],esp` arg-slot store (watch if the harness flags it).
+  Next: those lift.py rules, then a second batch (the other 28 safe prologue bodies) to measure again.
 - (older) **Resume here (2026-11-05 end): levelscript Replaced + pushed; next = levels translator PILOT on the prologue**
   (user agreed). Step 1: how many of the prologue's 670 rows (module "prologue", 0x0045xxxx section) reach a thread
   switch (tools/waitreach.py) - if most do, the translator output stays untestable until coroutines, and the
