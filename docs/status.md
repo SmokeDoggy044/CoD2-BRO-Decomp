@@ -333,8 +333,18 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   incremental-link `jmp` thunks Ghidra names after the target (Actor_FreeAllCorpses, File_PumpRequests, SndVoice_Free,
   Mem_AlignedFree resolved to the thunk) - fnpack.name_index skips them (fnpack, regflow, vc71match, namepack);
   EmptyFuncStrArg_11-13 were only a stale symbols export. Left clashes are SDK library (D3DX8/XONLINE/CRT FLIRT).
-  **Next:** user-steered watched `--compare-all` play run of the ls_replaced release build (144 "not reached" rows across
-  prologue/Oran/Tunisia/Mons/Buchholz/Gela/Troina, vehicles/turrets/flak), then merge ls_replaced into main + push.
+  User-steered --compare-all run (build/play_ls: prologue + Liberator, 596 s): automatic marks all known (accepted
+  box-lane rows, spawn builtins, NAL w word, HudManager_Update 0x100006a8). User mark: prologue Mission Complete screen
+  showed the missing-texture cube. Originals run (XBCMP_ORIGINALS=1) showed the art; cause: G_CheckMissionEnd's success
+  branch (game, Replaced 11-04; never compared - it loops forever) called File_ReadAt(file, data, 0, size): the
+  declaration had buffer/offset names swapped (real order file, offset, buffer, size; names fixed in qcommon_core).
+  Fixed build verified by the user (build/play_ls_fix).
+  **11-05: levelscript is Replaced** (292 rows; merge into main). Counter named 12170/16637 · matched 6938/16637.
+  Follow-ups: 144 "not reached" + untested rows stay Compare (later play runs); button prompts differ between our C and
+  XBCMP_ORIGINALS=1 in a --press smoke run (C: "Press A"/"Pull R"; originals: keyboard/stick glyphs; build/fail_ls m5_c
+  vs m5_orig) - not levelscript, find which module; MissionSuccessFailMenu vtable slots point inside other symbols
+  (0x0031b120 Draw inside ChapterMenu_Draw, 0x0032e9b0, 0x003151c0, 0x00011ec0/ed0): wrong boundaries to fix in Ghidra.
+  Next module: user picks (levels translator 5324, leftovers game/client/qcommon, mslib set aside).
 - (older) **Resume here (2026-11-05 end): script is Replaced; next module = user picks** (levelscript 1446 = the API the
   levels' compiled scripts call; levels 5324 = translator; mslib set aside; leftovers game 332 / client 152 / qcommon
   140). Counter named 12094/16616 · matched 6576/16616. Switch checklist (learned this module): full ctest + leaf_test
