@@ -296,7 +296,16 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   (dead), WeaponClassFor; two helper headers / stub sets / anim-handle generators to unify.
   Thread-switch rows: after the last push, re-score all with `vc71match --thread-switch --facts --force-inline`
   (scores before the COFF decoding fix b530d15c were understated).
-- **Resume here (2026-11-05 end): levelscript Replaced + pushed; next = levels translator PILOT on the prologue**
+- **Levels pilot, step 1+2 findings (11-05):** prologue 672 rows: 190 reach a thread switch, 482 do not (waitreach.py
+  --module prologue) - most translator output is testable now, no coroutines first. tools/levelsdup.py (all 5324
+  level rows, masked-address body hash, build/levels_groups.csv): 3842 distinct bodies; 393 groups hold 1875 rows
+  (1482 copies beyond the first) = per-level template instances (HashMap_*, std_list_*, AeThreadFunctor*, ScrField_*
+  + _IsDefined, Scr_StartThread_*, WaitTilOutputInst*, per-level singletons like FUN_00464490 x120) but only 0.35 MB
+  of 3.7 MB. The rest (~3400 bodies, 3.4 MB) are distinct script bodies: ScriptString temporaries with EH states,
+  engine calls through the 0x00922xxx interface slots, hash-switches on string args, Scr_Wait/WaitTill. Plan
+  proposed to the user: (A) templates as C++ templates + a generated per-level table, (B) script bodies via a lifter
+  (decompile -> idiom rewrite -> compile -> vc71match/compare) with agents fixing leftovers. Waiting on the user.
+- (older) **Resume here (2026-11-05 end): levelscript Replaced + pushed; next = levels translator PILOT on the prologue**
   (user agreed). Step 1: how many of the prologue's 670 rows (module "prologue", 0x0045xxxx section) reach a thread
   switch (tools/waitreach.py) - if most do, the translator output stays untestable until coroutines, and the
   coroutine runtime may come first (ask the user with the number). Step 2: sort the generated-code patterns
