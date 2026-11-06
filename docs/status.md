@@ -296,7 +296,13 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   (dead), WeaponClassFor; two helper headers / stub sets / anim-handle generators to unify.
   Thread-switch rows: after the last push, re-score all with `vc71match --thread-switch --facts --force-inline`
   (scores before the COFF decoding fix b530d15c were understated).
-- **Resume here (2026-11-05 evening): levelscript thread-switch push nearly done.** Left 50 rows without C:
+- **Resume here (2026-11-05 end): levelscript Replaced + pushed; next = levels translator PILOT on the prologue**
+  (user agreed). Step 1: how many of the prologue's 670 rows (module "prologue", 0x0045xxxx section) reach a thread
+  switch (tools/waitreach.py) - if most do, the translator output stays untestable until coroutines, and the
+  coroutine runtime may come first (ask the user with the number). Step 2: sort the generated-code patterns
+  (fnpack over a sample), design the translator. Left modules: levels ~5300, levelscript 305 / script 292 / game 270 /
+  client 110 / qcommon 65 mostly untested/not-reached rows (play runs), mslib set aside.
+- **(older) Resume here (2026-11-05 evening): levelscript thread-switch push nearly done.** Left 50 rows without C:
   a 0x00151cd0-0x0015ac70 (23, FollowLagThink ... SetFlakAutomatedByName), c's own 3 (AnimScript_Death, Bro_run__main,
   ForceShootThread) + list-a rows 0x0015b6c0-0x001609f0 (19, new file), cleanup 5 (GetEntSecondsSince_h05903940,
   SetPoseMovement, SetDirectionalMoveAnims unhookable; PlayerFeelsImportant_2 dead; WeaponClassFor). Lists: wt/tw_*_left.txt
