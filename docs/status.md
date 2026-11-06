@@ -367,6 +367,18 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   Other levels ready: near_twins ~553 copies, gen_functors ~341, gen_scrfield 121 (dry runs). Names to apply in
   Ghidra: manual_names.csv rows from t (not yet applied).
   **User 11-05: weekly limit at 87% - agents told to stop after their current batch.**
+  **All three stopped + merged (11-05 late, 1592a517):** a 30 rows (9 reg, 3 matched; 21 thread_switch),
+  b 21 rows (13 reg, 9 matched; 8 thread_switch) + LevelScript_prologue_ValueTypeLookup 0x0043fcd0 (new Ghidra
+  function, 470-hash field lookup, generated, 18/18 - every level likely has one). 0 mismatches. Left: a 120
+  rows from 0x0041f3a0 (wt/pro_body_a_list.txt), b 40 rows (all switch; smallest first: 00444050, 00453150, ...),
+  t ~88 rows. **waitreach over-approximation found:** it counts undefined code after a function's ret (real
+  functions Ghidra lacks) as the function's own - 6 of a's "switch" rows were safe (tools/levels/ownreach.py
+  checks a row's own body); 004205b0, 004230e0, 00431230 likewise. Ghidra boundary fixes there still to do
+  (0x0041a755.. etc. start with int3 padding - find the real starts). Rename suggestion: 0x0041be80
+  FriendlyChainThink -> BroLvl_prologue_UpdateObjectives (objectives 1-15 by stage). 107 names applied.
+  **API worker pilot dra1 (20 drageeth rows):** two harness bugs of mine (VC7.1 `using` ambiguity, header
+  missing scr_access.h) wasted rounds; after `worker.py recheck`: 16/20 facts same, $2.63 total; 4 rows in one
+  more round (run2.log). Next: compare run of its 12 safe rows (wt/api), review, merge branch api_drageeth.
 - (older) **Resume here (2026-11-05 end): levelscript Replaced + pushed; next = levels translator PILOT on the prologue**
   (user agreed). Step 1: how many of the prologue's 670 rows (module "prologue", 0x0045xxxx section) reach a thread
   switch (tools/waitreach.py) - if most do, the translator output stays untestable until coroutines, and the
