@@ -317,6 +317,15 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   (StandAnimForTime/_2), inlined title callees (SetAimBlendTimes, the vector-key access in DebugForwardStub) and
   title reads it never uses (0x922ec0/ed0): no real differences. Next: the 93 untested rows without a class (agent on
   wt/g_ent), then ghidra_todo + switch checklist (ask before full ctest/leaf_test).
+  **Done later 11-05:** 93 untested rows classed (23 matched, 15 dead, 1 offline, 54 not reached; 300 untested rows all
+  have a class now). wt/ghidra_todo.md levelscript list applied (user OK; slots 0x009224cc-d8 = Attach, AttachWithOwner,
+  AttachNoTag, Detach from the import table, 0x0092248c = GScr_NewHudElem). Full ctest (LEAF_JOBS=8, user OK): 22/23,
+  leaf_test 467/470 after the EmptyFuncStrArg_11-13 name-clash fix; left G_RestorePlayerHealth/Loadout 1-5 inputs (known,
+  docs/game_classes.csv). **Next (switch checklist):** tools/regpass.py (0 hits), keepregs.py, stack-guard sweep (debug,
+  feature_sweep.sh on a branch), smoke debug 4/1/6 + release 4/1, then a user-steered watched --compare-all play run
+  (138 levelscript rows are "not reached"), then set_replaced.py levelscript --keep the thread_switch rows. Open: names
+  shared by two addresses in Ghidra (BroScr_EmptyFunc_77, BroScr_ReturnFalse, BroScr_WaitFrame x6, File_PumpRequests,
+  FxShaderClass_Create, Actor_FreeAllCorpses, ...): vc71match/leafscan look names up - give them unique names.
 - (older) **Resume here (2026-11-05 end): script is Replaced; next module = user picks** (levelscript 1446 = the API the
   levels' compiled scripts call; levels 5324 = translator; mslib set aside; leftovers game 332 / client 152 / qcommon
   140). Counter named 12094/16616 · matched 6576/16616. Switch checklist (learned this module): full ctest + leaf_test
