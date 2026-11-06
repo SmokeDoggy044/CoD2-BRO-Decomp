@@ -329,8 +329,14 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   run reaches more). Names applied in Ghidra + ExportSymbols. All levels (dry run): 238 near twins makable now;
   left families: ScrField_* (gen_scrfield.py's job), BroScr_AnimHandles_*, std_vector/Uninitialized*4 copies.
   twin_register.py rerun guard fixed (14 duplicate rows removed).
-  **Next: (B) lifter pilot** on ~20 prologue script bodies (decompile -> idiom rewrite -> compile ->
-  vc71match/compare, agents fix leftovers).
+  **(B) lifter pilot started (11-05, user: go):** Ghidra now has our C prototypes (tools/protos.py +
+  tools/ghidra/ApplyPrototypes.java: 7068 functions incl. asm-shim storage and x87 results, 570 slots typed;
+  backup before: cod_bro/ghidra_backups/20261105-before-prototypes). tools/ghidra/ExportDecompile.java exports
+  decompile + prototypes + global/string addresses; tools/lift.py turns that into drafts (build/lift/draft,
+  report.txt): of the 48 safe prologue bodies without C, 7 compile as they are, 15 more with 1-2 errors.
+  Pilot: 20 bodies (wt/lift_{a,b}_list.txt, brief wt/lift_pilot_brief.md, worktrees g_ent/cl_lo on branches
+  lift_a/lift_b); agents fix the drafts and measure how much survived. Then: merge, improve lift.py from their
+  suggestions, decide the scale-up (the 183 prologue bodies that reach a thread switch wait for coroutines).
 - (older) **Resume here (2026-11-05 end): levelscript Replaced + pushed; next = levels translator PILOT on the prologue**
   (user agreed). Step 1: how many of the prologue's 670 rows (module "prologue", 0x0045xxxx section) reach a thread
   switch (tools/waitreach.py) - if most do, the translator output stays untestable until coroutines, and the
