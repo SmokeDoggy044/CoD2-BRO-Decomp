@@ -444,7 +444,9 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   C frame (ret into a float). Measured (COD_FIBER_STATS=1): title frames on a waiting thread < 1 KB, up to ~400
   threads alive, deepest fiber use 396 KB (nested gaps), VmSize ~2.2 GB. Checked: release smoke missions 4/1/6/10
   (150 s) and debug 4/1/6 clean, stack guard clean; crash backtraces follow fiber stacks; MinGW build compiles.
-  Open: (1) user-steered play run + full ctest/leaf_test (ask); (2) Windows: frames on a fiber are outside the TEB
+  User-steered play run 11-07, liberator (--level 5, 778 s): clean - 0 errors/warnings/marks, 60 fps, 54 hitches
+  (other 11-07 runs: 400-880), peak 423 live threads, deepest fiber 396 KB.
+  Open: (1) full ctest/leaf_test (ask); (2) Windows: frames on a fiber are outside the TEB
   stack limits, so Windows will not dispatch SEH there (Wine: "Exception frame is not in stack limits") - the
   crash handler still runs (vectored), title C++ throws use our seh.cpp; needs TEB StackLimit handling, unverified;
   (3) separate, pre-existing: the Windows build under Wine exits (code 5) at mission 4 start without fibers too
