@@ -383,7 +383,10 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   inconclusive (SV_Map_f, SV_SpawnServer, ... boot/map paths) + SV_ClientCommand untested stay Compare. keepregs 16 hits,
   all false (sites inside Replaced callers; Actor_ApplySpawnTemplate's entry reads only EBX); regpass 0. Smoke, release,
   all 14 levels (--level 0-13, 150 s, build/smoke_all_1107/all_last.png): every level reached gameplay, 0 warnings, no
-  crash. Not run yet: ctest/leaf_test (ask), debug stack-guard sweep, a user-steered play run. Every engine module except
+  crash. Full ctest debug (LEAF_JOBS=8, build/ctest_switch_1107.txt): 22/23, leaf_test only the known
+  VehiclePhys_AddContacts, G_RestorePlayerHealth, G_RestorePlayerLoadout; release leaf_test (build/leaf_release_1107.txt)
+  the same three + NAL_RLE8Int1_BeginBlock 2/3134 on random arena pointers (C untouched, debug 3069/3069, earlier
+  release runs clean: the ignored garbage-input kind). Not run yet: debug stack-guard sweep, a user-steered play run. Every engine module except
   mslib is now Replaced; the engine's remaining Compare rows are untested/inconclusive/set-aside.
 - **Resume here (2026-11-07): the 16 engine mismatches.** 8 were not real: 7 recorded before the 11-05 stack-guard
   fix (their addresses are t_live slots, 0x2c apart: Actor_Grenade_TakeCover, Actor_Negotiation_Think,
