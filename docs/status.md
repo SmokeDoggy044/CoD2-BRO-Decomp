@@ -414,7 +414,8 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   AnglesToAxis, original 887 switch rows, and XBCMP_ORIGINALS=1 (screenshots, build/drift_ab/compare.png). Cause: on a
   vehicle mount CG_ApplyVehicleTurnToView rebuilds cl.viewangles = view - delta each frame (negative here), and
   CL_FinishMove packs it with cvttss2si(x * 65536/360 + 0.5) - truncation toward zero lifts a negative exact unit by 1;
-  the server's view follows, next frame repeats. Xbox: same code at 30 fps (half our 0.33 deg/s, unverified). Every engine module except
+  the server's view follows, next frame repeats. Xbox: same code at 30 fps (half our 0.33 deg/s, unverified).
+  Fix (round with floor(x + 0.5)) waits for the own engine's input/view code (user 11-07). Every engine module except
   mslib is now Replaced; the engine's remaining Compare rows are untested/inconclusive/set-aside.
 - **Resume here (2026-11-07): the 16 engine mismatches.** 8 were not real: 7 recorded before the 11-05 stack-guard
   fix (their addresses are t_live slots, 0x2c apart: Actor_Grenade_TakeCover, Actor_Negotiation_Think,
