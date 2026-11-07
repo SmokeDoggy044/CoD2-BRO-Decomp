@@ -387,7 +387,8 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   --only, missions 1/4/5/6): SV_Trace 786/786, TakeCover 1/1; Negotiation_Think, DropWeapon, GetRootDelta not reached;
   Vehicle_PlayerDriveThink (player driving) and LoadMaubeuge (menu) need a steered run. Loader fix: an inconclusive
   test no longer overwrites a recorded mismatch's last_issue (it had turned accepted Actor_InitStateMachine
-  "mismatched" via ProfileSave-style "called host code"). Left, needs the user's OK for accepted.csv:
+  "mismatched" via ProfileSave-style "called host code"). User 11-07: (a) and (b) accepted (accepted.csv +
+  accepted_approved.csv), (c) reset - no engine mismatch left:
   (a) Actor_InitStateMachine, Actor_SpawnFromSpawner, GScr_DoSpawn/ForceSpawn/DoSpawnNamed/ForceSpawnNamed (0-19
   matched): the started script thread's saved stack (0xfc chunks, Scr_RestoreThreadStack) holds our C frames - host
   return addresses, scrubbed vs stale slots, and since 11-05 one chunk more (0d vs 0e) so one more heap chunk; goes
