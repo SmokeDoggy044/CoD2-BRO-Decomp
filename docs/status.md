@@ -379,6 +379,21 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   **API worker pilot dra1 (20 drageeth rows):** two harness bugs of mine (VC7.1 `using` ambiguity, header
   missing scr_access.h) wasted rounds; after `worker.py recheck`: 16/20 facts same, $2.63 total; 4 rows in one
   more round (run2.log): final 17 ok, 2 explained, 1 failed (to sessions), $3.03.
+- **Resume here (2026-11-07): the 16 engine mismatches.** 8 were not real: 7 recorded before the 11-05 stack-guard
+  fix (their addresses are t_live slots, 0x2c apart: Actor_Grenade_TakeCover, Actor_Negotiation_Think,
+  Vehicle_PlayerDriveThink, CG_ClipMoveToEntities, SV_Trace, GScr_DropWeapon, LoadMaubeugeMenu_RestoreSelection) and
+  ProfileSave_OnSaveOpComplete's one 0x100006a8 mismatch from before its gap fix; their mismatch counts were reset
+  (this also dropped SV_Trace's/CG_ClipMoveToEntities' older accepted box-lane counts). Re-test (build/compare/mism_1107,
+  --only, missions 1/4/5/6): SV_Trace 786/786, TakeCover 1/1; Negotiation_Think, DropWeapon, GetRootDelta not reached;
+  Vehicle_PlayerDriveThink (player driving) and LoadMaubeuge (menu) need a steered run. Loader fix: an inconclusive
+  test no longer overwrites a recorded mismatch's last_issue (it had turned accepted Actor_InitStateMachine
+  "mismatched" via ProfileSave-style "called host code"). Left, needs the user's OK for accepted.csv:
+  (a) Actor_InitStateMachine, Actor_SpawnFromSpawner, GScr_DoSpawn/ForceSpawn/DoSpawnNamed/ForceSpawnNamed (0-19
+  matched): the started script thread's saved stack (0xfc chunks, Scr_RestoreThreadStack) holds our C frames - host
+  return addresses, scrubbed vs stale slots, and since 11-05 one chunk more (0d vs 0e) so one more heap chunk; goes
+  away with coroutines; (b) AnimTree_GetRootDelta (13 matched, 1 mismatch): w lane [esp+0x1c] the original never
+  writes, as AnimTree_CalcPose_r; (c) HudManager_Update 1233/11: the old UIText stack address in heap 0x100006a8
+  (a written word, so not the never-set kind; the 11 are from before 11-05, none since).
 - **Plan switch (user, 2026-11-06): engine first, level scripts stay original.** The engine becomes our own C
   with modern features; the per-level compiled scripts (5324 rows) keep running as original x86 from the
   player's dump. No new level pushes; prologue C already done stays (Compare). Next: a script-only boundary
