@@ -388,7 +388,20 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   the same three + NAL_RLE8Int1_BeginBlock 2/3134 on random arena pointers (C untouched, debug 3069/3069, earlier
   release runs clean: the ignored garbage-input kind). Stack-guard sweep (debug, 14 missions, build/sweep_guard_1107):
   0 errors/warnings, no stack_guard report; lowest margin 0x1be24 (was 0x1fd24 on 11-05), now under SV_RunGameFrame's C
-  (server, newly Replaced) instead of Scn_AddModelInstances - 112 KB left. Not run yet: a user-steered play run. Every engine module except
+  (server, newly Replaced) instead of Scn_AddModelInstances - 112 KB left. User-steered play (release, --diag):
+  kasspass (--level 3, build/playtest_m3_1107, 1414 s): 0 errors/warnings, checkpoint reload fine. Marks: player's
+  mounted MG turret drifts down-left without input (user: older than this switch, known); enemies sometimes do not
+  use mounted MGs / do not fire (one did later; cause open, maybe original behaviour). Unattended --level 5 bomber
+  turret, no input: no drift. gela (--level 6, build/playtest_m6_1107, 1536 s): 0 errors/warnings, enemies used MG42s.
+  Marks 2-4 (1124-1182 s, courtyard scene): letterbox up but the scene stalled, ended late with missing audio, player
+  could not move after; at the marks only an ambient voice played, no dialogue (the working replay after a checkpoint
+  restart, mark 6, had two 20000-min-distance dialogue voices). Looks like a dialogue line that never started and a
+  script waiting on it; no OpenAL error logged (unlike the 10-29 "callback buffer" stall). Cause open, once only.
+  omaha (--level 9, build/playtest_m9_1107, 1336 s): 0 errors/warnings. Mark 1 (923 s): cutscene dialogue heard mostly
+  left while facing the speaker; two 3D dialogue voices at 126/214 units (min distance 25000, full volume, panned by
+  direction). Open: listener vs cutscene camera, or original behaviour - the mark log lacks listener yaw and source
+  positions for unoccluded voices (worth adding), and the same spot with Enhanced sound off would tell ours from the
+  original. Left: tunisia (2 = player tank mission, Vehicle_PlayerDriveThink). Every engine module except
   mslib is now Replaced; the engine's remaining Compare rows are untested/inconclusive/set-aside.
 - **Resume here (2026-11-07): the 16 engine mismatches.** 8 were not real: 7 recorded before the 11-05 stack-guard
   fix (their addresses are t_live slots, 0x2c apart: Actor_Grenade_TakeCover, Actor_Negotiation_Think,
