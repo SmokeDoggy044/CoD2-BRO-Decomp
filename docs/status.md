@@ -379,6 +379,12 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   **API worker pilot dra1 (20 drageeth rows):** two harness bugs of mine (VC7.1 `using` ambiguity, header
   missing scr_access.h) wasted rounds; after `worker.py recheck`: 16/20 facts same, $2.63 total; 4 rows in one
   more round (run2.log): final 17 ok, 2 explained, 1 failed (to sessions), $3.03.
+- **2026-11-07: cgame, xanim, streaming, collision, server and zlib are Replaced (887 rows, 7cf6d6b1).** Server's 8
+  inconclusive (SV_Map_f, SV_SpawnServer, ... boot/map paths) + SV_ClientCommand untested stay Compare. keepregs 16 hits,
+  all false (sites inside Replaced callers; Actor_ApplySpawnTemplate's entry reads only EBX); regpass 0. Smoke, release,
+  all 14 levels (--level 0-13, 150 s, build/smoke_all_1107/all_last.png): every level reached gameplay, 0 warnings, no
+  crash. Not run yet: ctest/leaf_test (ask), debug stack-guard sweep, a user-steered play run. Every engine module except
+  mslib is now Replaced; the engine's remaining Compare rows are untested/inconclusive/set-aside.
 - **Resume here (2026-11-07): the 16 engine mismatches.** 8 were not real: 7 recorded before the 11-05 stack-guard
   fix (their addresses are t_live slots, 0x2c apart: Actor_Grenade_TakeCover, Actor_Negotiation_Think,
   Vehicle_PlayerDriveThink, CG_ClipMoveToEntities, SV_Trace, GScr_DropWeapon, LoadMaubeugeMenu_RestoreSelection) and
