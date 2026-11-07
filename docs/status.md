@@ -401,7 +401,8 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   left while facing the speaker; two 3D dialogue voices at 126/214 units (min distance 25000, full volume, panned by
   direction). Open: listener vs cutscene camera, or original behaviour - the mark log lacks listener yaw and source
   positions for unoccluded voices (worth adding), and the same spot with Enhanced sound off would tell ours from the
-  original. Left: tunisia (2 = player tank mission, Vehicle_PlayerDriveThink). Every engine module except
+  original. tunisia (--level 2, build/playtest_m2_1107, 525 s, player tank driving + fighting, checkpoint): 0 marks,
+  0 errors/warnings. Switch play check done; audio oddities wait for the own engine (user 11-07). Every engine module except
   mslib is now Replaced; the engine's remaining Compare rows are untested/inconclusive/set-aside.
 - **Resume here (2026-11-07): the 16 engine mismatches.** 8 were not real: 7 recorded before the 11-05 stack-guard
   fix (their addresses are t_live slots, 0x2c apart: Actor_Grenade_TakeCover, Actor_Negotiation_Think,
