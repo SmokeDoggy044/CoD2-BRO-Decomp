@@ -446,8 +446,9 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   0x00921cbc-0x00922140): no contract. Runtime: 3536 level functions use SEH frames through fs:[0] (MSVC
   ___CxxFrameHandler, _CxxThrowException) - FS/ExceptionList per script thread is part of the contract. Heuristic
   limits (in the tool's docstring): fields only through a register loaded from a global or a slot's result, reset at
-  branches; a few engine-ref counts of 1 are byte coincidences. Next: decide with the user how the engine keeps
-  the 532 fixed addresses (thunk table at the original addresses -> our C) and which engine work comes first.
+  branches; a few engine-ref counts of 1 are byte coincidences. User 11-07: the engine keeps the 532 fixed
+  addresses as a thunk table (a jump at each original address into our C; only what level code expects stays at
+  fixed addresses - slots, block words, shared objects/globals). Next: which engine work comes first.
 - **Plan switch (user, 2026-11-06): engine first, level scripts stay original.** The engine becomes our own C
   with modern features; the per-level compiled scripts (5324 rows) keep running as original x86 from the
   player's dump. No new level pushes; prologue C already done stays (Compare). Next: a script-only boundary
