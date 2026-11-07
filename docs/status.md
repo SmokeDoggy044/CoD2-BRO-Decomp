@@ -446,7 +446,11 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   (150 s) and debug 4/1/6 clean, stack guard clean; crash backtraces follow fiber stacks; MinGW build compiles.
   User-steered play run 11-07, liberator (--level 5, 778 s): clean - 0 errors/warnings/marks, 60 fps, 54 hitches
   (other 11-07 runs: 400-880), peak 423 live threads, deepest fiber 396 KB.
-  Open: (1) full ctest/leaf_test (ask); (2) Windows: frames on a fiber are outside the TEB
+  Full ctest debug (LEAF_JOBS=8, build/ctest_fiber_1107.txt): 22/23, leaf_test only the known VehiclePhys_AddContacts,
+  G_RestorePlayerHealth + new NAL_Packed16EntropyIKSpin_BeginChannel 3/1001 (no gap entry, C untouched; LEAF_ONLY
+  seeds 0-3: 0/1/1/0 mismatches - an input-dependent case not hit before, stream pointer off by 2: look at it
+  separately); release leaf_test (build/leaf_release_fiber_1107.txt): the known three only.
+  Open: (2) Windows: frames on a fiber are outside the TEB
   stack limits, so Windows will not dispatch SEH there (Wine: "Exception frame is not in stack limits") - the
   crash handler still runs (vectored), title C++ throws use our seh.cpp; needs TEB StackLimit handling, unverified;
   (3) separate, pre-existing: the Windows build under Wine exits (code 5) at mission 4 start without fibers too
