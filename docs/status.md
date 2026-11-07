@@ -433,7 +433,25 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   away with coroutines; (b) AnimTree_GetRootDelta (13 matched, 1 mismatch): w lane [esp+0x1c] the original never
   writes, as AnimTree_CalcPose_r; (c) HudManager_Update 1233/11: the old UIText stack address in heap 0x100006a8
   (a written word, so not the never-set kind; the 11 are from before 11-05, none since).
-- **Resume here (2026-11-07): level boundary scan done** ([level_boundary.md](level_boundary.md), rows in
+- **Resume here (2026-11-07 late): script threads run on stacks of their own** (game/code/scr_fiber.cpp; our own
+  engine's script-thread runtime, user: "Do it"). Scr_ResumeThread (0x002fe100) is ours (Replaced): a new thread starts
+  on a fiber (1 MB stack + guard page, pooled) at Scr_ThreadEntry, a woken one continues from its wait's frame; the
+  waits, wait records and Scr_RestoreContext stay original - our switch writes the 0x0092709c context in
+  Scr_SaveContext's layout - and Scr_SaveThreadLocals only records the wait's ESP (no more 0xfc-chunk copies).
+  Per fiber: the gap-entry floor (t_host_floor + FS:[0x14]) and an on-a-fiber bit (FS:[0x14] bit 0); GAME_GAP_ESP on
+  a fiber keeps the gap but puts the scratch 256 bytes (not 64 KB) below it. Lesson: the gap is not only compare
+  fidelity - the C rebuilds the original's frame and title callees run there; a 2 KB gap let them overwrite the
+  C frame (ret into a float). Measured (COD_FIBER_STATS=1): title frames on a waiting thread < 1 KB, up to ~400
+  threads alive, deepest fiber use 396 KB (nested gaps), VmSize ~2.2 GB. Checked: release smoke missions 4/1/6/10
+  (150 s) and debug 4/1/6 clean, stack guard clean; crash backtraces follow fiber stacks; MinGW build compiles.
+  Open: (1) user-steered play run + full ctest/leaf_test (ask); (2) Windows: frames on a fiber are outside the TEB
+  stack limits, so Windows will not dispatch SEH there (Wine: "Exception frame is not in stack limits") - the
+  crash handler still runs (vectored), title C++ throws use our seh.cpp; needs TEB StackLimit handling, unverified;
+  (3) separate, pre-existing: the Windows build under Wine exits (code 5) at mission 4 start without fibers too
+  (null +0x24 in G_SpawnItem on a script thread) - check before the next release. Next: the thread-switch rows -
+  Scr_RunThreads' C can call Scr_ResumeThread directly (no title_call_at_regs at the original depth), then the 145
+  set-aside rows' C and their tests.
+- **(earlier 11-07) level boundary scan done** ([level_boundary.md](level_boundary.md), rows in
   level_boundary.csv, regenerate with `tools/levels/boundary.py`, ~1 min, XBE + symbols only). What the 5325 original
   level functions need from the engine: 345 import-block slots (of 762 filled; the scan found 3 more slot inits than
   levelreach.SLOT_INITS - G_Setup{Player,Mover,Actor}ScriptImports), 532 engine functions at fixed addresses (391 called
