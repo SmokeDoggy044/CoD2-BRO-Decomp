@@ -433,6 +433,21 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   away with coroutines; (b) AnimTree_GetRootDelta (13 matched, 1 mismatch): w lane [esp+0x1c] the original never
   writes, as AnimTree_CalcPose_r; (c) HudManager_Update 1233/11: the old UIText stack address in heap 0x100006a8
   (a written word, so not the never-set kind; the 11 are from before 11-05, none since).
+- **Resume here (2026-11-07): level boundary scan done** ([level_boundary.md](level_boundary.md), rows in
+  level_boundary.csv, regenerate with `tools/levels/boundary.py`, ~1 min, XBE + symbols only). What the 5325 original
+  level functions need from the engine: 345 import-block slots (of 762 filled; the scan found 3 more slot inits than
+  levelreach.SLOT_INITS - G_Setup{Player,Mover,Actor}ScriptImports), 532 engine functions at fixed addresses (391 called
+  directly - ScriptString_*, DynArray_*, Scr_Wait*, ScrCall_* - plus 163 handed out as values; 145 are set-aside
+  thread-switch rows, 17 not decompiled: Scr_Wait* family, 6 FUN_), 31 block words past the slots (sentinels
+  g_scrUndefined*, key table, and the published object pointers), 14 ModuleEntry pointers in the engine's table, and
+  ~47 shared globals (mostly g_anim_* handles). Levels construct the level object themselves and publish it in block
+  words 872/878 (anim object 873/879): 27 offsets used on both sides, 63 more the engine's BroScr_* runtime uses -
+  layout the engine must keep. 1561 globals are level-private (own .data 0x008c5800-0x008cca30 and .bss blocks
+  0x00921cbc-0x00922140): no contract. Runtime: 3536 level functions use SEH frames through fs:[0] (MSVC
+  ___CxxFrameHandler, _CxxThrowException) - FS/ExceptionList per script thread is part of the contract. Heuristic
+  limits (in the tool's docstring): fields only through a register loaded from a global or a slot's result, reset at
+  branches; a few engine-ref counts of 1 are byte coincidences. Next: decide with the user how the engine keeps
+  the 532 fixed addresses (thunk table at the original addresses -> our C) and which engine work comes first.
 - **Plan switch (user, 2026-11-06): engine first, level scripts stay original.** The engine becomes our own C
   with modern features; the per-level compiled scripts (5324 rows) keep running as original x86 from the
   player's dump. No new level pushes; prologue C already done stays (Compare). Next: a script-only boundary
