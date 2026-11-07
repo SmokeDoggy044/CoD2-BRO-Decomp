@@ -402,7 +402,19 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   direction). Open: listener vs cutscene camera, or original behaviour - the mark log lacks listener yaw and source
   positions for unoccluded voices (worth adding), and the same spot with Enhanced sound off would tell ours from the
   original. tunisia (--level 2, build/playtest_m2_1107, 525 s, player tank driving + fighting, checkpoint): 0 marks,
-  0 errors/warnings. Switch play check done; audio oddities wait for the own engine (user 11-07). Every engine module except
+  0 errors/warnings. Switch play check done; audio oddities wait for the own engine (user 11-07).
+- **Aim assist was on since 11-04:** the loader's "aim assist off" patches PM_UpdateStickyAim's first bytes at 0.038 s,
+  then the Replaced install (0.111 s) wrote its jump over them. Now an option in our C (game::set_aim_assist, pmove.h;
+  default on = original, the loader passes --aim-assist). Also dead since cgame went Replaced (no new patches, user 11-07:
+  these become own-engine features): widescreen HUD/objectives narrowing (CG_DrawActive jmp, CG_DrawObjectives call),
+  fixed fov for tanks/mounted guns and the culling fov (CG_CalcFov) - only wider-than-16:9 and --fov users lose them.
+- **Mounted-gun drift (mission 1 truck MG, kasspass MG): original behaviour.** COD_LOOK_TRACE=1 (cl.cpp, debugging aid)
+  prints per command the view turn by stage and between commands. Idle on the gun: +1 short unit (0.0055 deg) pitch and
+  yaw per command, between commands (no input). Same with original CG_ApplyVehicleTurnToView, original AxisToAngles/
+  AnglesToAxis, original 887 switch rows, and XBCMP_ORIGINALS=1 (screenshots, build/drift_ab/compare.png). Cause: on a
+  vehicle mount CG_ApplyVehicleTurnToView rebuilds cl.viewangles = view - delta each frame (negative here), and
+  CL_FinishMove packs it with cvttss2si(x * 65536/360 + 0.5) - truncation toward zero lifts a negative exact unit by 1;
+  the server's view follows, next frame repeats. Xbox: same code at 30 fps (half our 0.33 deg/s, unverified). Every engine module except
   mslib is now Replaced; the engine's remaining Compare rows are untested/inconclusive/set-aside.
 - **Resume here (2026-11-07): the 16 engine mismatches.** 8 were not real: 7 recorded before the 11-05 stack-guard
   fix (their addresses are t_live slots, 0x2c apart: Actor_Grenade_TakeCover, Actor_Negotiation_Think,
