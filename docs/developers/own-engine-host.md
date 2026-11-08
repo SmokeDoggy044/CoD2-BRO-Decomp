@@ -123,8 +123,8 @@ the frame's end. Other threads (file, sound) read real values. A recording cover
 Checked 2026-11-08 on mission 4 (`tools/smoke_test.sh` presses, `--silent`, 45 s = 2,400 frames): replay in the
 release build and in the -O0 debug build: all 2,400 frames match. Sensitivity: the clock stretched 1.2x from frame
 1500 differs from frame 1502 (level.time 16163/16166); pad input zeroed from frame 600 differs from frame 809
-(client 0 button words +0x528/+0x594/+0x59c, the only 3 differing words). Not checked yet: sound on (voice
-completion notifies come from the audio thread), long runs, other missions.
+(client 0 button words +0x528/+0x594/+0x59c, the only 3 differing words). With sound on (record and replay
+without `--silent`): all 2,400 frames match as well. Not checked yet: long runs, other missions.
 
 Next for 0.3: the host executable itself (our exe maps the dump and owns the main loop, list above), checked by
 replaying recordings made with the loader.
