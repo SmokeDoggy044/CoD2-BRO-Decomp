@@ -111,7 +111,9 @@ After each presented frame it writes a state record: level.time, entity count an
 (0x00985370, 0x2708 bytes), the clients (level +0, 0x640 each) and every entity (table 0x0097a8c0: count +0x2aac,
 pointers +0x2ab0, 0x460 bytes each). `--replay FILE` feeds the values back frame by frame and compares the state
 record; it exits at the end of the file (0 = all frames matched, 3 = some differed) and logs the first differing
-frame. `--replay-dump N DIR` writes frame N's raw state in either mode; `tools/replay_diff.py A B N` lists the
+frame. Each frame also records one hash per entity (format 3), so a differing frame logs which entity indices
+differ; the file is flushed every frame, so a crash keeps every frame before it (~110 KB per second of play).
+`--replay-dump N DIR` writes frame N's raw state in either mode; `tools/replay_diff.py A B N` lists the
 differing words. Code: `src/runtime/xbox/replay.cpp`; the hooks sit at the boundary the host has to provide
 anyway (clock, XPP, SDL mouse/pointer), so the same mode works in the host.
 
@@ -124,7 +126,11 @@ Checked 2026-11-08 on mission 4 (`tools/smoke_test.sh` presses, `--silent`, 45 s
 release build and in the -O0 debug build: all 2,400 frames match. Sensitivity: the clock stretched 1.2x from frame
 1500 differs from frame 1502 (level.time 16163/16166); pad input zeroed from frame 600 differs from frame 809
 (client 0 button words +0x528/+0x594/+0x59c, the only 3 differing words). With sound on (record and replay
-without `--silent`): all 2,400 frames match as well. Not checked yet: long runs, other missions.
+without `--silent`): all 2,400 frames match as well. A 90 s user playtest (mission 4, keyboard/mouse) replayed
+matching up to frame 3719, then entity-only differences on 317 of the remaining frames (cause open; the
+recording had no per-entity hashes yet). That run crashed at 99 s in FXCmd_Alloc (entity pointer 3, called
+through fx_cmd.cpp's Builder) - not reproduced by the replay because the old format lost the last unflushed
+frames.
 
 Next for 0.3: the host executable itself (our exe maps the dump and owns the main loop, list above), checked by
 replaying recordings made with the loader.
