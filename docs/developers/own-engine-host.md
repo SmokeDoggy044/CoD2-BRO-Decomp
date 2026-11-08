@@ -64,3 +64,24 @@ C-owned memory is later and optional.
 Open questions for 0.3: the 40+ mslib call sites into PROLOGUE/BUCHHOLZ/LIBEATOR code (probably misfiled
 helpers, check in Ghidra), the 222 data-stored pointers to code without C (mostly mslib CRT/D3D tables),
 and SEH via fs:[0] in level code (the host sets up an FS segment like the loader does today).
+
+## 0.2 progress (2026-11-07, branch `own_host`)
+
+`tools/own_calls.py` rewrites the C so it reaches our own C by symbol, not through the hook jump at the
+original address (each pass is idempotent; rerun after new C lands):
+
+| pass | what | sites |
+|---|---|---|
+| default | `title_function<F>(0xADDR)` / `(kConst)` → `own_function<F>(&Name)` (direct call, same convention) | 1,787 |
+| `--helpers` | address-taking call helpers (`call_at`, `cg_call_regs`, `title_call_at_regs`, ...) → `own_address(&Name)` | 2,322 |
+| `--values` | addresses used as values: level import slots, command tables, thread bodies, callbacks | 1,912 |
+
+Compare-status callees reached this way now run as C (0.2). Still on original addresses: template arguments
+(`deleting<0x...>`, `key_table_*<0x...>`, the generated scr_field instances), inline-asm immediates,
+comparisons, `constexpr` lines, helpers that store addresses into functors (`start_on`, `run_to_node`), and
+`KEEP_NAMES` in the script.
+
+Open, found by the smoke runs: **SV_Map_f** (KEEP_NAMES). Its C calls SV_SpawnServer's C (inconclusive in
+every test), which crashes live: a callee run at the original's stack position overwrites the C body's
+return address (the body sits only the 0x20000 gap below the original's frame). With SV_Map_f kept
+original, smoke runs on missions 4, 1 and 6 (120 s) are clean.
