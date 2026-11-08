@@ -152,5 +152,13 @@ hold them back / wait for them to match (fits 0.3: the host owns sound and file 
 differs from another run), `tools/replay_compare.py A B` (first differing frame and entities of two runs).
 Fixed on the way: the cached trace box lane 3 in six more writers (Path_TraceGatherCandidates and others).
 
+Format 4 (2026-11-08) closes the two suspects: a wait with a timeout on the main thread records its result (a
+replay returns the timeout at once, or waits for exactly the object the recording saw signaled); voice status reads
+are recorded ('S'); packets the mixer finishes are held until the main thread's DirectSoundDoWork, which writes their
+status words, and the recording lists which ones ('k'/'K', a replay writes exactly those, waiting for the mixer when
+it is behind). The recording also starts with the settings.ini text and command line it ran with ('O'/'A'): a replay
+uses that text instead of the player's settings.ini (which may have changed, and under Wine is another file). Check:
+mission 4, 45 s with sound, 2,963 frames match. Still to show: a long user recording that replays to the end.
+
 Next for 0.3: the host executable itself (our exe maps the dump and owns the main loop, list above), checked by
 replaying recordings made with the loader.
