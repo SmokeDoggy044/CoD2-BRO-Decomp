@@ -4,9 +4,18 @@ Phase 0 of the engine improvements (plan 2026-11-07): our own executable owns th
 the route-B loader (XBE mapping, kernel/XAPI imitation, hooks) goes away. Level code stays original x86 from
 the player's dump behind the thunk table ([level_boundary.md](../formats/level_boundary.md)).
 
-Steps: 0.1 inventory (this page) · 0.2 untested rows run as C (user OK 2026-11-07; failures tracked as they
-appear, targeted `--compare` runs when needed) · 0.3 host executable · 0.4 native frame pacing · 0.5 Vulkan
-back end with a render graph · 0.6 one settings schema (launcher, settings.ini, menus).
+Steps (order agreed 2026-11-08): 0.1 inventory (this page, done) · 0.2 untested rows run as C (done 2026-11-08;
+failures tracked as they appear, targeted `--compare` runs when needed) · 0.3 host executable, with a record/replay
+mode (inputs + seed, compare state and frames between builds) as its check · 0.3b proper widescreen (Hor+ FOV,
+edge-anchored HUD incl. the health-bar offset, menus; options in our C - the cgame widescreen/FOV patches died
+with the 11-07 switch) · 0.4 native frame pacing together with native keyboard/mouse (input read per rendered
+frame, straight into the usercmd) and the mounted-gun drift fix (round instead of truncate in CL_FinishMove's
+angle packing, switchable) · 0.5 Vulkan back end with a render graph · 0.6 one settings schema (launcher,
+settings.ini, menus) taking over all the switches.
+
+Developer modes for automated checks (suggested 2026-11-08, build each when its step needs it): record/replay
+(0.3), live function test (call by name, original vs C from the same state), fixed capture points per mission
+(quality gate), state dump; later an object viewer for the lighting work.
 
 ## 0.1 inventory: what our C still takes from the loader
 
