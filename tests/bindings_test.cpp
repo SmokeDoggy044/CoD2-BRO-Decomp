@@ -1,4 +1,4 @@
-// Keyboard and mouse bindings (input/bindings.h): the `keys` setting's format and the
+// Keyboard and mouse bindings (src/input/bindings.h): the `keys` setting's format and the
 // launcher's editing rules.
 
 #include <cstdio>
