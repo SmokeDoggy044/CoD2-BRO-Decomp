@@ -1,7 +1,8 @@
 # Status and next steps
 
 **Current (2026-11-08):** own engine host, step 0.3: record/replay done (`--record`/`--replay`, deterministic on
-mission 4 in release and debug builds); next the host executable itself. Step order and progress:
+mission 4 in release, debug and Windows builds for the first ~90 s); open: run-to-run differences after that
+(sound/file completion timing, see the plan doc), then the host executable itself. Step order and progress:
 [own-engine-host.md](../developers/own-engine-host.md).
 
 **Decompilation fork (2026-10-17):** this repository (CoD2-BRO-Decomp, local

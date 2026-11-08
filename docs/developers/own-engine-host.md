@@ -140,5 +140,17 @@ missing EAX (crash in a user playtest), Vehicle_GatherCollisionCandidates' lane 
 G_SetModel's 5-word name-hash buffer (0x20 bytes needed): on Windows the overrun zeroed the caller's EBX/ESI and
 crashed G_SpawnItem at every mission start.
 
+**Open (2026-11-08): run-to-run differences after ~90 s of a 13-minute playtest recording** (mission 4, after
+the opening cutscene). Two Linux replays part at frame ~5800, Windows at ~5600 (and Windows then drifts
+visibly: the player ends up elsewhere). First differing word: entity 402 +0x3cc, the tag link's address
+(G_EntLinkTo, SmallHeap 0x0095f598, main-thread only) - so the main thread linked/unlinked in a different
+order earlier, in state the hash does not cover. Suspect: sound and file completions, which the main thread
+sees as written by the audio/file threads in real time (script waits on sound ends, zone load completion);
+the replay records neither yet. Plan: record, per main-thread poll, which completions it saw, and on replay
+hold them back / wait for them to match (fits 0.3: the host owns sound and file completion). Tools for it:
+`--replay-hashes FILE` (a run's own per-frame state), `--replay-reference FILE DIR` (dumps the first frame that
+differs from another run), `tools/replay_compare.py A B` (first differing frame and entities of two runs).
+Fixed on the way: the cached trace box lane 3 in six more writers (Path_TraceGatherCandidates and others).
+
 Next for 0.3: the host executable itself (our exe maps the dump and owns the main loop, list above), checked by
 replaying recordings made with the loader.
