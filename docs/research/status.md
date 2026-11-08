@@ -1,7 +1,8 @@
 # Status and next steps
 
-**Current (2026-11-08):** own engine host, step 0.2 done; next 0.3 (host executable + record/replay). Step order
-and progress: [own-engine-host.md](../developers/own-engine-host.md).
+**Current (2026-11-08):** own engine host, step 0.3: record/replay done (`--record`/`--replay`, deterministic on
+mission 4 in release and debug builds); next the host executable itself. Step order and progress:
+[own-engine-host.md](../developers/own-engine-host.md).
 
 **Decompilation fork (2026-10-17):** this repository (CoD2-BRO-Decomp, local
 `cod_bro/decomp/`) is the native loader's fork for the decompilation; the loader

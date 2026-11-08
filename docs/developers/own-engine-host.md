@@ -101,3 +101,30 @@ C was UIScreenMgr_SetActiveScreen_entry (and UIDialog_SetText_entry, same shape)
 entry ESP *before* GAME_GAP_ESP's floor check: called at the original's position, that word landed on the
 SV_SpawnServer body's return address. EBP is now saved after the macro. Rule: an entry writes nothing below its
 ESP until GAME_GAP_ESP has placed the body. Smoke runs m4/1/6 (debug) and m4/1 (release) clean.
+
+## 0.3 progress (2026-11-08, branch `own_host`)
+
+**Record/replay (the check for the host), done.** `--record FILE` writes every value the title's main thread
+(thread 1) reads from outside, in order: clock (`cpu_time_stamp_counter` = the RDTSC sites + XAPI
+QueryPerformanceCounter, and KeQueryPerformanceCounter), pad state, connected ports, mouse motion, menu pointer.
+After each presented frame it writes a state record: level.time, entity count and hashes of the level locals
+(0x00985370, 0x2708 bytes), the clients (level +0, 0x640 each) and every entity (table 0x0097a8c0: count +0x2aac,
+pointers +0x2ab0, 0x460 bytes each). `--replay FILE` feeds the values back frame by frame and compares the state
+record; it exits at the end of the file (0 = all frames matched, 3 = some differed) and logs the first differing
+frame. `--replay-dump N DIR` writes frame N's raw state in either mode; `tools/replay_diff.py A B N` lists the
+differing words. Code: `src/runtime/xbox/replay.cpp`; the hooks sit at the boundary the host has to provide
+anyway (clock, XPP, SDL mouse/pointer), so the same mode works in the host.
+
+Replay is per frame, not per read: the main thread sometimes reads the clock once more or less than in the
+recording (waits on the loading thread, frames ~150 of a level start). Extra clock reads continue from the last
+recorded value at the real clock's pace, extra other reads repeat the last value, unread values are dropped at
+the frame's end. Other threads (file, sound) read real values. A recording covers one boot (dropped on reboot).
+
+Checked 2026-11-08 on mission 4 (`tools/smoke_test.sh` presses, `--silent`, 45 s = 2,400 frames): replay in the
+release build and in the -O0 debug build: all 2,400 frames match. Sensitivity: the clock stretched 1.2x from frame
+1500 differs from frame 1502 (level.time 16163/16166); pad input zeroed from frame 600 differs from frame 809
+(client 0 button words +0x528/+0x594/+0x59c, the only 3 differing words). Not checked yet: sound on (voice
+completion notifies come from the audio thread), long runs, other missions.
+
+Next for 0.3: the host executable itself (our exe maps the dump and owns the main loop, list above), checked by
+replaying recordings made with the loader.
