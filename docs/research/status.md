@@ -440,14 +440,19 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   tests on a fiber compared the dead stack). Unattended 0/1/4/10 300 s (build/compare/ts_wide2): 143 match, 23
   mism, 6 drift. User-steered MONS1 --compare (release, build/play_ts, 1611 s, 30 fps, 0 marks): 475 rows tested,
   thread rows 267 (103 first time): 229 match, 26 mism, 12 drift; untested_by_level rows 36 (26 first): all match,
-  MONS1 34/153 reached. REAL: Actor_Lmg_Think C segfaults (4/17, address 0x164e, libcod_bro_game +0x31143).
-  Next: triage the mismatches - patterns: (1) [host] 0x803e.... [3] pointer vs 0 in 0xc8 records (Bro_run__main,
-  BattleChatterInit, MiscCombatTimer, CombatMain, AnimScriptEntSetDefaults, Bro_anim_main_init: suspect
-  Scr_BeginThreadFunctor1 copying a stack word above its args - stale stack?); (2) fiber-stack words above the
-  caller's ESP (0xb.......: StandWalkToStop_2, keep_aiming 0x40000000 vs 0.1f, SetupFriendlyFireMissionFail vs
-  fefefefe, StandShootSideStep) - check arg_bytes (ts_register guessed from the original's reads) and by-value
-  ScrVec3 args; (3) SpawnerSetupAI/FinishSpawn heap layout (allocation order); (4) DronePathSpawnLoop,
-  AeThreadFunctor3/5 Invokes. Then ctest (ask), merge, push.
+  MONS1 34/153 reached. Triage (e3833e92): FIXED Actor_Lmg_Think (AnimStationary EAX 0x2be, not the actor),
+  CornerBRun2AlertLeft (+StopAtCornerStandLeft) reorient yaw - 90, StandShootSideStep result a whole word; 260 rows'
+  stack bytes raised to the C declaration's (the original writes arg slots it never reads) - keep_aiming,
+  StandWalkToStop_2, SetupFriendlyFireMissionFail, CoverAttack, ... now match. ACCEPT CANDIDATES (ask user):
+  bool key entries made by a `push ecx` slot (upper 3 bytes = the caller's ECX; ScrField_hbe944753 0x1950d0,
+  SetDefaults 0x1b7eb6/0x1b828d, ScrField_is_firing 0x1931b0; all 29 readers of keys 602384d4/be944753/a287dc52
+  read the byte): AnimScriptEntSetDefaults, Bro_anim_main_init, Bro_run__main, BattleChatterInit, MiscCombatTimer,
+  CombatMain, TurretManualTargetThink (PathMoverFromTargetChain likely, via PathMoverRun 0x173cfb). OPEN:
+  SpawnerSetupAI/FinishSpawn one more heap block on our side before the first wait (C matches the original's calls
+  - watchpoint); two words 0x20 apart in 0x82...... records (tree_burst_playBurst, DroneMain, AnimLoopGuys,
+  AeThreadFunctor3 Invokes: host 0xf7...... / fiber vs heap values); DronePathSpawnLoop [2] 807f vs 0000;
+  GScr_*Spawn* accepted rows' issue changed since fibers (re-check pattern); drift 1 byte at 0x00929b40 / 0x81df....
+  Then ctest (ask), merge, push.
 - **(earlier 11-07 late): script threads run on stacks of their own** (src/engine/script/scr_fiber.cpp; our own
   engine's script-thread runtime, user: "Do it"). Scr_ResumeThread (0x002fe100) is ours (Replaced): a new thread starts
   on a fiber (1 MB stack + guard page, pooled) at Scr_ThreadEntry, a woken one continues from its wait's frame; the
