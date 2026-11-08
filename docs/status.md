@@ -450,6 +450,11 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   G_RestorePlayerHealth + new NAL_Packed16EntropyIKSpin_BeginChannel 3/1001 (no gap entry, C untouched; LEAF_ONLY
   seeds 0-3: 0/1/1/0 mismatches - an input-dependent case not hit before, stream pointer off by 2: look at it
   separately); release leaf_test (build/leaf_release_fiber_1107.txt): the known three only.
+  Reach of the 981 untested/inconclusive engine rows (11-07, tools/levelreach.py): 245 dead, 145 builtins no level
+  script calls, 233 only via data pointers (menus/vtables/field tables), 84 engine-only paths, 274 level-reachable -
+  per mission in tools/data/untested_by_level.csv (tools/untested_by_level.py; MONS1 153 ... KASSPASS 94, 72 from all
+  14). User 11-07: no more coverage runs before the own engine; bugs found there get tested then, steered runs of
+  these missions only when the user has time.
   Open: (2) Windows: frames on a fiber are outside the TEB
   stack limits, so Windows will not dispatch SEH there (Wine: "Exception frame is not in stack limits") - the
   crash handler still runs (vectored), title C++ throws use our seh.cpp; needs TEB StackLimit handling, unverified;
