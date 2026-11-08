@@ -81,7 +81,8 @@ Compare-status callees reached this way now run as C (0.2). Still on original ad
 comparisons, `constexpr` lines, helpers that store addresses into functors (`start_on`, `run_to_node`), and
 `KEEP_NAMES` in the script.
 
-Open, found by the smoke runs: **SV_Map_f** (KEEP_NAMES). Its C calls SV_SpawnServer's C (inconclusive in
-every test), which crashes live: a callee run at the original's stack position overwrites the C body's
-return address (the body sits only the 0x20000 gap below the original's frame). With SV_Map_f kept
-original, smoke runs on missions 4, 1 and 6 (120 s) are clean.
+Fixed 2026-11-08: **SV_Map_f** now runs as C too (`KEEP_NAMES` is empty). The live crash under SV_SpawnServer's
+C was UIScreenMgr_SetActiveScreen_entry (and UIDialog_SetText_entry, same shape) pushing EBP 0x20000 below its
+entry ESP *before* GAME_GAP_ESP's floor check: called at the original's position, that word landed on the
+SV_SpawnServer body's return address. EBP is now saved after the macro. Rule: an entry writes nothing below its
+ESP until GAME_GAP_ESP has placed the body. Smoke runs m4/1/6 (debug) and m4/1 (release) clean.
