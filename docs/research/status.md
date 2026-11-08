@@ -433,6 +433,15 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   away with coroutines; (b) AnimTree_GetRootDelta (13 matched, 1 mismatch): w lane [esp+0x1c] the original never
   writes, as AnimTree_CalcPose_r; (c) HudManager_Update 1233/11: the old UIText stack address in heap 0x100006a8
   (a written word, so not the never-set kind; the 11 are from before 11-05, none since).
+- **Resume here (2026-11-07 late night, branch pc_menus on ts_compare, c1c0eea0): first own-engine addition -
+  PC settings in the front end's own menus** (user: "Split into existing items", a few settings end to end, keep the
+  ImGui PC menu for now). Done: Options -> GRAPHICS (the panel's hidden Screen row) -> the cut Screen menu as the
+  Graphics menu (Enhanced Graphics on/off live, Reset, Apply and Exit -> settings.ini; Back undoes), via
+  game::PcSettingsHooks (src/engine/client/fe_pc.h), off in --compare runs. User-steered: works, layout fixed.
+  Next: an Enhanced Sound row in the Sound menu (SoundMenu 0x00330f80, FE_SetupSoundMenu fe_setup.cpp: rows
+  MusicVolume / ResetToDefault / SaveAndExit; spare panel row "Channels"/"ChannelOption" at y 190 with
+  arrowleft01/right01; its accept 0x0031e6d0, update 0x00335cd0 and back 0x0031e630 are still x86 - inserting a row
+  at the top shifts the indices, so those need C). Panel extracts: build-time notes in the 11-07 session.
 - **Resume here (2026-11-07 night, branch ts_compare, e96f3a80): thread-switch rows on Compare.** 841 rows
   registered (tools/ts_register.py; FUN_0013f820 has no C); harness ends a test at a script thread switch
   (Config::switch_return_word 0x009270c0 -> xbcmp_switch_landing; Config::switch_ranges: 0x00922ed4-dc, fiber
