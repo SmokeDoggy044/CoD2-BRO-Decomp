@@ -433,7 +433,22 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   away with coroutines; (b) AnimTree_GetRootDelta (13 matched, 1 mismatch): w lane [esp+0x1c] the original never
   writes, as AnimTree_CalcPose_r; (c) HudManager_Update 1233/11: the old UIText stack address in heap 0x100006a8
   (a written word, so not the never-set kind; the 11 are from before 11-05, none since).
-- **Resume here (2026-11-07 late): script threads run on stacks of their own** (src/engine/script/scr_fiber.cpp; our own
+- **Resume here (2026-11-07 night, branch ts_compare, e96f3a80): thread-switch rows on Compare.** 841 rows
+  registered (tools/ts_register.py; FUN_0013f820 has no C); harness ends a test at a script thread switch
+  (Config::switch_return_word 0x009270c0 -> xbcmp_switch_landing; Config::switch_ranges: 0x00922ed4-dc, fiber
+  wait ESP, t_host_floor, FS:[0]/[0x14], stack guard table) and stack_limit(esp) gives the fiber's limit (before,
+  tests on a fiber compared the dead stack). Unattended 0/1/4/10 300 s (build/compare/ts_wide2): 143 match, 23
+  mism, 6 drift. User-steered MONS1 --compare (release, build/play_ts, 1611 s, 30 fps, 0 marks): 475 rows tested,
+  thread rows 267 (103 first time): 229 match, 26 mism, 12 drift; untested_by_level rows 36 (26 first): all match,
+  MONS1 34/153 reached. REAL: Actor_Lmg_Think C segfaults (4/17, address 0x164e, libcod_bro_game +0x31143).
+  Next: triage the mismatches - patterns: (1) [host] 0x803e.... [3] pointer vs 0 in 0xc8 records (Bro_run__main,
+  BattleChatterInit, MiscCombatTimer, CombatMain, AnimScriptEntSetDefaults, Bro_anim_main_init: suspect
+  Scr_BeginThreadFunctor1 copying a stack word above its args - stale stack?); (2) fiber-stack words above the
+  caller's ESP (0xb.......: StandWalkToStop_2, keep_aiming 0x40000000 vs 0.1f, SetupFriendlyFireMissionFail vs
+  fefefefe, StandShootSideStep) - check arg_bytes (ts_register guessed from the original's reads) and by-value
+  ScrVec3 args; (3) SpawnerSetupAI/FinishSpawn heap layout (allocation order); (4) DronePathSpawnLoop,
+  AeThreadFunctor3/5 Invokes. Then ctest (ask), merge, push.
+- **(earlier 11-07 late): script threads run on stacks of their own** (src/engine/script/scr_fiber.cpp; our own
   engine's script-thread runtime, user: "Do it"). Scr_ResumeThread (0x002fe100) is ours (Replaced): a new thread starts
   on a fiber (1 MB stack + guard page, pooled) at Scr_ThreadEntry, a woken one continues from its wait's frame; the
   waits, wait records and Scr_RestoreContext stay original - our switch writes the 0x0092709c context in
