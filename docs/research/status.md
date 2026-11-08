@@ -1,5 +1,8 @@
 # Status and next steps
 
+**Current (2026-11-08):** own engine host, step 0.2 done; next 0.3 (host executable + record/replay). Step order
+and progress: [own-engine-host.md](../developers/own-engine-host.md).
+
 **Decompilation fork (2026-10-17):** this repository (CoD2-BRO-Decomp, local
 `cod_bro/decomp/`) is the native loader's fork for the decompilation; the loader
 repo (`upstream`) stays as it is. Merge loader fixes with `git pull upstream main`.
@@ -415,7 +418,8 @@ model smoother (TruForm-style). None of it before the decompilation is complete.
   vehicle mount CG_ApplyVehicleTurnToView rebuilds cl.viewangles = view - delta each frame (negative here), and
   CL_FinishMove packs it with cvttss2si(x * 65536/360 + 0.5) - truncation toward zero lifts a negative exact unit by 1;
   the server's view follows, next frame repeats. Xbox: same code at 30 fps (half our 0.33 deg/s, unverified).
-  Fix (round with floor(x + 0.5)) waits for the own engine's src/input/view code (user 11-07). Every engine module except
+  Fix (round with floor(x + 0.5)) waits for the own engine's src/input/view code (user 11-07): scheduled with
+  step 0.4 (pacing + native input), 2026-11-08. Every engine module except
   mslib is now Replaced; the engine's remaining Compare rows are untested/inconclusive/set-aside.
 - **Resume here (2026-11-07): the 16 engine mismatches.** 8 were not real: 7 recorded before the 11-05 stack-guard
   fix (their addresses are t_live slots, 0x2c apart: Actor_Grenade_TakeCover, Actor_Negotiation_Think,
