@@ -132,5 +132,13 @@ recording had no per-entity hashes yet). That run crashed at 99 s in FXCmd_Alloc
 through fx_cmd.cpp's Builder) - not reproduced by the replay because the old format lost the last unflushed
 frames.
 
+**Cross-build check:** `tools/replay_check.sh RECORDING SAVES MISSION OUT [NAME=LOADER ...]` replays one recording
+in several builds at once (default: Linux release, Linux debug, Windows release under Wine), each on a fresh copy
+of the save folder the recording started from, and prints one line per build (matched / first differing frame /
+crash). 2026-11-08, mission 4, 2,670 frames: all three match. On the way it found three bugs: CG_FireWeaponEmpty's
+missing EAX (crash in a user playtest), Vehicle_GatherCollisionCandidates' lane 3 (host garbage in the entity), and
+G_SetModel's 5-word name-hash buffer (0x20 bytes needed): on Windows the overrun zeroed the caller's EBX/ESI and
+crashed G_SpawnItem at every mission start.
+
 Next for 0.3: the host executable itself (our exe maps the dump and owns the main loop, list above), checked by
 replaying recordings made with the loader.
