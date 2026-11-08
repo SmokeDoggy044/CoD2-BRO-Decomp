@@ -140,6 +140,13 @@ missing EAX (crash in a user playtest), Vehicle_GatherCollisionCandidates' lane 
 G_SetModel's 5-word name-hash buffer (0x20 bytes needed): on Windows the overrun zeroed the caller's EBX/ESI and
 crashed G_SpawnItem at every mission start.
 
+**Fixed capture points:** `--replay-shots 600,1800,... DIR` (with `--record` or `--replay`) saves those presented
+frames as `DIR/shot_<n>.bmp`; the frame numbers are the replay's (as `--replay-dump`), so one recording gives the same
+pictures in every build or back end. `SHOTS=600,1800,2600 tools/replay_check.sh ...` does it for each build and runs
+`tools/shot_compare.py` (first build vs each other; share of pixels off by more than 8/255). 2026-11-08, mission 4,
+2,620 frames: release and debug pictures identical; Windows (Wine, other back end) at most 0.01% of pixels differ
+(largest difference 115). The quality gate for 0.3b widescreen and 0.5 Vulkan uses this.
+
 **Open (2026-11-08): run-to-run differences after ~90 s of a 13-minute playtest recording** (mission 4, after
 the opening cutscene). Two Linux replays part at frame ~5800, Windows at ~5600 (and Windows then drifts
 visibly: the player ends up elsewhere). First differing word: entity 402 +0x3cc, the tag link's address
