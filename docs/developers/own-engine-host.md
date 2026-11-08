@@ -75,11 +75,17 @@ original address (each pass is idempotent; rerun after new C lands):
 | default | `title_function<F>(0xADDR)` / `(kConst)` → `own_function<F>(&Name)` (direct call, same convention) | 1,787 |
 | `--helpers` | address-taking call helpers (`call_at`, `cg_call_regs`, `title_call_at_regs`, ...) → `own_address(&Name)` | 2,322 |
 | `--values` | addresses used as values: level import slots, command tables, thread bodies, callbacks | 1,912 |
+| `--consts` | `constexpr` address constants inlined at their uses, `uintptr_t{0x...}` asm operands | 54 constants (153 uses), 9 |
+| `--generated` | the default and `--values` passes over generator output; the generators run it last | 9 + 354 |
 
-Compare-status callees reached this way now run as C (0.2). Still on original addresses: template arguments
-(`deleting<0x...>`, `key_table_*<0x...>`, the generated scr_field instances), inline-asm immediates,
-comparisons, `constexpr` lines, helpers that store addresses into functors (`start_on`, `run_to_node`), and
-`KEEP_NAMES` in the script.
+Compare-status callees reached this way now run as C (0.2). Done by hand 2026-11-08 (with the passes above): the
+constexpr struct tables of callees (fe_bonus, fe_menus, the HashMap instances, tank specs) became `const` with
+`own_address`; `deleting<>` / `key_table_*<>` take `auto` (an address or our symbol, `target_function<F, T>()`);
+asm `movl $ADDR, %reg; call *%reg` became `PLATFORM_ASM_CALL(Name_entry)`, `pushl $ADDR; ret` a `jmp`; two asm
+stubs (MemContextScope_Enter, DebugDraw_AddLine) became plain C calls. Still on original addresses, on purpose:
+comparisons/identities (xanim's `base == 0x002e4650`), `sample_root` and `Heap_CreateFromZone` arguments
+(KEEP_CALLEES), the generated scr_field template arguments, and a few generated sites whose declaring header
+the including .cpp lacks (4).
 
 Fixed 2026-11-08: **SV_Map_f** now runs as C too (`KEEP_NAMES` is empty). The live crash under SV_SpawnServer's
 C was UIScreenMgr_SetActiveScreen_entry (and UIDialog_SetText_entry, same shape) pushing EBP 0x20000 below its
