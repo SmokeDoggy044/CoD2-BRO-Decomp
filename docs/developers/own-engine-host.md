@@ -178,5 +178,15 @@ is one `jmp G_SetupVehiclePool`), and ~130 `title_function` calls of the three i
 stack-exact frame helpers / address constants still reach the originals (for the scripted 0.3 rewrite). Checked:
 m4_smoke replay matches in all three builds; smoke runs of missions 0, 3, 5, 9, 10 (the slots' users) clean.
 
+**Memory functions (2026-11-08):** of the 8 memory functions our C called without C, 6 were 5-byte `jmp` thunks to
+functions that have C (`Z_Malloc` 0x00011040/0x00042c10, `Z_Free` 0x00011050, `Heap_AllocAligned` 0x00042c50/0x00042c60,
+`Mem_AlignedAlloc` 0x00066af0, `Mem_AlignedFree` 0x000c3830). `tools/own_calls.py` now resolves such thunks (23 in
+all, chains included: also G_SetupVehiclePool_Thunk, BroScr_WaitFrame x5, Phys_CreateWorld/DestroyWorld, ...) and
+rewrites calls through them to the target's C (57 calls, 11 helper arguments, 4 values). The other two now have C,
+untested by design (XPhysicalAlloc / debugger output cannot run twice): `Mem_AllocPhysicalPools` (the 0x232b000-byte
+physical and 0x3ac000-byte write-combined pools; no debug pool) and `Mem_DebugPrintf` (never runs: its one caller is
+behind the debug pool, which is always off). host_inventory.py: no memory function left; level slots without C: 0.
+Checked: m4_smoke replay matches in all three builds; smoke runs of missions 0 and 5 clean.
+
 Next for 0.3: the host executable itself (our exe maps the dump and owns the main loop, list above), checked by
 replaying recordings made with the loader.
