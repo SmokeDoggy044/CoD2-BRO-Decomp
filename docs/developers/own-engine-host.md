@@ -188,5 +188,12 @@ physical and 0x3ac000-byte write-combined pools; no debug pool) and `Mem_DebugPr
 behind the debug pool, which is always off). host_inventory.py: no memory function left; level slots without C: 0.
 Checked: m4_smoke replay matches in all three builds; smoke runs of missions 0 and 5 clean.
 
+**File device layer (2026-11-08):** `FS_FileExists` already had C; `FileDevice_IssueIo` and its helper
+`FileDevice_AlignTransfer` (both set aside before) now have C, untested by design (they start real asynchronous I/O
+through the driver's function pointer, so they cannot run twice): reads are rounded to the device's sector / offset
+alignment and largest transfer and clamped at the file's end; device mode 1 takes only aligned transfers, 3 always uses
+the bounce buffer, 2 and 4 when unaligned. Checked: m4_smoke replay matches in all three builds (every level load goes
+through them); smoke runs of missions 0, 5 and 9 clean. The write path (op 1) is not reached by those runs.
+
 Next for 0.3: the host executable itself (our exe maps the dump and owns the main loop, list above), checked by
 replaying recordings made with the loader.
