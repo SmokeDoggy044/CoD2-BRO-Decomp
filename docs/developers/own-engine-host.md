@@ -195,5 +195,19 @@ alignment and largest transfer and clamped at the file's end; device mode 1 take
 the bounce buffer, 2 and 4 when unaligned. Checked: m4_smoke replay matches in all three builds (every level load goes
 through them); smoke runs of missions 0, 5 and 9 clean. The write path (op 1) is not reached by those runs.
 
+**Engine functions without C (2026-11-08, partly):** 8 more now have C (NullCallback, ListVectorValue_Dtor,
+Record54_Copy, ThreadHandleList_EndAll - 71/71 matched -, G_EntityWeaponRecordFlag, GScr_ConstStrings_Dtor,
+BroScr_JoinHangarChain, FollowEnt_Worker; all on Compare, the others not reached yet: exit path, ORAN late, BUCHHOLZ
+event 3). Left: Scr_WaitFrames / Scr_WaitRecord15-17 (thread switch, with ts_compare), the CRT ones (atof, sscanf,
+srand, tolower, _ftol, memset2, _errno, the vector iterators: next for title_crt.h + --check-crt), mslib-filed
+FUN_0002c442 / FUN_001fa100 / LoadScreen_SetProgress, and ScrEnt_Set/GetInt_370, LocStrings_Ctor/Dtor,
+BrushModel_CopyBounds, FUN_0030f190, FUN_000b8990, FUN_001c2aa0.
+
+**Open: false compare mismatches since 0.2.** A compare run (missions 1,4,5,6) on 2026-11-08 reported 64 level-script
+bodies (BroScr_*, AeThreadFunctor*) as mismatched: each differing word is a code address our C stores as
+own_address(&X) (0xf7... host) where the original stores X's title address (e.g. BroScr_SpawnedThink 0x001e25d0) -
+the 0.2 --values rewrite, not a bug. Those rows were not committed. Fix in the harness: treat our C's address of a
+kFunctions entry as equal to its original address when comparing memory words.
+
 Next for 0.3: the host executable itself (our exe maps the dump and owns the main loop, list above), checked by
 replaying recordings made with the loader.
