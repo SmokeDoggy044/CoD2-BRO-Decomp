@@ -44,7 +44,7 @@ Mem_*), FS_FileExists/FileDevice_IssueIo, the script thread-switch family (Scr_W
 Scr_StartThread_*/Scr_CallThread_* functors, Scr_ThreadEntry), Live_*/LiveMgr (gone), Save_* signature code,
 10 unnamed functions, 6 named-only. Level code also calls the Scr_Wait family directly (not through a slot),
 so the fiber runtime (scr_fiber.cpp, branch ts_compare) must own those addresses. Level slots without C: 4
-(`_sprintf`, `_atol`, `_strncpy`, `G_SetupVehiclePool_Thunk`).
+(`_sprintf`, `_atol`, `_strncpy`, `G_SetupVehiclePool_Thunk`) - done 2026-11-08, see "Own CRT" under 0.3.
 
 **C reaching C through original addresses: 3,281 targets.** `title_function<...>(0x...)` calls into
 functions that already have C go through the hook jump today. In the host either every original address
@@ -166,6 +166,17 @@ status words, and the recording lists which ones ('k'/'K', a replay writes exact
 it is behind). The recording also starts with the settings.ini text and command line it ran with ('O'/'A'): a replay
 uses that text instead of the player's settings.ini (which may have changed, and under Wine is another file). Check:
 mission 4, 45 s with sound, 2,963 frames match; a 12.5-minute user playtest (mission 4, keyboard/mouse, 45,498 frames) replays to the end in all three builds: Linux release matches every frame, Linux debug and Windows (Wine) each differ on 34 frames only (one entity for a moment - debug 676 from frame 38,723, Windows 582 from frame 11,417 - then back in step). Cause (hardware watchpoint): G_MissileImpact copies the trace's end point as 4 words into the entity (+0x60..+0x6c); the 4th is a lane the trace copies from its own stack, so it differed per build. G_RunMissile now sets it to 0 before the call. Source (found 11-08): no writer - CM_BoxTrace and SV_Trace compute the end point in all four lanes (start + (end - start) * fraction), and G_RunMissile's `end` gets only three lanes from BG_EvaluateTrajectory, so lane 3 carries a stale stack word (always the same in the original, left by our C here). The trace normal's lane 3 (G_MissileTrace's start - end over four lanes) has the same source when a trace starts solid. Since then release, debug and Windows agree on every frame (all three differ from that older recording on the same 34 frames).
+
+**Own CRT (2026-11-08):** `src/engine/shared/title_crt.h` - our `_sprintf`/`_vsprintf`, `_atol`, `_strncpy`, written
+to behave like the title's VC7.1 CRT, not the host's: floats from 17 significant digits rounded half up on the digit
+string (`%.0f` of 2.5 = 3, 1e30 = 1 and 30 zeros), 3-digit exponents, `1.#INF00`/`1.#QNAN`/`1.#IND`, `-0` printed
+without its sign, `%p` = 8 upper-case hex digits, 16-bit wide strings; atol wraps on overflow. `--check-crt` runs
+ours and the title's side by side on a table (ints, flags, widths, `*`, `I64`, wide, rounding edges, denormals,
+specials) at the first frame (the title's CRT needs its own init) and exits 3 on any difference: 0 differences in
+Linux release/debug and Windows (Wine). The 4 level slots without C now point at our C (`G_SetupVehiclePool_Thunk`
+is one `jmp G_SetupVehiclePool`), and ~130 `title_function` calls of the three in our C use ours; 11 calls through
+stack-exact frame helpers / address constants still reach the originals (for the scripted 0.3 rewrite). Checked:
+m4_smoke replay matches in all three builds; smoke runs of missions 0, 3, 5, 9, 10 (the slots' users) clean.
 
 Next for 0.3: the host executable itself (our exe maps the dump and owns the main loop, list above), checked by
 replaying recordings made with the loader.
