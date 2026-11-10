@@ -198,16 +198,32 @@ through them); smoke runs of missions 0, 5 and 9 clean. The write path (op 1) is
 **Engine functions without C (2026-11-08, partly):** 8 more now have C (NullCallback, ListVectorValue_Dtor,
 Record54_Copy, ThreadHandleList_EndAll - 71/71 matched -, G_EntityWeaponRecordFlag, GScr_ConstStrings_Dtor,
 BroScr_JoinHangarChain, FollowEnt_Worker; all on Compare, the others not reached yet: exit path, ORAN late, BUCHHOLZ
-event 3). Left: Scr_WaitFrames / Scr_WaitRecord15-17 (thread switch, with ts_compare), the CRT ones (atof, sscanf,
-srand, tolower, _ftol, memset2, _errno, the vector iterators: next for title_crt.h + --check-crt), mslib-filed
+event 3). Left: Scr_WaitFrames / Scr_WaitRecord15-17 (thread switch, with ts_compare), the CRT ones below, mslib-filed
 FUN_0002c442 / FUN_001fa100 / LoadScreen_SetProgress, and ScrEnt_Set/GetInt_370, LocStrings_Ctor/Dtor,
 BrushModel_CopyBounds, FUN_0030f190, FUN_000b8990, FUN_001c2aa0.
 
-**Open: false compare mismatches since 0.2.** A compare run (missions 1,4,5,6) on 2026-11-08 reported 64 level-script
-bodies (BroScr_*, AeThreadFunctor*) as mismatched: each differing word is a code address our C stores as
-own_address(&X) (0xf7... host) where the original stores X's title address (e.g. BroScr_SpawnedThink 0x001e25d0) -
-the 0.2 --values rewrite, not a bug. Those rows were not committed. Fix in the harness: treat our C's address of a
-kFunctions entry as equal to its original address when comparing memory words.
+**More own CRT (2026-11-10):** title_crt.h gained `tolower`, `atof`, `sscanf` (the `%f` lists the title's callers
+use; also `%lf`, `%d`), `memset` (the level import table's memset2 slot now points at it) and the eh vector
+constructor/destructor iterators; ~60 call sites in our C use ours. VC7.1's decimal conversion is not the host's: it
+rounds to nearest but breaks an exact tie toward zero (sscanf `%f` of 9150587.5 = 9150587), and float denormals
+round up only past 0.75 of a step (rounded to one more bit, then truncated). Ours converts with exact integer
+arithmetic (no host strtod: msvcrt's ignores rounding modes and is not correctly rounded); VC's sscanf also takes a
+bare exponent letter (`"1e 2 3"` reads 1, 2, 3). `--check-crt` adds tolower -1..255, an atof/sscanf table and 20,000
+seeded random decimals: 0 differences in Linux release/debug and Windows (Wine). Known limit, logged but not counted:
+of the 10,000 long ones (up to 20 digits, exponents to +-300) one near-tie at e-291 (0.5003 of a step) differs,
+VC's 64-bit intermediate with inexact powers of ten (not ported; no game data comes near). Still on the originals:
+`srand` and `_errno` (they write the title CRT's per-thread data, which `rand` and the CRT read - they move with the
+rest of that data), `_ftol` (one x87 asm chain with `__CIacos` in ragdoll.cpp) and the 11 calls through
+stack-exact frame helpers (scripted 0.3 rewrite). Checked: m4_smoke replay matches in all three builds.
+
+**False compare mismatches since 0.2: fixed 2026-11-10.** A compare run on 2026-11-08 reported level-script bodies
+(BroScr_*, AeThreadFunctor*) as mismatched where a memory word held our C's address of a function (own_address(&X),
+0xf7... host) and the original's X's title address - the 0.2 `--values` rewrite, not a bug. The harness
+(compare_linux.cpp, `g_own_to_title`) now treats the pair (C entry, original address) of every kFunctions row as the
+same word; pairs, since several functions share one C body (the BroScr_EmptyFunc_* rows all use BroScr_Stub_Ret). Rerun
+(missions 1,4,5,6): no code-address differences left. What remains in those rows is the older level-script family
+(host heap pointers stored on one side only, +INF vs 0, the .data byte 0x00929b40) - the script fiber triage list in
+status.md; such rows still stay out of commits.
 
 Next for 0.3: the host executable itself (our exe maps the dump and owns the main loop, list above), checked by
 replaying recordings made with the loader.
