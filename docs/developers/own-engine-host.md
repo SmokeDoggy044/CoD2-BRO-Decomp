@@ -445,8 +445,23 @@ Left, in order:
    XB_CHECK_NATIVE_FILES=1 runs our side of the directory, disk-size and save-game checks on the native files and
    the title's on the kernel (same folders, so each reads the other's saves and the real save folder): 0
    differences on Linux and Wine; Wine --own-main m4 replay runs through.
-   **Batch 3:** time (host clock), settings (ExQueryNonVolatileSetting -> settings.ini/defaults), critical sections
-   on the title's structs, memory (XPhysicalAlloc, MmQueryStatistics), launch info (5b).
+   **Batch 3 done 11-11:** time - `TitleHost::system_time` (host UTC clock) and our calendar
+   (`src/platform/civil_time.h`, now also behind the kernel's RtlTime* exports) for GetSystemTimeAsFileTime,
+   File/SystemTime conversions, the time zone and cutover dates; console settings - our own table
+   (title_xapi.cpp `native_setting`, the 256-byte layout the title parses for blocks 0xff/0xffff) from
+   `TitleHost::language`/`widescreen`, North America/NTSC-M/UTC as before, XGetAVPack 0; critical sections - pure C
+   on the title's RTL_CRITICAL_SECTION (title_objects.cpp) with the kernel's protocol and the same futex word, so
+   the title's x86 and our C share sections (CRT lock table, stdio file locks, the thread-notify lock); memory -
+   XPhysicalAlloc/Free/Protect, XQueryMemoryProtect, GlobalMemoryStatus and our heap's segments through
+   `TitleHost` (allocate_contiguous, protect, memory_statistics, reserve - the loader's allocator, so addresses
+   stay); save signatures - SHA-1 from `src/platform/sha1.h` (kernel's XcSHA* use it too), the console key
+   "CoD2BRO-port-key" and zero signature keys as constants (`title_console_key`), so existing saves keep loading;
+   status -> DOS error our own full table (`title_dos_error`); MultiByteToWideChar's ANSI widening in C. Checks:
+   m4/m2 state dumps byte-identical to batch 2, traps m4 12 / m2 17 (unchanged); `--check-crt` 0 differences on
+   Linux and Wine with and without XB_CHECK_NATIVE_FILES=1 (now covers the whole native layer: times, settings,
+   time zone, string conversion, disk sizes, saves); Wine `--own-main` m4 replay runs through
+   (build/trap/wine_own.sh). Kernel calls left in our C under --own-main: XGetLaunchInfo (LaunchDataPage, 5b),
+   RaiseException/RtlUnwind in title_eh.cpp (SEH), the kernel paths kept for plain runs/compare.
 5b. Level switches without a restart (user 11-11): the title moves between levels by rebooting itself
    (XLaunchNewImageA + launch data page); the loader re-execs, so the window closes and reopens. Ours: keep the
    window, GfxDevice, audio device and input; map .data/.bss fresh from the dump, reset our heap and CRT state,
