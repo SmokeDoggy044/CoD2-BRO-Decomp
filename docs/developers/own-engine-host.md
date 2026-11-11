@@ -287,9 +287,16 @@ pre-merge runs (0 words). Left, in order:
    Actor_Noncombat_Suspend, ~10 unnamed (FUN_00014c80 ...); the 6 MANUAL static initializers; the UIX feature ctors
    from StaticInit_FxParticleBounds (drop with Live). Agent-suggested Ghidra names (not applied, ask the user):
    0xcbae0 FileXapi_Close, 0xcbb30 FileXapi_GetNativeHandle, 0xcbb50 FileDeviceXapi_IoComplete, 0xcbb70
-   FileDeviceXapi_Issue.
+   FileDeviceXapi_Issue (applied in Ghidra 2026-11-10).
 5. XAPI/CRT start-up (mainXapiStartup, XapiInitProcess, _rtinit, the CRT's .CRT$XI entries, __mtinitlocks, heap
    init) replaced by the host's own start.
-6. Recordings of other missions through the trap (ask the user to record); ctest/leaf_test after the merges (ask
+6. Recordings of other missions through the trap (ask the user to record). Done for mission 2 (tank,
+   recordings/m2/m2_playtest.rep, 7.2 min, 2026-11-10): two C bugs our Compare rows hid, fixed (the thread starts or
+   the variable write happen after the harness compares): Bro_aim__keep_aiming passed BroScr_TurnToEnemy_2 its
+   callback and end-on hash swapped (crash at 171 s), BroScr_SpawnerSetupAI set the tank-squish var on the actor
+   instead of the spawner (player script object missing). Now: replay reaches its end, non-pointer state at frame
+   25900 equal to the plain loader's; 153 trapped functions, 17 not in m4's list (Scr_CallThread_* x7,
+   Scr_WaitTillArgsNoFlag, Scr_StartThread_ent_ent_f_i_i_i_f, Actor_DefaultPain/Finish/Slot5, __CItan + helper,
+   BroScr_EmptyFunc_3/_36, FUN_000b8990). Then ctest/leaf_test after the merges (ask
    first, LEAF_JOBS=8); then the host executable: .text/SDK sections as INT3 + jumps, start at title_cinit +
    Sys_Main; check = replays reach their end with non-pointer state equal to the loader's.
