@@ -268,79 +268,28 @@ Note: `--text-trap` only sees Ghidra's function entries; code Ghidra has no func
 initializer stubs were such) runs unseen. The host's own check is .text filled with INT3 except the jumps.
 
 ### Next for 0.3 (resume here)
-1. Agents (worktrees cod_bro/wt/h_crt, h_xapi, h_xg; brief wt/host_brief.md, row lists wt/h_*_rows.txt) replace
-   the CRT + MSVC C++ EH, XAPI + stdio files + FileXapi/Sys_ReadLaunchInfo/Save_FirstPort/Sys_GetStackBounds, and
-   XGRAPHICS/D3DX (XGAssembleShader). Merge each branch into own_host, rerun the m4 check.
-2. Script thread switch in C (with scr_fiber.cpp): Scr_Wait/WaitFrames/WaitTill/WaitTillArgs/WaitTillString/
+State 2026-11-10 late (own_host 04cad6bb): the three library agents are merged (XDK graphics, XAPI + stdio +
+FileXapi rows, own CRT frontier + C++ EH; their sections are above). m4_smoke with --own-main --text-trap: 139
+original functions left (894 at the start of the day), replay reaches its end, state at frame 2600 equal to the
+pre-merge runs (0 words). Left, in order:
+1. Script thread switch in C (with scr_fiber.cpp): Scr_Wait/WaitFrames/WaitTill/WaitTillArgs/WaitTillString/
    WaitOnObject(NoFlag) (level code calls them directly), Scr_Suspend* + Scr_WaitRecord15-17 + Scr_RestoreContext
-   become a fiber switch; Scr_ThreadEntry (try/catch around Invoke: needs our EH), Scr_StartThreadFunctor1,
-   Scr_BeginThreadFunctor1, Scr_CallThread_* (game set-aside).
-3. Leftover engine rows: LocStrings_Ctor, SoundManager_Ctor, NullCallback, EmptyVFunc_Ret8, BrushModel_CopyBounds,
+   become a fiber switch; Scr_ThreadEntry (try/catch around Invoke, our EH now exists), Scr_StartThreadFunctor1,
+   Scr_BeginThreadFunctor1, Scr_CallThread_*.
+2. CRT leftovers: x87 intrinsics (__CIsqrt/sin/cos/fmod/pow_default + _87except/__trandisp2...; behaviour worked
+   out in the CRT section), the stdio write side (fwrite/_flsbuf/printf/fprintf), malloc/free/_lock family,
+   _toupper/_strncat/__ceil/strtod/memmove still by address; title_crt.cpp's XAPI calls by address
+   (GetCurrentThreadId, GetSystemTimeAsFileTime) -> the new title_xapi C (title_crt.cpp is in own_calls KEEP_FILES).
+3. XAPI leftovers our C calls but m4 never reaches: save games (XCreateSaveGame, XFind*SaveGame, XCalculateSignature*),
+   MultiByteToWideChar, GetDiskFreeSpaceExA, XGetDisk*Size, XGetDisplayBlocks, FileTime*, CancelIo, OutputDebugStringA.
+4. Leftover engine rows: LocStrings_Ctor, SoundManager_Ctor, NullCallback, EmptyVFunc_Ret8, BrushModel_CopyBounds,
    ScrIface_HashKeyNoCase, ScrCall_GScr_GetEntScriptObject(_2), BroScr_Nop/SetDirectionalMoveAnims/SetPoseMovement,
-   Actor_Noncombat_Suspend, unnamed FUN_00014c80/0001ce00/00022ba0/00023ad0/00026fc0/000270e0/00027cf0/000445d0/
-   001e4700/0028e610; the 6 MANUAL initializers; UIX feature ctors from StaticInit_FxParticleBounds (drop: Live).
-4. XAPI start-up (mainXapiStartup: XapiInitProcess, _rtinit, CRT XI) replaced by the host's own start.
-5. More recordings (other missions) through the trap; then the host executable: maps the dump with .text/SDK
-   sections as INT3 + jumps, starts at title_cinit + Sys_Main; check = replays reach their end with non-pointer
-   state equal to the loader's.
-
-### XDK graphics helpers in C (2026-11-10, branch `h_xg`)
-
-`src/engine/renderer/xgraphics.cpp` holds our own code for the XGRPH/D3D helpers the renderer's C calls
-(Compare rows at the original addresses): the resource headers (XGSetTextureHeader, XGSetCubeTextureHeader,
-XGSetSurfaceHeader, XGSetVertexBufferHeader, XGSetPaletteHeader, with the format/size word computation 0x003f975f inlined),
-XGBytesPerPixelFromFormat, the swizzler (Swizzler_Init/SwizzleU/SwizzleV, XGSwizzleRect: one per-pixel loop
-for the original's fast paths and tiled loop, which all write the same bytes; Width <= 2 or Height <= 1 is the
-original's plain copy), D3D_ReturnOne (0x003ebb20) and XGAssembleShader.
-
-**XGAssembleShader: the four texts, not an assembler.** The title assembles exactly four shaders, all from
-constant text (nglInitShaders: three `xps.1.1` screen-space pixel shaders, one `xvs.1.1` pass-through vertex
-shader; no format arguments), and reads the result only through the buffer (`data` at +4: the
-D3DPIXELSHADERDEF / vertex program our D3D layer translates). The original is the D3DX assembler with its
-optimizer (~280 functions); a general vs/ps assembler that reproduces its output bit for bit would be a large
-project for four fixed inputs, and taking the source text in our renderer instead would change what the game
-holds. So ours compares the text with the four known ones and returns the original's output for them
-(PSDEF fields and NV2A instruction words in the source, checked byte for byte against the original's output
-captured in a loader run), in a newly allocated buffer like the original's; any other text gets E_FAIL and a
-message. A level or mod that assembled other shaders would need the general assembler then.
-
-m4_smoke with `--own-main --text-trap` after this: the SDK rows go from 284 to 3 (UIX's D3D_AllocContiguousMemory
-and XGIsSwizzledFormat, the XONLINE static initializer); the frame-2600 state differs from the baseline in the same
-pool pointers only. Left in the group: the TrueType rasterizer filed under mslib (XGRAPHICS::itrp_*, PackBitmap,
-CurveTransitions, ...), reached only through 0x0002c442, the UIX layout font Sys_Main creates for Live_Init: it
-goes with Live/UIX.
-
-### CRT and C++ exception handling in C (2026-11-10, branch `h_crt`)
-
-**CRT (title_crt.h).** At the title CRT's addresses as Compare rows (`--own-main` installs them): strncmp,
-strnicmp, stricmp (the `__ascii_` versions: `__locale_changed` stays 0), strtok, strcspn, strchr, strstr,
-strlwr/strupr, strtol (strtoxl), isalpha/isdigit/isspace/isalnum (through the title's `_pctype`: callers pass
-sign-extended chars), qsort (VC's median of three, insertion sort below 9, equal runs skipped: the order of equal
-keys is VC's), bsearch, _vsnprintf/_snprintf (the int counter: 0x80000000 wraps and takes everything), clock,
-atexit (our own list; the game never exits through it), _control87/_controlfp (abstract <-> hardware bits),
-_allmul/_alldiv/_aulldiv, and asm entries for _allshr, _ftol (VC7.1's: rounds in the thread's mode, then
-corrects by the sign of the difference) and _chkstk; the earlier sprintf/vsprintf/atol/strncpy/tolower/atof/
-sscanf/memset/vector iterators are registered too. `--check-crt` covers each one whose result the game can see
-(rand sequences, string and ctype tables, strtok, strtol with errno and end, vsnprintf counts, qsort order of
-equal keys, bsearch, the 64-bit helpers, _allshr, _ftol, control87/controlfp from 7 start words): 0 differences.
-
-**Per-thread data.** `_getptd` (rand seed, errno, strtok position, the EH words) is ours under `--own-main`, but
-looked up the title's way: a thread whose KTHREAD has TLS data keeps it in its TLS block, every other thread shares
-the one slot at 0x0098f9e0 - so those threads share one rand seed. (A thread_local version split it, and m4
-diverged from frame 147.) Our C reaches `_getptd` and `_atexit` through their original addresses on purpose
-(`tools/own_calls.py` KEEP_ADDRESS): in loader runs that is the title's own, so the title's CRT and our C keep one
-state. own_calls.py also skips title_crt.cpp / title_eh.cpp (KEEP_FILES): --check-crt calls the originals.
-
-**C++ EH (title_eh.cpp).** ___CxxFrameHandler (asm entry: FuncInfo in EAX), _CxxThrowException and __EH_prolog:
-VC7.1's model - unwind map walk (throw-in-progress count), try ranges by catch depth, type match, catch object
-copy, RtlUnwind of nested frames, the catch block run at the frame's EBP under our catch guard and our
-CallCatchBlock node (rethrow and unwind-past clean-up), frame info list, the last catch destroys the object, then
-the jump to the continuation at the frame's saved ESP. After the catch FS:[0] is the catching frame's node
-(the title's code relinked the unwound head and popped it again: same end state). Not ported: SE translators (the
-title sets none), FuncInfo versions after 0x19930520 (none), the catch guard's cookie check.
-
-**Check.** m4_smoke `--own-main` replay: reaches the end, 2018 of 2620 frames differ from frame 603 on, the same
-as the own_host baseline; `--replay-dump 2600` against the baseline: 0 differences. Left in the group (trap log):
-the x87 intrinsics `__CIsqrt`, `__CIsin`, `__CIcos`, `__CIfmod`, `__CIpow` (and their `__math_exit` /
-`_87except` / `__cintrindisp2` closure), the CRT start-up before Sys_Main (mtinit, setmbcp, cfltcvt_init, heap),
-and the stdio file functions (XAPI group).
+   Actor_Noncombat_Suspend, ~10 unnamed (FUN_00014c80 ...); the 6 MANUAL static initializers; the UIX feature ctors
+   from StaticInit_FxParticleBounds (drop with Live). Agent-suggested Ghidra names (not applied, ask the user):
+   0xcbae0 FileXapi_Close, 0xcbb30 FileXapi_GetNativeHandle, 0xcbb50 FileDeviceXapi_IoComplete, 0xcbb70
+   FileDeviceXapi_Issue.
+5. XAPI/CRT start-up (mainXapiStartup, XapiInitProcess, _rtinit, the CRT's .CRT$XI entries, __mtinitlocks, heap
+   init) replaced by the host's own start.
+6. Recordings of other missions through the trap (ask the user to record); ctest/leaf_test after the merges (ask
+   first, LEAF_JOBS=8); then the host executable: .text/SDK sections as INT3 + jumps, start at title_cinit +
+   Sys_Main; check = replays reach their end with non-pointer state equal to the loader's.
