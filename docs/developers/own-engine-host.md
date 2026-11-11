@@ -318,10 +318,23 @@ Left, in order:
    frame for frame (the CRT blocks' own addresses are not in the hashed state). Heap handles are ignored; the small-block
    heap (__active_heap 3) is not ported; _callnewh is still called by address on exhaustion. `--check-crt` runs
    30,000 random alloc/free/realloc on it. The game holds only ~6 CRT blocks at the first frame.
-   Then the rest: the stdio write side (fwrite/_flsbuf/printf/fprintf), the _lock family,
-   _toupper/_strncat/__ceil/strtod/memmove still by address; title_crt.cpp's XAPI calls by address
-   (GetCurrentThreadId, GetSystemTimeAsFileTime) -> the new title_xapi C (title_crt.cpp is in own_calls KEEP_FILES;
-   own_calls --helpers now honours KEEP_FILES too - it had rewritten the check's title addresses).
+   **Done 11-11: the CRT our C called by address** (Compare rows, call sites rewritten by own_calls): _toupper,
+   _strncat, _strrchr, _memchr, _memmove, _strcpy, _wcslen, _strtoul (strtoxl unsigned: overflow ULONG_MAX, a '-'
+   negates unchecked), _strtod (atof's converter; overflow +-HUGE_VAL, and a nonzero number below the smallest
+   normal - denormals too - gives +0, even "-1e-400", both ERANGE), __ceil_default (x87 asm: frndint under the
+   word at 0x008d11f0; NaN EDOM) and __CIasin (acos's frame; +-1 gives the 80-bit pi/2 at 0x008d19b6).
+   **The stdio write side** in title_stdio.cpp: fwrite/_fwrite_lk/_flsbuf/_write/_write_lk (text mode CR LF through
+   a 1 KB staging buffer that can reach 0x401 bytes)/_lseeki64_lk/_isatty/__doserrno/_dosmaperr (the CRT's 45-entry
+   table at 0x008d1208) as Compare rows; **the lock table** (_mtinitlocks, _mtinitlocknum, _lock, _unlock,
+   __crtInitCritSecAndSpinCount/NoSpinCount) as Replaced rows (comparing would enter each section twice).
+   `--check-crt` adds tables for all of them and an fwrite run (the title's into T:\crtcheck_a.bin, ours into _b,
+   binary and text, 13 write shapes; return values, stream fields and bytes; files deleted after). 0 differences
+   Linux release/debug and Wine. Replays: m4 all frames in release/debug/Windows, m2 release; own-main dumps only
+   heap pointers (m4 6 words, m2 300). Traps m4 61 -> 52, m2 67 -> 58. Replays write no save files (checked with
+   the new `KEEP_DATA=1` of replay_check.sh), so fwrite is checked by --check-crt only.
+   Left from item 2: printf/fprintf (__output, _stbuf/_ftbuf; only Nfl_Print*, CL_Shutdown, Mem_DebugPrintf use
+   them), _flsall, _chsize_lk, _commit, _amsg_exit, _callnewh; title_crt.cpp's XAPI calls by address
+   (GetCurrentThreadId, GetSystemTimeAsFileTime) -> title_xapi C (title_crt.cpp is in own_calls KEEP_FILES).
 3. XAPI leftovers our C calls but m4 never reaches: save games (XCreateSaveGame, XFind*SaveGame, XCalculateSignature*),
    MultiByteToWideChar, GetDiskFreeSpaceExA, XGetDisk*Size, XGetDisplayBlocks, FileTime*, CancelIo, OutputDebugStringA.
 4. Leftover engine rows: SoundManager_Ctor, BrushModel_CopyBounds, ScrIface_HashKeyNoCase, FUN_000b8990,
