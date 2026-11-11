@@ -267,6 +267,26 @@ frame 2600 identical to the original _cinit's (0 words). Trap count m4_smoke: 89
 Note: `--text-trap` only sees Ghidra's function entries; code Ghidra has no function for (most of these
 initializer stubs were such) runs unseen. The host's own check is .text filled with INT3 except the jumps.
 
+### Direction (user 2026-11-11): a native PC game, not a loader in C
+
+Two layers, two rules:
+- **Game logic stays exact** (AI, physics, scripts, weapons, menus, the CRT behaviour it depends on): replays and
+  `--check-crt` keep checking it word for word. That is what keeps the game playing like the original.
+- **The platform layer is native.** Our own `main()`, files through normal host paths (data folder, user folder,
+  cache), saves written straight to the user folder, threads/time/memory from `src/platform`. No kernel imitation,
+  no drive letters or symbolic links, no LaunchDataPage, no XBE header reads, no Xbox TLS bookkeeping in our C.
+  Xbox-only start-up work (partitions, title updates, auto power-down, kernel patches, TitleMeta.xbx/title images)
+  is not ported at all.
+- Check for the platform layer: replays (non-pointer state equal), save compatibility (the player's existing saves
+  load and saves we write load in the original), not instruction-level equality with XAPI.
+- One real constraint stays: levels remain original x86 from the dump (user 11-06), and they read globals at fixed
+  addresses, so .rdata/.data/.bss stay mapped at their original addresses. That is a memory layout, not an
+  Xbox imitation.
+
+Where our C still leans on the imitation (11-11): `title_xapi.cpp` (69 kernel calls: files, time, events, threads,
+settings) and `title_savegame.cpp` (14: files, signatures), plus the loader-side SDK redirects (D3D/XGRAPHICS, XPP,
+DSOUND) that move into the host as they are.
+
 ### Next for 0.3 (resume here)
 State 2026-11-11 (own_host): m4_smoke with --own-main --text-trap: 81 original functions left (139 on 11-10), m2
 93 (153); both replays reach their end, m4 state at frame 2600 unchanged, m2 at 25900 equal to the plain loader's
@@ -376,57 +396,31 @@ Left, in order:
    EmptyVFunc_Ret8, SndSys_EmptyStub, BroScr_Nop, BroScr_EmptyFunc_3/_36, Actor_Noncombat_Suspend,
    Actor_DefaultPain/Finish/Slot5; the 6 MANUAL static initializers; the UIX feature ctors from
    StaticInit_FxParticleBounds (drop with Live); LoadScreen_SetProgress (0x0033ac80, filed under mslib).
-5. XAPI/CRT start-up (mainXapiStartup, XapiInitProcess, _rtinit, the CRT's .CRT$XI entries, __mtinitlocks, heap
-   init) replaced by the host's own start. **Analysis 11-11 (next session starts here):** plan = new
-   `src/engine/shared/title_start.cpp`, `--own-main` adds `install_jump(0x001e7bc3 entry -> title_entry)` in
-   loader main.cpp. What each piece does / what ours does:
-   - entry 0x001e7bc3: cert size fix (XBE +0x118 cert; size = headers size - cert + 0x10000 if smaller), TLS size
-     ((zero fill 0x90 - raw start + raw end + 15) & ~15) + 4 -> 0x0098f668, _tls_index (*0x00827414 = 0x009268b0)
-     = size / -4; CreateThread(0, 0, mainXapiStartup, 0, 0, 0) (fails: XapiBootToDash(1, 1, 0)), CloseHandle.
-   - mainXapiStartup 0x001e7b4f (stdcall 1 arg): XapiApplyKernelPatches (Xbox-only: code selector, page
-     protection - skip), XapiInitProcess, then if (*(FS:[0x20] + 0x250) && its +0x24 = p): p[0] = 1,
-     p[1] = TLS[stack base FS:[4] + index * 4] - KTHREAD(FS:[0x28]) +0x28 + 8; _rtinit, _cinit (ours), Sys_Main(0,0,0),
-     XapiBootToDash(1, 1, 0) (calls XLaunchNewImageA 0x001e6d5c, no C yet - reboots need it: keep by address).
-   - XapiInitProcess 0x001edc6f: skip (Xbox-only) HalRegisterShutdownNotification, XapiInitAutoPowerDown,
-     XapiValidateDiskPartition (only when !(XBE init flags 0x10124 & 8)), XapipUpdateRebootIfNecessary (title
-     updates); keep RtlCreateHeap(2, 0, [0x10134], [0x10138], 0, params{0x30,..}) -> 0x0098f660 (ours), D: link
-     (IoCreateSymbolicLink \??\D: -> \Device\CdRom0 when !(XboxHardwareInfo flags & 8); 0xc0000035 ok),
-     XapiSetupPerTitleDriveLetters(cert +8 title id, cert +0xc name) when !(flags & 0x18), XMountUtilityDrive(flags &
-     2) when !(flags & 8) && (flags & 1) (the loader's patch at 0x001e9b66), parental: ExQueryNonVolatileSetting(0xa)
-     vs cert +0xa4 (BootToDash(1, 4, rating)), LaunchDataPage: if page && page[0x214/4] & 1: page[0] = page[0x218/4];
-     at the end if page && page[0] == -1: LaunchDataPage = 0, MmFreeContiguousMemory(page). Failures: XapiBootToDash.
-   - XapiSetupPerTitleDriveLetters 0x001edba4: sprintf "%08lx" id; XapiMapLetterToDirectory(T:, TDATA, id, 1, 0, 0),
-     then (U:, UDATA, id, 1, name, 0). XapiMapLetterToDirectory 0x001ed870 (link, dir, sub, create, name, set_time;
-     ret 0x18): open-if the dir (0xc0000103 counts as ok); path = dir + '\\' + sub (a trailing backslash on dir
-     DECREMENTS the static ANSI_STRING's Length in place); open (create ? 3 : 1) the title folder; set_time:
-     FileBasicInformation with LastWriteTime = now; name: sections $$XTINFO/$$XTIMAGE/$$XSIMAGE (XGetSectionHandleA
-     walks XBE section headers 0x1011c count / 0x10120, 0x38 each, name +0x14; missing: SetLastError(0x490), -1);
-     unless no XTINFO and name empty: TitleMeta.xbx open-if (0x40100000, attrs 4, share 1, options 0x22), when empty
-     (FileNetworkOpenInformation EndOfFile 0): the XTINFO section's bytes, else (or its load failing)
-     _snwprintf(0x8e, L"%lc%ls%lc%ls%ls", 0xfeff, L"TitleName", '=', name, 0x00827530) * 2 bytes; then
-     XapiCopySectionToFile 0x001ed789 (handle, path, 0x104, "\\TitleImage.xbx" / "\\SaveImage.xbx": same
-     open-if/empty/write, 0xc0000035 ok); finally IoCreateSymbolicLink(link, path).
-   - _rtinit 0x001ede36: XI list 0x00897240..4c = 0, __mtinit 0x001f34c4, _ioinit 0x001f4ede. __mtinit:
-     title_mtinitlocks, calloc(1, 0x88) -> TLS block +0xc, ptd[0] = GetCurrentThreadId, ptd[1] = -1 (NOTE: no
-     mbcinfo / seed - the original's _initptd stores were folded onto the null path), XRegisterThreadNotifyRoutine(
-     0x00926a74 {routine 0x001f8400}, 1) (0x001e7779: critical section 0x008cfce8 via kernel slots 0x7b3130/0x7b312c,
-     insert at tail of list 0x008cfd04). _ioinit: malloc 0x500 -> 0x0098f8e0, 0x0098f8c4 = 0x20, 32 records of 0x28
-     (+0 -1, +8 0, +4 0, +5 0x0a), first three +4 = 0xc1.
-   - _cinit XI (0x008978d0..ec, title_cinit calls them by address): __fpmath (via 0x008d1378; its argument is
-     _cinit's return address, always nonzero: __cfltcvt_init (6 pointers 0x008d1988..9c) + _controlfp(0x10000,
-     0x30000) + fnclex), 0x00396f5f (3 XONLINE pointers into 0x009267b0..b8), 0x001eecd6 (onexit table: malloc 0x80
-     -> 0x0098f9e8 = 0x0098f9e4, first word 0; fail 0x18), ___inittime (0x00926a58 = FILETIME), 0x001f17c2 (stdio:
-     count 0x0098f9f4 0 -> 0x200, min 20; calloc(count, 4) -> 0x0098f9f0 (retry 20; fail 0x1a); first 20 = _iob
-     0x008d13a0 + i*0x20; _iob 0..2 +0x10 = -1 when the lowio handle (0x0098f8e0 record) is -1 or 0),
-     0x001f83d8 (once 0x0098f9ec: 0x0098f784 = -3, __setmbcp(0)), 0x001f7ee2 (SetUnhandledExceptionFilter(
-     0x001f7e9c) -> 0x00926d34). __setmbcp 0x001f82b7 (lock 0xd, cp -4 -> 0x00926d2c, same as 0x0098f784 -> 0;
-     info = 0x0098f674 if refcount 0 else malloc 0x220; __setmbcp_lk (cp 0 -> _setSBCS: 0x0098f680 0x101 bytes, 0x0098f7a0
-     6 dwords, 0x0098f784/678/670 = 0; else table 0x008d1b60 5 x 0x3c); copy into info; free on failure; unlock).
+5. **Own start** (replaces the XAPI start-up, nothing of it ported): our start function maps nothing new yet (the
+   loader still maps the dump while replays need it) but runs our own sequence: platform init -> the CRT state the
+   game reads, as plain C -> title_cinit -> Sys_Main. The CRT state (from the 11-11 reading of the originals):
+   per-thread data (calloc 0x88; tid, handle -1, NO mbcinfo/seed - the original's _initptd stores were folded onto
+   the null path), the lowio table (malloc 0x500 -> 0x0098f8e0, 0x0098f8c4 = 0x20, 32 records of 0x28: +0 -1, +4 0
+   then 0xc1 for the first three, +5 0x0a, +8 0), stdio table (0x0098f9f4 = 0x200, calloc -> 0x0098f9f0, first 20 =
+   _iob 0x008d13a0 + i*0x20, _iob 0..2 +0x10 = -1 when their lowio handle is -1/0), onexit table (malloc 0x80 ->
+   0x0098f9e8 = 0x0098f9e4, word 0), start time 0x00926a58 (FILETIME), float conversion pointers 0x008d1988..9c +
+   _controlfp(0x10000, 0x30000) + fnclex, code page (_setSBCS: 0x0098f680 0x101 bytes and 0x0098f7a0 6 dwords zeroed,
+   0x0098f784/678/670 = 0; mbcinfo 0x220 block -> 0x0098f674; 0x0098f9ec = 1), heap handle 0x0098f660. Dropped:
+   XONLINE pointers (0x00396f5f, Live), unhandled-exception filter, drive letters, partitions, updates, parental
+   check, power-down, kernel patches, LaunchDataPage handling (5b passes the level choice natively). For now
+   `--own-main` jumps the XBE entry (0x001e7bc3) to it; a replay check per step as before.
+5c. **Native platform layer under our C**: files (CreateFileA/ReadFile/WriteFile/Find*/... in title_xapi.cpp on
+   `src/platform` files; title paths D:\ -> data folder, T:\/U:\ -> user folder, Z:\ -> cache, mapped in one
+   place), save games (title_savegame.cpp on the same, same folder layout and signatures so existing saves load),
+   time (host clock), events/mutexes/threads (platform), memory (heap segments from the host). Then nothing in our
+   C calls the kernel thunk table. Check: replays + a save round trip both ways with the original.
 5b. Level switches without a restart (user 11-11): the title moves between levels by rebooting itself
    (XLaunchNewImageA + launch data page); the loader re-execs, so the window closes and reopens. Ours: keep the
    window, GfxDevice, audio device and input; map .data/.bss fresh from the dump, reset our heap and CRT state,
    stop the title's threads and close its handles, hand over the launch data, run the start-up again (static
    initializers, Sys_Main). Check: a replay across an in-process switch matches one across a real restart.
+   Order: 5, 5c, 5b (in-process switches are simplest once threads and files are ours), then the host
+   executable itself (our own exe, no loader).
 6. Recordings of other missions through the trap (ask the user to record). Done for mission 2 (tank,
    recordings/m2/m2_playtest.rep, 7.2 min, 2026-11-10): two C bugs our Compare rows hid, fixed (the thread starts or
    the variable write happen after the harness compares): Bro_aim__keep_aiming passed BroScr_TurnToEnemy_2 its
