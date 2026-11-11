@@ -298,16 +298,15 @@ Left, in order:
    0x008ff42c): word 0x133f, operand classes by fxam (normal; zero AND denormal; NaN/other; infinite): normal/normal
    fprem, zero/normal +0 (so a denormal dividend gives +0), NaN: faddp with the quiet bits picking the code, all other
    pairs the indefinite + EDOM; a plain result is NOT rounded to double (that exit tests PM the other way round).
-   **Next: __CIpow_default** (0x001f1a6c -> 0x001f1a6e, core FUN_001f1a90 453 bytes; cl.cpp's one call): x (ST1) is
-   stored as a double and reloaded (__fload_withFB keeps NaN payloads), y stays 80-bit; word (cw & 0x300) | 0x7f;
-   x > 0: fyl2x + __twoToTOS (frndint, f2xm1, fld1/faddp, fscale); x < 0: y must be an integer (FUN_001f1c55: frndint
-   compare, then y * 0.5 again -> cl 0 / 1 odd / 2 even; it pops what it checks), |x| path, fchs when odd, else the
-   indefinite + EDOM; x = +-0: y = 0 -> 1, y < 0 -> +-inf (-inf when x = -0 and y odd) type 2 (ERANGE), y > 0 -> +-0;
-   NaNs: faddp, types 1/7 (EDOM; note x's quiet bit sends a QNaN x to type 1, an SNaN to 7); infinities go to
-   __powhlp (0x001f7402: |x| vs 1 for y = +-inf, |x| = 1 -> 0x008d1758 + EDOM; x = +-inf by y's sign and
-   __d_inttype). Exit __check_range_exit (0x001f6cc1): the double's exponent 0 -> scale and type 4 (underflow), all
-   ones -> type 3 (overflow, ERANGE); both go through __handle_exc's masked responses (0x001f387c, rounding-mode
-   dependent) - port those or document them; otherwise only PM-unmasked + PE takes the error path. Then the rest:
+   **Done 11-11: __CIpow** (0x001f1a6c, Compare row; cl.cpp and fx.cpp call ours): the x87 part (core 0x001f1a90,
+   __fload_withFB, __twoToTOS, __check_range_exit, __startTwoArgErrorHandling) is the title's instruction sequence
+   in title_crt.cpp asm; its C helpers (__powhlp, _87except, __handle_exc's masked responses incl. the
+   overflow-by-rounding-mode and bit-cut denormal underflow, _decomp, __d_inttype) are C++ on the doubles' bits, so
+   only the title's own x87 instructions touch the status word; __set_statfp is copied as asm. `--check-crt`: 41
+   edge values squared + 400 random pairs x 6 control words, result / control word / errno / status flags + stack
+   top bit-exact (Linux release+debug, Wine); a mutation (no odd-power fchs) shows up. Not ported: _raise_exc (an
+   inexact result with PM unmasked; the title masks all). Note the title leaves y on the x87 stack for x = +-0,
+   y != 0 (ours too). Then the rest:
    the stdio write side (fwrite/_flsbuf/printf/fprintf), malloc/free/_lock family,
    _toupper/_strncat/__ceil/strtod/memmove still by address; title_crt.cpp's XAPI calls by address
    (GetCurrentThreadId, GetSystemTimeAsFileTime) -> the new title_xapi C (title_crt.cpp is in own_calls KEEP_FILES;
