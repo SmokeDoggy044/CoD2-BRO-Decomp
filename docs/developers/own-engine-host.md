@@ -351,12 +351,19 @@ Left, in order:
    unseen because those Compare rows are not installed in Windows runs). Traps m4 52 -> 50, m2 58 -> 56; plain
    replays match every frame, own-main dumps only heap pointers. `tools/fnpack.py` names kernel import slots
    (`krnl:Name`).
-   **Left (batch B):** the save games - XCreateSaveGame, XDeleteSaveGame, XFindFirst/NextSaveGame, XFindClose,
-   XGetDisplayBlocks, WideCharToMultiByte, XCalculateSignatureBegin/Update/End and their closure (XapiSaveGameHashEncode,
-   XapiVerifyGameName, XapiTouchDirectoryTimestamp, Create/RemoveDirectoryA, lstrcpynA, XapiNukeDirectory(FromHandle),
-   XapiFillInSaveGameData, XapiFindValueInMetaFile, XapiValidateAndSkipUnicodeSignature, XapiGetDirectoryDisplayBlocks,
-   UnicodeToUTF8, XShaHmac*, XapipCalculate*Signature*, XapiConvertSignatureToNonRoamable, HexDigitToChar, wcsncpy,
-   wcsstr, wcscmp, the wide _snwprintf (XCreateSaveGame's SaveMeta.xbx text: only %lc/%ls)).
+   **Done 11-11 (batch B, title_savegame.cpp):** the save games - 29 Compare rows (signatures: XShaHmac*,
+   XapipCalculate*Signature*, XCalculateSignature*, XapiConvertSignatureToNonRoamable, FUN_001e8a21; hash encode,
+   HexDigitToChar, meta-file parsing, XapiFillInSaveGameData, XFindFirst/NextSaveGame, XFindClose, display blocks,
+   UnicodeToUTF8, WideCharToMultiByte, lstrcpynA; CRT _wcsncpy/_wcsstr/_wcscmp/_snwprintf in title_crt.cpp) and 8
+   Replaced rows that write files (XCreateSaveGame, XDeleteSaveGame, Create/RemoveDirectoryA, XapiNukeDirectory(+
+   FromHandle), XapiTouchDirectoryTimestamp, XapiVerifyGameName - opens SaveMeta.xbx OPEN_ALWAYS), each first
+   checked as Compare against the title's, then flipped; `check_title_savegame` (title_savegame_check.cpp) checks
+   them against the save format afterwards. 0 differences Linux release/debug and Wine; 13 mutations caught. Traps
+   m4 49, m2 55. Notes: our loader has no XboxSignatureKey/XboxAlternateSignatureKeys export (zero blocks), so
+   signatures use an all-zero key - same as the title's code under the loader; FindValueInMetaFile's and
+   XapiNukeDirectory's buffers are uninitialized stack in the originals (ours start zeroed); quirks kept
+   (WideCharToMultiByte converts length + 1, XCreateSaveGame's write loop restarts at the buffer start,
+   ValidateAndSkipUnicodeSignature accepts any 2 bytes); lstrcpynA's SEH wrapper not ported.
 4. Leftover engine rows: SoundManager_Ctor, BrushModel_CopyBounds, ScrIface_HashKeyNoCase, FUN_000b8990,
    FUN_0028e610, FUN_00396f5f; too short for a jump (keep the original until the host's data pointers are rewritten):
    NullCallback, EmptyVFunc_Ret8, SndSys_EmptyStub, BroScr_Nop, BroScr_EmptyFunc_3/_36, Actor_Noncombat_Suspend,
