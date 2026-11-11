@@ -422,6 +422,11 @@ Left, in order:
      0x001f7e9c) -> 0x00926d34). __setmbcp 0x001f82b7 (lock 0xd, cp -4 -> 0x00926d2c, same as 0x0098f784 -> 0;
      info = 0x0098f674 if refcount 0 else malloc 0x220; __setmbcp_lk (cp 0 -> _setSBCS: 0x0098f680 0x101 bytes, 0x0098f7a0
      6 dwords, 0x0098f784/678/670 = 0; else table 0x008d1b60 5 x 0x3c); copy into info; free on failure; unlock).
+5b. Level switches without a restart (user 11-11): the title moves between levels by rebooting itself
+   (XLaunchNewImageA + launch data page); the loader re-execs, so the window closes and reopens. Ours: keep the
+   window, GfxDevice, audio device and input; map .data/.bss fresh from the dump, reset our heap and CRT state,
+   stop the title's threads and close its handles, hand over the launch data, run the start-up again (static
+   initializers, Sys_Main). Check: a replay across an in-process switch matches one across a real restart.
 6. Recordings of other missions through the trap (ask the user to record). Done for mission 2 (tank,
    recordings/m2/m2_playtest.rep, 7.2 min, 2026-11-10): two C bugs our Compare rows hid, fixed (the thread starts or
    the variable write happen after the harness compares): Bro_aim__keep_aiming passed BroScr_TurnToEnemy_2 its
