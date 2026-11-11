@@ -227,3 +227,29 @@ status.md; such rows still stay out of commits.
 
 Next for 0.3: the host executable itself (our exe maps the dump and owns the main loop, list above), checked by
 replaying recordings made with the loader.
+
+## 0.3 host executable: coverage (2026-11-10)
+
+Two loader developer options measure what the host still needs:
+
+- `--own-main`: mainXapiStartup's call to Sys_Main lands in our C (`install_jump`), so the main loop (IN_Frame,
+  Live_Frame, Com_Frame) is ours, and **every** kFunctions row with C runs it, Compare rows too
+  (`compare::Config::all_c`; rows that return within 5 bytes keep the original: a jump would overwrite the next
+  function). The XAPI/CRT start-up before Sys_Main is still the title's.
+- `--text-trap LIST OUT` (Linux): an INT3 on the first byte of every original non-level function
+  (`tools/text_trap_list.py`, 14,124 entries from the Ghidra export) that is not hooked; the first run of each is
+  logged with its caller, the byte restored. `tools/text_trap_report.py OUT [--rows]` groups them by module.
+
+m4_smoke with both: 894 original functions still run (2026-11-10, after all_c): mslib 526 (XAPILIB 75, LIBCMT +
+plain CRT ~150, UIX 44, MSVC EH), SDK 302 (XGRAPHICS incl. XGAssembleShader and its D3DX/XGRPH helpers), set-aside
+engine functions ~45 (the script thread-switch family Scr_Wait*/Scr_Suspend*/Scr_CallThread_*/Scr_ThreadEntry,
+Live_*/LiveMgr*, FileXapi_*, Sys_ReadLaunchInfo, Sys_GetStackBounds, Save_FirstPort, SoundManager_Ctor), the _cinit
+static initializers (StaticInit_*, mostly with C) and ~15 unnamed helpers. The frontier (first caller is our C or
+level code) is ~110 of them; the rest is library closure behind it.
+
+**Replays with all C:** m4_smoke diverges from frame 604 on, but only in heap pointers: script thread bodies in C
+(found by `tools/bisect_own.py`: BroScr_AnimNoteTracksThread, one more in the other half) have other frame sizes than
+the originals, so the thread switch saves a stack of another size and the pool hands out other slots. At frame 2600
+the dumps (`--replay-dump`, all-C vs Compare-rows-original) differ in 32 words, all pool pointers (entity +0x234
+callback blocks, +0x264/+0x284/+0x3dc/+0x428 script objects); positions, health, level and client state are equal.
+So the host's check is "every non-pointer word equal", not frame-exact hashes.
