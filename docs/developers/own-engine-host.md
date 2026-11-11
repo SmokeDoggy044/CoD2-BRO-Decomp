@@ -268,8 +268,8 @@ Note: `--text-trap` only sees Ghidra's function entries; code Ghidra has no func
 initializer stubs were such) runs unseen. The host's own check is .text filled with INT3 except the jumps.
 
 ### Next for 0.3 (resume here)
-State 2026-11-11 (own_host): m4_smoke with --own-main --text-trap: 100 original functions left (139 on 11-10), m2
-113 (153); both replays reach their end, m4 state at frame 2600 unchanged, m2 at 25900 equal to the plain loader's
+State 2026-11-11 (own_host): m4_smoke with --own-main --text-trap: 81 original functions left (139 on 11-10), m2
+93 (153); both replays reach their end, m4 state at frame 2600 unchanged, m2 at 25900 equal to the plain loader's
 except 300 heap-pointer words. Plain release replays still match every frame.
 
 **Done 11-11 - 1. Script thread switch in C** (scr_fiber.cpp): our Scr_SuspendWaitTime/Frames/Till leave the wait's
@@ -288,10 +288,30 @@ the gap function 0x002fd6e0 (SmallHeap_DrawExhaustedWarning, "Broc Pool empty"; 
 spans 0x002fd680 too - a separate function there, no Ghidra entry; both still to fix in Ghidra). Names file-only.
 
 Left, in order:
-2. CRT leftovers: x87 intrinsics (__CIsqrt/sin/cos/fmod/pow_default + _87except/__trandisp2...; behaviour worked
-   out in the CRT section), the stdio write side (fwrite/_flsbuf/printf/fprintf), malloc/free/_lock family,
+2. CRT leftovers. **Done 11-11: x87 intrinsics __CIsqrt/sin/cos/tan/acos/fmod** (title_crt.cpp asm, Compare rows,
+   `--check-crt`: 440 arguments x 5 control words + fmod pairs, results / control word / errno bit-exact in Linux and
+   Wine; m4 trap 100 -> 81). What they do, from the title's LIBCMT: sqrt/acos run under (cw & 0x300) | 0x7f (the
+   caller's precision kept), sin/cos/tan under 0x027f with fprem1-by-2-pi reduction when C2 is set; the exit
+   (__math_exit) stores and reloads the result as a double when the caller's word is not 0x027f, masks PM and the PE
+   flag is set (the CRT's "error" path for inexact); domain errors (negative sqrt, infinite angle, |x| > 1 acos, any
+   NaN) give the indefinite / quiet NaN through a double and errno EDOM. fmod (__cintrindisp2 + its table at
+   0x008ff42c): word 0x133f, operand classes by fxam (normal; zero AND denormal; NaN/other; infinite): normal/normal
+   fprem, zero/normal +0 (so a denormal dividend gives +0), NaN: faddp with the quiet bits picking the code, all other
+   pairs the indefinite + EDOM; a plain result is NOT rounded to double (that exit tests PM the other way round).
+   **Next: __CIpow_default** (0x001f1a6c -> 0x001f1a6e, core FUN_001f1a90 453 bytes; cl.cpp's one call): x (ST1) is
+   stored as a double and reloaded (__fload_withFB keeps NaN payloads), y stays 80-bit; word (cw & 0x300) | 0x7f;
+   x > 0: fyl2x + __twoToTOS (frndint, f2xm1, fld1/faddp, fscale); x < 0: y must be an integer (FUN_001f1c55: frndint
+   compare, then y * 0.5 again -> cl 0 / 1 odd / 2 even; it pops what it checks), |x| path, fchs when odd, else the
+   indefinite + EDOM; x = +-0: y = 0 -> 1, y < 0 -> +-inf (-inf when x = -0 and y odd) type 2 (ERANGE), y > 0 -> +-0;
+   NaNs: faddp, types 1/7 (EDOM; note x's quiet bit sends a QNaN x to type 1, an SNaN to 7); infinities go to
+   __powhlp (0x001f7402: |x| vs 1 for y = +-inf, |x| = 1 -> 0x008d1758 + EDOM; x = +-inf by y's sign and
+   __d_inttype). Exit __check_range_exit (0x001f6cc1): the double's exponent 0 -> scale and type 4 (underflow), all
+   ones -> type 3 (overflow, ERANGE); both go through __handle_exc's masked responses (0x001f387c, rounding-mode
+   dependent) - port those or document them; otherwise only PM-unmasked + PE takes the error path. Then the rest:
+   the stdio write side (fwrite/_flsbuf/printf/fprintf), malloc/free/_lock family,
    _toupper/_strncat/__ceil/strtod/memmove still by address; title_crt.cpp's XAPI calls by address
-   (GetCurrentThreadId, GetSystemTimeAsFileTime) -> the new title_xapi C (title_crt.cpp is in own_calls KEEP_FILES).
+   (GetCurrentThreadId, GetSystemTimeAsFileTime) -> the new title_xapi C (title_crt.cpp is in own_calls KEEP_FILES;
+   own_calls --helpers now honours KEEP_FILES too - it had rewritten the check's title addresses).
 3. XAPI leftovers our C calls but m4 never reaches: save games (XCreateSaveGame, XFind*SaveGame, XCalculateSignature*),
    MultiByteToWideChar, GetDiskFreeSpaceExA, XGetDisk*Size, XGetDisplayBlocks, FileTime*, CancelIo, OutputDebugStringA.
 4. Leftover engine rows: SoundManager_Ctor, BrushModel_CopyBounds, ScrIface_HashKeyNoCase, FUN_000b8990,
