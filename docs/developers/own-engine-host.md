@@ -422,6 +422,24 @@ Left, in order:
    place), save games (title_savegame.cpp on the same, same folder layout and signatures so existing saves load),
    time (host clock), events/mutexes/threads (platform), memory (heap segments from the host). Then nothing in our
    C calls the kernel thunk table. Check: replays + a save round trip both ways with the original.
+   **How (11-11):** `title_host.h` - a `TitleHost` of function pointers the loader fills today and our own exe
+   later (start a thread with the title's FS/TLS block, the record/replay hooks); `native_platform()` is on under
+   `--own-main` only, so the kernel path stays for the compare harness and plain runs (the host exe drops it).
+   Handles of our own start at 0x7e000000 (the kernel counts up from 4), so every XAPI function routes by handle
+   while both exist; `xbox::set_foreign_objects` lets the loader's kernel I/O and SDK redirects (sound packets,
+   input) signal our events and queue completion routines on our threads.
+   **Batch 1 (title_objects.cpp):** events, mutexes, threads (no kernel handle: `loader::start_title_thread`),
+   waits with the kernel's 'W' replay rule, sleeps and each thread's completion-routine queue; CreateEventA,
+   CreateMutexA, CreateThread, SetEvent, ReleaseMutex, WaitForSingleObject(Ex), SleepEx, CloseHandle native.
+   **Batch 2 (files, next):** `title_files.cpp`: paths in one place (D: data folder read-only, T: = user
+   E/TDATA/41560051, U: = E/UDATA/41560051, Z: = user Z, E: = user E; components matched ignoring case like the
+   kernel), File/Find objects in the same table holding a `platform::File`; CreateFileA, ReadFile(Ex),
+   WriteFile(Ex) (an overlapped handle reports pending although done - the save reader relies on it), GetFileSize(Ex),
+   SetFilePointer(Ex), SetEndOfFile, FindFirst/NextFileA (sorted listing like the kernel's), XGetFilePhysicalSortKey,
+   DeleteFileA, CancelIo, disk queries (retail sizes as the kernel reports them), title_savegame.cpp's directory
+   calls; `ForeignObjects` gets `host_file` for XFileCreateMediaObjectAsync. Then map_drive_letters() goes.
+   **Batch 3:** time (host clock), settings (ExQueryNonVolatileSetting -> settings.ini/defaults), critical sections
+   on the title's structs, memory (XPhysicalAlloc, MmQueryStatistics), launch info (5b).
 5b. Level switches without a restart (user 11-11): the title moves between levels by rebooting itself
    (XLaunchNewImageA + launch data page); the loader re-execs, so the window closes and reopens. Ours: keep the
    window, GfxDevice, audio device and input; map .data/.bss fresh from the dump, reset our heap and CRT state,
