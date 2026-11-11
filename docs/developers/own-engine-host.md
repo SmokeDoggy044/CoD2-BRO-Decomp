@@ -306,8 +306,19 @@ Left, in order:
    edge values squared + 400 random pairs x 6 control words, result / control word / errno / status flags + stack
    top bit-exact (Linux release+debug, Wine); a mutation (no odd-power fchs) shows up. Not ported: _raise_exc (an
    inexact result with PM unmasked; the title masks all). Note the title leaves y on the x87 stack for x = +-0,
-   y != 0 (ours too). Then the rest:
-   the stdio write side (fwrite/_flsbuf/printf/fprintf), malloc/free/_lock family,
+   y != 0 (ours too).
+   **Done 11-11: our own heap** (user's choice over porting the title's Rtl heap; `title_heap.cpp`): RtlAllocateHeap /
+   RtlFreeHeap / RtlReAllocateHeap / RtlSizeHeap / RtlCreateHeap / RtlDestroyHeap, the XAPI wrappers (HeapAlloc's
+   GetProcessHeap, HeapFree, HeapCreate/Destroy, LocalAlloc/Free, XMemAlloc/Free, which keeps its physical-memory
+   path through XPhysicalAlloc(Ex)) and LIBCMT's malloc / __nh_malloc / __heap_alloc / free / calloc / realloc /
+   _msize / _aligned_* are Replaced rows on one boundary-tag allocator (16-byte headers and alignment, exact bins
+   below 2 KB, log bins above, first fit, coalescing) over 1 MB segments from NtAllocateVirtualMemory (where the
+   Rtl heap's memory came from: with segments from the contiguous allocator instead, every engine pointer moved by
+   1 MB), so addresses are the same in every run and build, and plain replays still match the recordings' hashes
+   frame for frame (the CRT blocks' own addresses are not in the hashed state). Heap handles are ignored; the small-block
+   heap (__active_heap 3) is not ported; _callnewh is still called by address on exhaustion. `--check-crt` runs
+   30,000 random alloc/free/realloc on it. The game holds only ~6 CRT blocks at the first frame.
+   Then the rest: the stdio write side (fwrite/_flsbuf/printf/fprintf), the _lock family,
    _toupper/_strncat/__ceil/strtod/memmove still by address; title_crt.cpp's XAPI calls by address
    (GetCurrentThreadId, GetSystemTimeAsFileTime) -> the new title_xapi C (title_crt.cpp is in own_calls KEEP_FILES;
    own_calls --helpers now honours KEEP_FILES too - it had rewritten the check's title addresses).
