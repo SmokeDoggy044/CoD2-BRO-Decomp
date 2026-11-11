@@ -1,9 +1,11 @@
 # Status and next steps
 
-**Current (2026-11-10):** own engine host, step 0.3: `--own-main` (our Sys_Main, every C row installed, Live
-dropped, static initializers as generated C) and `--text-trap` coverage; m4_smoke still runs 628 original functions
-(library code, script thread switch, a few engine rows). Resume list: "Next for 0.3" in
-[own-engine-host.md](../developers/own-engine-host.md).
+**Current (2026-11-11):** own engine host, step 0.3: `--own-main` (our Sys_Main, every C row installed, Live
+dropped, static initializers as generated C) and `--text-trap` coverage. Library agents merged: m4_smoke runs 139
+original functions (894 at the start), the mission 2 recording 153 (156 distinct); both replays reach their end with
+non-pointer state equal to the loader's (two C bugs found by the m2 replay, fixed). `--replay-speed N` / `SPEED=N`
+replays ~2.8x faster. Next session: record missions 0, 1, 3 and 5, run them through the trap; then the resume list
+"Next for 0.3" in [own-engine-host.md](../developers/own-engine-host.md).
 
 **Decompilation fork (2026-10-17):** this repository (CoD2-BRO-Decomp, local
 `cod_bro/decomp/`) is the native loader's fork for the decompilation; the loader
