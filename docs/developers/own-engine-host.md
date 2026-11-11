@@ -401,7 +401,7 @@ Left, in order:
    plain C (_mtinit with our CRT notify routine, _ioinit, _fpmath, onexit, inittime, _initstdio, _setmbcp(-3) =
    SBCS), then run_static_initializers and Sys_Main. Not run any more: entry, mainXapiStartup, XapiInitProcess,
    _rtinit, _cinit, kernel patches, auto power-down, updates, parental check, partitions, Live init 0x00396f5f,
-   the unhandled-exception filter. **Interim until 5c:** map_drive_letters() still makes D: (kernel link), T:/U:
+   the unhandled-exception filter. **Interim until 5c batch 2 (gone 11-11):** map_drive_letters() still makes D: (kernel link), T:/U:
    (the title's XapiSetupPerTitleDriveLetters) and Z: (loader) - without them the game hangs after frame 3 (no
    data). Traps m4 44 -> 16, m2 49 -> 21; dumps equal to the previous batch. Original plan text:
    **Own start** (replaces the XAPI start-up, nothing of it ported): our start function maps nothing new yet (the
@@ -431,13 +431,20 @@ Left, in order:
    **Batch 1 (title_objects.cpp):** events, mutexes, threads (no kernel handle: `loader::start_title_thread`),
    waits with the kernel's 'W' replay rule, sleeps and each thread's completion-routine queue; CreateEventA,
    CreateMutexA, CreateThread, SetEvent, ReleaseMutex, WaitForSingleObject(Ex), SleepEx, CloseHandle native.
-   **Batch 2 (files, next):** `title_files.cpp`: paths in one place (D: data folder read-only, T: = user
-   E/TDATA/41560051, U: = E/UDATA/41560051, Z: = user Z, E: = user E; components matched ignoring case like the
-   kernel), File/Find objects in the same table holding a `platform::File`; CreateFileA, ReadFile(Ex),
-   WriteFile(Ex) (an overlapped handle reports pending although done - the save reader relies on it), GetFileSize(Ex),
-   SetFilePointer(Ex), SetEndOfFile, FindFirst/NextFileA (sorted listing like the kernel's), XGetFilePhysicalSortKey,
-   DeleteFileA, CancelIo, disk queries (retail sizes as the kernel reports them), title_savegame.cpp's directory
-   calls; `ForeignObjects` gets `host_file` for XFileCreateMediaObjectAsync. Then map_drive_letters() goes.
+   **Batch 2 done 11-11 (title_files.cpp):** title paths map to host folders in one place (D: the game data,
+   read-only; T:/U: <user>/E/TDATA|UDATA/41560051; Z: <user>/Z; no E: - the title never had one; "\??\" prefixes
+   accepted; components matched ignoring case). Open files and searches are payloads in title_objects' handle
+   table. Native branches (native_platform() or one of our handles) in CreateFileA, ReadFile(Ex), WriteFile(Ex)
+   (overlapped: done inside the call, event set, still reported pending), GetFileSize(Ex), SetFilePointer(Ex),
+   SetEndOfFile, Find*, XGetFilePhysicalSortKey (same path hash as the kernel's), DeleteFileA, CancelIo, disk
+   sizes, and in title_savegame.cpp CreateDirectoryA, RemoveDirectoryA, XCreateSaveGame's meta file,
+   XDeleteSaveGame (remove_tree), XGetDisplayBlocks (by path), XapiTouchDirectoryTimestamp (now sets the time; the
+   kernel ignored it). XapiSetLastNTError maps our own statuses without the kernel. ForeignObjects.host_file serves
+   XFileCreateMediaObjectAsync. map_drive_letters() is gone (XapiSetupPerTitleDriveLetters, TitleMeta copies no
+   longer run). Checks: m4/m2 dumps byte-identical to batch 1, traps m4 16 -> 12, m2 21 -> 17; `--check-crt` with
+   XB_CHECK_NATIVE_FILES=1 runs our side of the directory, disk-size and save-game checks on the native files and
+   the title's on the kernel (same folders, so each reads the other's saves and the real save folder): 0
+   differences on Linux and Wine; Wine --own-main m4 replay runs through.
    **Batch 3:** time (host clock), settings (ExQueryNonVolatileSetting -> settings.ini/defaults), critical sections
    on the title's structs, memory (XPhysicalAlloc, MmQueryStatistics), launch info (5b).
 5b. Level switches without a restart (user 11-11): the title moves between levels by rebooting itself
