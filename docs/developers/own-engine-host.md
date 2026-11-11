@@ -490,6 +490,33 @@ Left, in order:
    inputs with all-C call chains and our heap (both versions crash, in different places); to look into.
    Order: 5, 5c, 5b (in-process switches are simplest once threads and files are ours), then the host
    executable itself (our own exe, no loader).
+**Host executable, step 1 (11-11): `--text-clear`.** What the host really needs from the original code: under
+`--own-main` the loader turns every original byte of the non-level code sections (.text, XONLINE, XNET, D3DX,
+DSOUND, D3D, XGRPH, XPP; 3.98 MB) into INT3, except the bytes our hooks wrote and the data kept from
+`tools/data/code_section_data.txt`. Code that still runs traps, is logged (`address caller`) and gets its one
+function back (up to the next 16-byte boundary after INT3 padding that follows a ret/jmp; a single 0xCC may be an
+operand byte such as `[ebp-0x34]`), so one run lists everything. `tools/text_clear_report.py LOG...` names the spots.
+- **Data inside code sections:** LTCG merged constants into them (XGRPH holds strings such as "a" and "v" that our
+  C reads by address, bro_scr_ai_anim_threads.cpp / bro_scr_level_threads_2.cpp, and TUNISIA/LIBEATOR/GELA/PIANLUPO
+  code reads that area too). Cleared, the voice alias name went wrong and m2 replays stalled 10 s per sound packet.
+  `tools/text_clear_keep.py` builds the keep list from `tools/ghidra/ExportCodeSectionData.java` (instruction runs,
+  defined data, data references): Ghidra's defined data plus every non-instruction address an instruction reads, up
+  to the next instruction (341 ranges, 270 KB; 141 KB of it inside the cleared sections). Addresses stored in data
+  sections (vtables, .CRT$XC tables) count as code. The host maps these ranges like .rdata.
+- Debug switches: `XB_CLEAR_SKIP=SECTION,...` leaves sections alone (bisecting), `XB_CLEAR_NOACCESS=SECTION` also
+  takes the section's pages away after the restart snapshot and logs the first access to each as `R address eip`.
+- **Result:** m4_smoke and m2_playtest replays reach their end, state dumps byte-identical to the previous batch
+  (dump_lsw2, m2dump_lsw2_own). **315 spots** of original code still run (m4 264, m2 311; build/trap/clear_spots.txt),
+  where the Ghidra-entry trap saw 12/17: nearly all are **gap functions** (no Ghidra function; 54 not even
+  disassembled) that our C reaches through vtables, callbacks or title addresses - UI text/picture/menu methods,
+  HUD component setup, the cd* material Draw/AddToList methods, NAL/ngl helpers, EH unwind funclets
+  (0x00343xxx/0x0034exxx, entered by the loader's SEH dispatch), plus the known short stubs. Sizes: 120 up to 16
+  bytes, 81 up to 48, 78 up to 256, 36 larger.
+- **Next:** C for those spots in batches (smallest first), each a Replaced/Compare row so own_calls points our C at
+  it; check per batch = both replays, dumps equal, spot count down. Ghidra functions for them wait for the user's OK
+  (names file-only until then). Then the host exe proper (map data sections + level sections + kept data, jumps at
+  the remaining entry points, no .text).
+
 6. Recordings of other missions through the trap (ask the user to record). Done for mission 2 (tank,
    recordings/m2/m2_playtest.rep, 7.2 min, 2026-11-10): two C bugs our Compare rows hid, fixed (the thread starts or
    the variable write happen after the harness compares): Bro_aim__keep_aiming passed BroScr_TurnToEnemy_2 its
