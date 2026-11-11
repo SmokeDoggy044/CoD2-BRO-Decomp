@@ -1,8 +1,8 @@
 # Status and next steps
 
-**Current (2026-11-08):** own engine host, step 0.3: record/replay done (`--record`/`--replay`, deterministic on
-mission 4 in release, debug and Windows builds for the first ~90 s); format 4 (completions, timed waits and settings
-recorded) replays a 12.5-minute playtest to the end in release/debug/Windows; next: the host executable itself. Step order and progress:
+**Current (2026-11-10):** own engine host, step 0.3: `--own-main` (our Sys_Main, every C row installed, Live
+dropped, static initializers as generated C) and `--text-trap` coverage; m4_smoke still runs 628 original functions
+(library code, script thread switch, a few engine rows). Resume list: "Next for 0.3" in
 [own-engine-host.md](../developers/own-engine-host.md).
 
 **Decompilation fork (2026-10-17):** this repository (CoD2-BRO-Decomp, local

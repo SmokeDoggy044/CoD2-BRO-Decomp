@@ -253,3 +253,33 @@ the originals, so the thread switch saves a stack of another size and the pool h
 the dumps (`--replay-dump`, all-C vs Compare-rows-original) differ in 32 words, all pool pointers (entity +0x234
 callback blocks, +0x264/+0x284/+0x3dc/+0x428 script objects); positions, health, level and client state are equal.
 So the host's check is "every non-pointer word equal", not frame-exact hashes.
+
+**Live dropped, static initializers in C (2026-11-10, 5a9fcf96).** Our Sys_Main (only reached with `--own-main`)
+builds the Live manager's fields in C (LiveMgr_Construct/LiveMgrBase_Construct/LiveRecord_Construct: plain field
+fills, g_liveMgr) and leaves out SetUnhandledExceptionFilter, the UIX layout stream, Live_Init, the launch-mode
+invite branches, Live_Frame and Live_Render: m4_smoke state at frame 2600 equal except heap pointers. `_cinit`
+(0x001eddde) is hooked to `game::title_cinit`: FP init hook + the CRT's 6 .CRT$XI entries still by address, then the
+414 .CRT$XC initializers from `static_init_generated.cpp` (`tools/gen_static_init.py`: 32 with C, 376 translated
+from their x86 - constant copies, atexit registrations kept in a host list, constructor calls by address, fill
+loops -, 6 MANUAL by address: 0x003787b0, 0x007abead, 0x007abedd, 0x00372de0, 0x003768a0, 0x00376c70). State at
+frame 2600 identical to the original _cinit's (0 words). Trap count m4_smoke: 894 -> 628.
+
+Note: `--text-trap` only sees Ghidra's function entries; code Ghidra has no function for (most of these
+initializer stubs were such) runs unseen. The host's own check is .text filled with INT3 except the jumps.
+
+### Next for 0.3 (resume here)
+1. Agents (worktrees cod_bro/wt/h_crt, h_xapi, h_xg; brief wt/host_brief.md, row lists wt/h_*_rows.txt) replace
+   the CRT + MSVC C++ EH, XAPI + stdio files + FileXapi/Sys_ReadLaunchInfo/Save_FirstPort/Sys_GetStackBounds, and
+   XGRAPHICS/D3DX (XGAssembleShader). Merge each branch into own_host, rerun the m4 check.
+2. Script thread switch in C (with scr_fiber.cpp): Scr_Wait/WaitFrames/WaitTill/WaitTillArgs/WaitTillString/
+   WaitOnObject(NoFlag) (level code calls them directly), Scr_Suspend* + Scr_WaitRecord15-17 + Scr_RestoreContext
+   become a fiber switch; Scr_ThreadEntry (try/catch around Invoke: needs our EH), Scr_StartThreadFunctor1,
+   Scr_BeginThreadFunctor1, Scr_CallThread_* (game set-aside).
+3. Leftover engine rows: LocStrings_Ctor, SoundManager_Ctor, NullCallback, EmptyVFunc_Ret8, BrushModel_CopyBounds,
+   ScrIface_HashKeyNoCase, ScrCall_GScr_GetEntScriptObject(_2), BroScr_Nop/SetDirectionalMoveAnims/SetPoseMovement,
+   Actor_Noncombat_Suspend, unnamed FUN_00014c80/0001ce00/00022ba0/00023ad0/00026fc0/000270e0/00027cf0/000445d0/
+   001e4700/0028e610; the 6 MANUAL initializers; UIX feature ctors from StaticInit_FxParticleBounds (drop: Live).
+4. XAPI start-up (mainXapiStartup: XapiInitProcess, _rtinit, CRT XI) replaced by the host's own start.
+5. More recordings (other missions) through the trap; then the host executable: maps the dump with .text/SDK
+   sections as INT3 + jumps, starts at title_cinit + Sys_Main; check = replays reach their end with non-pointer
+   state equal to the loader's.
