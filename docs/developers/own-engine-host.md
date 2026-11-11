@@ -484,6 +484,10 @@ Left, in order:
    with every frame matching (2350 frames, Linux and Wine) and the frame-900 state dump byte-identical to the
    fresh boot's. The page differs from the original only past the 0xe9 words of data (the original's stack bytes,
    ours zeros).
+   **leaf_test 11-11 (after 5b):** full ctest fails in leaf_test only - 23 mismatches (destructors, FreeAligned,
+   CG_SizeUp/Down_f, CG_CopySaveState, Phys_DestroyWorld, ...) and 2 functions whose workers die (host malloc
+   corruption); the same at 395ea703, so older than 5b, new since the 11-07 run. Likely the harness on random
+   inputs with all-C call chains and our heap (both versions crash, in different places); to look into.
    Order: 5, 5c, 5b (in-process switches are simplest once threads and files are ours), then the host
    executable itself (our own exe, no loader).
 6. Recordings of other missions through the trap (ask the user to record). Done for mission 2 (tank,
