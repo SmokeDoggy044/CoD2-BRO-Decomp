@@ -253,3 +253,23 @@ the originals, so the thread switch saves a stack of another size and the pool h
 the dumps (`--replay-dump`, all-C vs Compare-rows-original) differ in 32 words, all pool pointers (entity +0x234
 callback blocks, +0x264/+0x284/+0x3dc/+0x428 script objects); positions, health, level and client state are equal.
 So the host's check is "every non-pointer word equal", not frame-exact hashes.
+
+### XDK graphics helpers in C (2026-11-10, branch `h_xg`)
+
+`src/engine/renderer/xgraphics.cpp` holds our own code for the XGRPH/D3D helpers the renderer's C calls
+(Compare rows at the original addresses): the resource headers (XGSetTextureHeader, XGSetCubeTextureHeader,
+XGSetSurfaceHeader, XGSetVertexBufferHeader, with the format/size word computation 0x003f975f inlined),
+XGBytesPerPixelFromFormat, the swizzler (Swizzler_Init/SwizzleU/SwizzleV, XGSwizzleRect: one per-pixel loop
+for the original's fast paths and tiled loop, which all write the same bytes; Width <= 2 or Height <= 1 is the
+original's plain copy), D3D_ReturnOne (0x003ebb20) and XGAssembleShader.
+
+**XGAssembleShader: the four texts, not an assembler.** The title assembles exactly four shaders, all from
+constant text (nglInitShaders: three `xps.1.1` screen-space pixel shaders, one `xvs.1.1` pass-through vertex
+shader; no format arguments), and reads the result only through the buffer (`data` at +4: the
+D3DPIXELSHADERDEF / vertex program our D3D layer translates). The original is the D3DX assembler with its
+optimizer (~280 functions); a general vs/ps assembler that reproduces its output bit for bit would be a large
+project for four fixed inputs, and taking the source text in our renderer instead would change what the game
+holds. So ours compares the text with the four known ones and returns the original's output for them
+(PSDEF fields and NV2A instruction words in the source, checked byte for byte against the original's output
+captured in a loader run), in a newly allocated buffer like the original's; any other text gets E_FAIL and a
+message. A level or mod that assembled other shaders would need the general assembler then.
