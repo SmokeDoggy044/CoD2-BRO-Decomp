@@ -460,13 +460,30 @@ Left, in order:
    m4/m2 state dumps byte-identical to batch 2, traps m4 12 / m2 17 (unchanged); `--check-crt` 0 differences on
    Linux and Wine with and without XB_CHECK_NATIVE_FILES=1 (now covers the whole native layer: times, settings,
    time zone, string conversion, disk sizes, saves); Wine `--own-main` m4 replay runs through
-   (build/trap/wine_own.sh). Kernel calls left in our C under --own-main: XGetLaunchInfo (LaunchDataPage, 5b),
+   (build/trap/wine_own.sh). Kernel calls left in our C under --own-main (XGetLaunchInfo native since 5b):
    RaiseException/RtlUnwind in title_eh.cpp (SEH), the kernel paths kept for plain runs/compare.
 5b. Level switches without a restart (user 11-11): the title moves between levels by rebooting itself
    (XLaunchNewImageA + launch data page); the loader re-execs, so the window closes and reopens. Ours: keep the
    window, GfxDevice, audio device and input; map .data/.bss fresh from the dump, reset our heap and CRT state,
    stop the title's threads and close its handles, hand over the launch data, run the start-up again (static
    initializers, Sys_Main). Check: a replay across an in-process switch matches one across a real restart.
+   **Done 11-11:** the switch is the console command `reboot`; `Cmd_RelaunchTitle_f` (0x002cfa40, was set aside)
+   and `XLaunchNewImageA` (0x001e6d5c) are C. Natively (same title, "d:\default.xbe") XLaunchNewImageA builds the
+   page XWriteTitleInfoNoReboot writes (type, title id, "\Device\Cdrom0;default.xbe", the data at +0x400) and calls
+   `TitleHost::relaunch`; other launches keep the original path. Under --own-main the title has ONE thread of its
+   own (the main thread), so the loader (`request_title_restart`) ends that thread and its parked start thread does
+   the reset: `render::restart_title` (vertical blank stops calling the title, back end forgets everything made
+   from title memory, device closed; the next CreateDevice reuses window and back end and moves the frame buffers
+   to their new memory - `Backend::set_frame_buffers`), `audio::forget_title_voices`, `game::title_restart_reset`
+   (handles, heap, script fibers, sound additions, ngl_gfx device objects + recorded state), the image's header and
+   writable sections back to a snapshot taken before the entry ran (incl. the per-level sections' reference counts),
+   `xbox::restore_memory` (allocator bookkeeping + committed pages as at that point), thread ids from 1 again,
+   `xbox::place_launch_data_page`, the entry again. Window, devices, input, settings stay.
+   **Check:** `--replay-at-switch` starts a recording/replay at the first in-process switch. A recording of a fresh
+   boot (`--launch-data 3 3<page`, the page --diag saves at the switch) replays from `--level 4 --exec reboot`
+   with every frame matching (2350 frames, Linux and Wine) and the frame-900 state dump byte-identical to the
+   fresh boot's. The page differs from the original only past the 0xe9 words of data (the original's stack bytes,
+   ours zeros).
    Order: 5, 5c, 5b (in-process switches are simplest once threads and files are ours), then the host
    executable itself (our own exe, no loader).
 6. Recordings of other missions through the trap (ask the user to record). Done for mission 2 (tank,
