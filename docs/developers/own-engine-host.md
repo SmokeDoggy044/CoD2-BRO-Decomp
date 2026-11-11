@@ -268,26 +268,37 @@ Note: `--text-trap` only sees Ghidra's function entries; code Ghidra has no func
 initializer stubs were such) runs unseen. The host's own check is .text filled with INT3 except the jumps.
 
 ### Next for 0.3 (resume here)
-State 2026-11-10 late (own_host 04cad6bb): the three library agents are merged (XDK graphics, XAPI + stdio +
-FileXapi rows, own CRT frontier + C++ EH; their sections are above). m4_smoke with --own-main --text-trap: 139
-original functions left (894 at the start of the day), replay reaches its end, state at frame 2600 equal to the
-pre-merge runs (0 words). Left, in order:
-1. Script thread switch in C (with scr_fiber.cpp): Scr_Wait/WaitFrames/WaitTill/WaitTillArgs/WaitTillString/
-   WaitOnObject(NoFlag) (level code calls them directly), Scr_Suspend* + Scr_WaitRecord15-17 + Scr_RestoreContext
-   become a fiber switch; Scr_ThreadEntry (try/catch around Invoke, our EH now exists), Scr_StartThreadFunctor1,
-   Scr_BeginThreadFunctor1, Scr_CallThread_*.
+State 2026-11-11 (own_host): m4_smoke with --own-main --text-trap: 100 original functions left (139 on 11-10), m2
+113 (153); both replays reach their end, m4 state at frame 2600 unchanged, m2 at 25900 equal to the plain loader's
+except 300 heap-pointer words. Plain release replays still match every frame.
+
+**Done 11-11 - 1. Script thread switch in C** (scr_fiber.cpp): our Scr_SuspendWaitTime/Frames/Till leave the wait's
+frame as the original did (16-bit FLAGS, POPA block, FS:[0]) and call scr_fiber_wait (note the fiber's ESP, build the
+wait record, switch back); Scr_WaitRecord15/16/17 and Scr_RestoreContext (kept instruction for instruction: the
+harness lands a suspended test through it) are C/asm and fill import slots 15-17; Scr_ThreadEntry is our asm copy of
+the original frame with our own handler stub, FuncInfo and catch(...) funclet (the library is position independent:
+label addresses via call/pop; `.pushsection` does not exist on MinGW's gas, so the data goes in `.data` then back to
+`.text`). The Scr_Wait family (11 rows) and the 28 Scr_StartThread*/Scr_CallThread*/ThreadFunctor1 wrappers (their C
+existed; the harness cannot hook them: a call inside the first 5 bytes, or the thread switch) are Replaced rows now,
+not compared - replays check them. **Also done (part of 4):** LocStrings_Ctor, the static-object constructors
+FUN_00023ad0/26fc0/270e0/27cf0/001e4700 (StaticObj_*_Ctor, ScrUndefinedInts21_Ctor), ScrStringHolder_Dtor
+(0x00014c80), ScrCall_GScr_GetEntScriptObject(_2), NAL_SkipActiveChannelBlocks_VFunc (0x00022ba0),
+BroScr_SetPoseMovement/SetDirectionalMoveAnims, Scr_NotifyAfterDeath, SmallHeap_AllPoolsExhausted (0x000445d0) and
+the gap function 0x002fd6e0 (SmallHeap_DrawExhaustedWarning, "Broc Pool empty"; Ghidra's Vehicle_CountActive wrongly
+spans 0x002fd680 too - a separate function there, no Ghidra entry; both still to fix in Ghidra). Names file-only.
+
+Left, in order:
 2. CRT leftovers: x87 intrinsics (__CIsqrt/sin/cos/fmod/pow_default + _87except/__trandisp2...; behaviour worked
    out in the CRT section), the stdio write side (fwrite/_flsbuf/printf/fprintf), malloc/free/_lock family,
    _toupper/_strncat/__ceil/strtod/memmove still by address; title_crt.cpp's XAPI calls by address
    (GetCurrentThreadId, GetSystemTimeAsFileTime) -> the new title_xapi C (title_crt.cpp is in own_calls KEEP_FILES).
 3. XAPI leftovers our C calls but m4 never reaches: save games (XCreateSaveGame, XFind*SaveGame, XCalculateSignature*),
    MultiByteToWideChar, GetDiskFreeSpaceExA, XGetDisk*Size, XGetDisplayBlocks, FileTime*, CancelIo, OutputDebugStringA.
-4. Leftover engine rows: LocStrings_Ctor, SoundManager_Ctor, NullCallback, EmptyVFunc_Ret8, BrushModel_CopyBounds,
-   ScrIface_HashKeyNoCase, ScrCall_GScr_GetEntScriptObject(_2), BroScr_Nop/SetDirectionalMoveAnims/SetPoseMovement,
-   Actor_Noncombat_Suspend, ~10 unnamed (FUN_00014c80 ...); the 6 MANUAL static initializers; the UIX feature ctors
-   from StaticInit_FxParticleBounds (drop with Live). Agent-suggested Ghidra names (not applied, ask the user):
-   0xcbae0 FileXapi_Close, 0xcbb30 FileXapi_GetNativeHandle, 0xcbb50 FileDeviceXapi_IoComplete, 0xcbb70
-   FileDeviceXapi_Issue (applied in Ghidra 2026-11-10).
+4. Leftover engine rows: SoundManager_Ctor, BrushModel_CopyBounds, ScrIface_HashKeyNoCase, FUN_000b8990,
+   FUN_0028e610, FUN_00396f5f; too short for a jump (keep the original until the host's data pointers are rewritten):
+   NullCallback, EmptyVFunc_Ret8, SndSys_EmptyStub, BroScr_Nop, BroScr_EmptyFunc_3/_36, Actor_Noncombat_Suspend,
+   Actor_DefaultPain/Finish/Slot5; the 6 MANUAL static initializers; the UIX feature ctors from
+   StaticInit_FxParticleBounds (drop with Live); LoadScreen_SetProgress (0x0033ac80, filed under mslib).
 5. XAPI/CRT start-up (mainXapiStartup, XapiInitProcess, _rtinit, the CRT's .CRT$XI entries, __mtinitlocks, heap
    init) replaced by the host's own start.
 6. Recordings of other missions through the trap (ask the user to record). Done for mission 2 (tank,
