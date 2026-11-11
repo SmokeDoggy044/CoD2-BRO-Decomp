@@ -364,13 +364,64 @@ Left, in order:
    XapiNukeDirectory's buffers are uninitialized stack in the originals (ours start zeroed); quirks kept
    (WideCharToMultiByte converts length + 1, XCreateSaveGame's write loop restarts at the buffer start,
    ValidateAndSkipUnicodeSignature accepts any 2 bytes); lstrcpynA's SEH wrapper not ported.
-4. Leftover engine rows: SoundManager_Ctor, BrushModel_CopyBounds, ScrIface_HashKeyNoCase, FUN_000b8990,
-   FUN_0028e610, FUN_00396f5f; too short for a jump (keep the original until the host's data pointers are rewritten):
-   NullCallback, EmptyVFunc_Ret8, SndSys_EmptyStub, BroScr_Nop, BroScr_EmptyFunc_3/_36, Actor_Noncombat_Suspend,
+4. Leftover engine rows. **Done 11-11 (item 4 batch):** SoundManager_Ctor (Replaced; the default I3DL2 listener it
+   built went to SndSys_EmptyStub, a bare RET, so ours skips that call), BrushModel_CopyBounds, ScrIface_HashKeyNoCase
+   (Replaced, the level import slot 0x8a4 now holds ours), Vec3A_Perpendicular (was FUN_000b8990),
+   Stream_FindMap98Loaded (was FUN_0028e610). Its caller showed a family Ghidra has no functions for: slot 1
+   (ClassName, "cdTextureDirectory".., 0x0028be30..90) and slot 2 (Find, 0x00025b10..0x00025ed0) of the seven
+   Zone*Manager vtables - all 14 in C (stream.cpp), names file-only (manual_names.csv says "NO Ghidra function yet";
+   create them in Ghidra when the user agrees). Traps m4 49 -> 44, m2 55 -> 49; m4 state at 2600 equal to the
+   previous batch. FUN_00396f5f is a .CRT$XI entry (item 5).
+   Left: too short for a jump (keep the original until the host's data pointers are rewritten): NullCallback,
+   EmptyVFunc_Ret8, SndSys_EmptyStub, BroScr_Nop, BroScr_EmptyFunc_3/_36, Actor_Noncombat_Suspend,
    Actor_DefaultPain/Finish/Slot5; the 6 MANUAL static initializers; the UIX feature ctors from
    StaticInit_FxParticleBounds (drop with Live); LoadScreen_SetProgress (0x0033ac80, filed under mslib).
 5. XAPI/CRT start-up (mainXapiStartup, XapiInitProcess, _rtinit, the CRT's .CRT$XI entries, __mtinitlocks, heap
-   init) replaced by the host's own start.
+   init) replaced by the host's own start. **Analysis 11-11 (next session starts here):** plan = new
+   `src/engine/shared/title_start.cpp`, `--own-main` adds `install_jump(0x001e7bc3 entry -> title_entry)` in
+   loader main.cpp. What each piece does / what ours does:
+   - entry 0x001e7bc3: cert size fix (XBE +0x118 cert; size = headers size - cert + 0x10000 if smaller), TLS size
+     ((zero fill 0x90 - raw start + raw end + 15) & ~15) + 4 -> 0x0098f668, _tls_index (*0x00827414 = 0x009268b0)
+     = size / -4; CreateThread(0, 0, mainXapiStartup, 0, 0, 0) (fails: XapiBootToDash(1, 1, 0)), CloseHandle.
+   - mainXapiStartup 0x001e7b4f (stdcall 1 arg): XapiApplyKernelPatches (Xbox-only: code selector, page
+     protection - skip), XapiInitProcess, then if (*(FS:[0x20] + 0x250) && its +0x24 = p): p[0] = 1,
+     p[1] = TLS[stack base FS:[4] + index * 4] - KTHREAD(FS:[0x28]) +0x28 + 8; _rtinit, _cinit (ours), Sys_Main(0,0,0),
+     XapiBootToDash(1, 1, 0) (calls XLaunchNewImageA 0x001e6d5c, no C yet - reboots need it: keep by address).
+   - XapiInitProcess 0x001edc6f: skip (Xbox-only) HalRegisterShutdownNotification, XapiInitAutoPowerDown,
+     XapiValidateDiskPartition (only when !(XBE init flags 0x10124 & 8)), XapipUpdateRebootIfNecessary (title
+     updates); keep RtlCreateHeap(2, 0, [0x10134], [0x10138], 0, params{0x30,..}) -> 0x0098f660 (ours), D: link
+     (IoCreateSymbolicLink \??\D: -> \Device\CdRom0 when !(XboxHardwareInfo flags & 8); 0xc0000035 ok),
+     XapiSetupPerTitleDriveLetters(cert +8 title id, cert +0xc name) when !(flags & 0x18), XMountUtilityDrive(flags &
+     2) when !(flags & 8) && (flags & 1) (the loader's patch at 0x001e9b66), parental: ExQueryNonVolatileSetting(0xa)
+     vs cert +0xa4 (BootToDash(1, 4, rating)), LaunchDataPage: if page && page[0x214/4] & 1: page[0] = page[0x218/4];
+     at the end if page && page[0] == -1: LaunchDataPage = 0, MmFreeContiguousMemory(page). Failures: XapiBootToDash.
+   - XapiSetupPerTitleDriveLetters 0x001edba4: sprintf "%08lx" id; XapiMapLetterToDirectory(T:, TDATA, id, 1, 0, 0),
+     then (U:, UDATA, id, 1, name, 0). XapiMapLetterToDirectory 0x001ed870 (link, dir, sub, create, name, set_time;
+     ret 0x18): open-if the dir (0xc0000103 counts as ok); path = dir + '\\' + sub (a trailing backslash on dir
+     DECREMENTS the static ANSI_STRING's Length in place); open (create ? 3 : 1) the title folder; set_time:
+     FileBasicInformation with LastWriteTime = now; name: sections $$XTINFO/$$XTIMAGE/$$XSIMAGE (XGetSectionHandleA
+     walks XBE section headers 0x1011c count / 0x10120, 0x38 each, name +0x14; missing: SetLastError(0x490), -1);
+     unless no XTINFO and name empty: TitleMeta.xbx open-if (0x40100000, attrs 4, share 1, options 0x22), when empty
+     (FileNetworkOpenInformation EndOfFile 0): the XTINFO section's bytes, else (or its load failing)
+     _snwprintf(0x8e, L"%lc%ls%lc%ls%ls", 0xfeff, L"TitleName", '=', name, 0x00827530) * 2 bytes; then
+     XapiCopySectionToFile 0x001ed789 (handle, path, 0x104, "\\TitleImage.xbx" / "\\SaveImage.xbx": same
+     open-if/empty/write, 0xc0000035 ok); finally IoCreateSymbolicLink(link, path).
+   - _rtinit 0x001ede36: XI list 0x00897240..4c = 0, __mtinit 0x001f34c4, _ioinit 0x001f4ede. __mtinit:
+     title_mtinitlocks, calloc(1, 0x88) -> TLS block +0xc, ptd[0] = GetCurrentThreadId, ptd[1] = -1 (NOTE: no
+     mbcinfo / seed - the original's _initptd stores were folded onto the null path), XRegisterThreadNotifyRoutine(
+     0x00926a74 {routine 0x001f8400}, 1) (0x001e7779: critical section 0x008cfce8 via kernel slots 0x7b3130/0x7b312c,
+     insert at tail of list 0x008cfd04). _ioinit: malloc 0x500 -> 0x0098f8e0, 0x0098f8c4 = 0x20, 32 records of 0x28
+     (+0 -1, +8 0, +4 0, +5 0x0a), first three +4 = 0xc1.
+   - _cinit XI (0x008978d0..ec, title_cinit calls them by address): __fpmath (via 0x008d1378; its argument is
+     _cinit's return address, always nonzero: __cfltcvt_init (6 pointers 0x008d1988..9c) + _controlfp(0x10000,
+     0x30000) + fnclex), 0x00396f5f (3 XONLINE pointers into 0x009267b0..b8), 0x001eecd6 (onexit table: malloc 0x80
+     -> 0x0098f9e8 = 0x0098f9e4, first word 0; fail 0x18), ___inittime (0x00926a58 = FILETIME), 0x001f17c2 (stdio:
+     count 0x0098f9f4 0 -> 0x200, min 20; calloc(count, 4) -> 0x0098f9f0 (retry 20; fail 0x1a); first 20 = _iob
+     0x008d13a0 + i*0x20; _iob 0..2 +0x10 = -1 when the lowio handle (0x0098f8e0 record) is -1 or 0),
+     0x001f83d8 (once 0x0098f9ec: 0x0098f784 = -3, __setmbcp(0)), 0x001f7ee2 (SetUnhandledExceptionFilter(
+     0x001f7e9c) -> 0x00926d34). __setmbcp 0x001f82b7 (lock 0xd, cp -4 -> 0x00926d2c, same as 0x0098f784 -> 0;
+     info = 0x0098f674 if refcount 0 else malloc 0x220; __setmbcp_lk (cp 0 -> _setSBCS: 0x0098f680 0x101 bytes, 0x0098f7a0
+     6 dwords, 0x0098f784/678/670 = 0; else table 0x008d1b60 5 x 0x3c); copy into info; free on failure; unlock).
 6. Recordings of other missions through the trap (ask the user to record). Done for mission 2 (tank,
    recordings/m2/m2_playtest.rep, 7.2 min, 2026-11-10): two C bugs our Compare rows hid, fixed (the thread starts or
    the variable write happen after the harness compares): Bro_aim__keep_aiming passed BroScr_TurnToEnemy_2 its
