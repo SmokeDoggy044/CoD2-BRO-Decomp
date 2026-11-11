@@ -283,3 +283,29 @@ initializer stubs were such) runs unseen. The host's own check is .text filled w
 5. More recordings (other missions) through the trap; then the host executable: maps the dump with .text/SDK
    sections as INT3 + jumps, starts at title_cinit + Sys_Main; check = replays reach their end with non-pointer
    state equal to the loader's.
+
+### XDK graphics helpers in C (2026-11-10, branch `h_xg`)
+
+`src/engine/renderer/xgraphics.cpp` holds our own code for the XGRPH/D3D helpers the renderer's C calls
+(Compare rows at the original addresses): the resource headers (XGSetTextureHeader, XGSetCubeTextureHeader,
+XGSetSurfaceHeader, XGSetVertexBufferHeader, XGSetPaletteHeader, with the format/size word computation 0x003f975f inlined),
+XGBytesPerPixelFromFormat, the swizzler (Swizzler_Init/SwizzleU/SwizzleV, XGSwizzleRect: one per-pixel loop
+for the original's fast paths and tiled loop, which all write the same bytes; Width <= 2 or Height <= 1 is the
+original's plain copy), D3D_ReturnOne (0x003ebb20) and XGAssembleShader.
+
+**XGAssembleShader: the four texts, not an assembler.** The title assembles exactly four shaders, all from
+constant text (nglInitShaders: three `xps.1.1` screen-space pixel shaders, one `xvs.1.1` pass-through vertex
+shader; no format arguments), and reads the result only through the buffer (`data` at +4: the
+D3DPIXELSHADERDEF / vertex program our D3D layer translates). The original is the D3DX assembler with its
+optimizer (~280 functions); a general vs/ps assembler that reproduces its output bit for bit would be a large
+project for four fixed inputs, and taking the source text in our renderer instead would change what the game
+holds. So ours compares the text with the four known ones and returns the original's output for them
+(PSDEF fields and NV2A instruction words in the source, checked byte for byte against the original's output
+captured in a loader run), in a newly allocated buffer like the original's; any other text gets E_FAIL and a
+message. A level or mod that assembled other shaders would need the general assembler then.
+
+m4_smoke with `--own-main --text-trap` after this: the SDK rows go from 284 to 3 (UIX's D3D_AllocContiguousMemory
+and XGIsSwizzledFormat, the XONLINE static initializer); the frame-2600 state differs from the baseline in the same
+pool pointers only. Left in the group: the TrueType rasterizer filed under mslib (XGRAPHICS::itrp_*, PackBitmap,
+CurveTransitions, ...), reached only through 0x0002c442, the UIX layout font Sys_Main creates for Live_Init: it
+goes with Live/UIX.
