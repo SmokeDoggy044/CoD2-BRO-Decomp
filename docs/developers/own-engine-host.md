@@ -335,8 +335,28 @@ Left, in order:
    Left from item 2: printf/fprintf (__output, _stbuf/_ftbuf; only Nfl_Print*, CL_Shutdown, Mem_DebugPrintf use
    them), _flsall, _chsize_lk, _commit, _amsg_exit, _callnewh; title_crt.cpp's XAPI calls by address
    (GetCurrentThreadId, GetSystemTimeAsFileTime) -> title_xapi C (title_crt.cpp is in own_calls KEEP_FILES).
-3. XAPI leftovers our C calls but m4 never reaches: save games (XCreateSaveGame, XFind*SaveGame, XCalculateSignature*),
-   MultiByteToWideChar, GetDiskFreeSpaceExA, XGetDisk*Size, XGetDisplayBlocks, FileTime*, CancelIo, OutputDebugStringA.
+3. XAPI leftovers our C calls but m4 never reaches. **Done 11-11 (batch A, title_xapi.cpp):** GetCurrentThreadId,
+   GetSystemTimeAsFileTime, FileTimeToSystemTime/SystemTimeToFileTime, XQueryValue, the time-zone chain
+   (XapipQueryTimeZoneInformation, RtlpCutoverTimeToSystemTime, GetTimeZoneInformation, XapipGetTimeZoneBias,
+   FileTimeToLocalFileTime), XGetDiskSectorSizeA/ClusterSizeA, GetDiskFreeSpaceExA, UTF8ToUnicode, MultiByteToWideChar
+   as Compare rows; DeleteFileA, OutputDebugStringA (the original's int 0x2d faults under the loader: ours drops the
+   text, as a retail kernel does), CancelIo (the original walks IdexChannelObject's queue, a zero block in our kernel
+   that would fault; ours only checks the handle - our kernel completes I/O inside the call) as Replaced rows.
+   `--check-crt` now also runs `check_title_xapi` (title_xapi_check.cpp): 400 file/system times both ways, 36
+   setting queries, 3000 cutover dates (relative + absolute, this year or next), 8 disk paths, 4000 UTF-8/ANSI
+   strings - 0 differences in Linux release/debug and Wine; a mutation in the cutover weekday step and one in the
+   low surrogate both show up. Found on the way: on Windows FS:[0x20/0x24/0x28/0x58] are TEB TLS slots (the loader
+   patches the title's reads), so our C's `platform_fs_word` read the TEB there - now `game::title_fs_word` maps the
+   offset through `loader::title_fs_offset` (XapiThreadStartup and the CRT's per-thread data had the same bug,
+   unseen because those Compare rows are not installed in Windows runs). Traps m4 52 -> 50, m2 58 -> 56; plain
+   replays match every frame, own-main dumps only heap pointers. `tools/fnpack.py` names kernel import slots
+   (`krnl:Name`).
+   **Left (batch B):** the save games - XCreateSaveGame, XDeleteSaveGame, XFindFirst/NextSaveGame, XFindClose,
+   XGetDisplayBlocks, WideCharToMultiByte, XCalculateSignatureBegin/Update/End and their closure (XapiSaveGameHashEncode,
+   XapiVerifyGameName, XapiTouchDirectoryTimestamp, Create/RemoveDirectoryA, lstrcpynA, XapiNukeDirectory(FromHandle),
+   XapiFillInSaveGameData, XapiFindValueInMetaFile, XapiValidateAndSkipUnicodeSignature, XapiGetDirectoryDisplayBlocks,
+   UnicodeToUTF8, XShaHmac*, XapipCalculate*Signature*, XapiConvertSignatureToNonRoamable, HexDigitToChar, wcsncpy,
+   wcsstr, wcscmp, the wide _snwprintf (XCreateSaveGame's SaveMeta.xbx text: only %lc/%ls)).
 4. Leftover engine rows: SoundManager_Ctor, BrushModel_CopyBounds, ScrIface_HashKeyNoCase, FUN_000b8990,
    FUN_0028e610, FUN_00396f5f; too short for a jump (keep the original until the host's data pointers are rewritten):
    NullCallback, EmptyVFunc_Ret8, SndSys_EmptyStub, BroScr_Nop, BroScr_EmptyFunc_3/_36, Actor_Noncombat_Suspend,
