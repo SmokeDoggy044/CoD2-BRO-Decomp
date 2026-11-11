@@ -512,6 +512,18 @@ operand byte such as `[ebp-0x34]`), so one run lists everything. `tools/text_cle
   HUD component setup, the cd* material Draw/AddToList methods, NAL/ngl helpers, EH unwind funclets
   (0x00343xxx/0x0034exxx, entered by the loader's SEH dispatch), plus the known short stubs. Sizes: 120 up to 16
   bytes, 81 up to 48, 78 up to 256, 36 larger.
+- **Ghidra functions created (11-11, user OK):** `tools/ghidra/CreateFunctionsAt.java` over
+  `tools/data/host_gap_functions.txt` (the spots minus the 18 EH unwind funclets 0x0033df40-0x0034e008, plus the 14
+  zone manager methods and 0x002fd680/0x002fd6e0): 297 created (6 cut back where a new body ran into a neighbour
+  through shared tails), 16 existed; manual_names.csv applied (18 names), symbols + naming export refreshed. Backup
+  of the project before: cod_bro/ghidra_backups/20261111-before-gap-functions. The funclets still run (entered by
+  our SEH dispatch, loader 0x080a3c7d, and game C 0xf7b81711): find which frames they unwind before the host.
+- `tools/gap_list.py LIST MAX [MIN]` prints size + disassembly per address. Batch 1 = the 121 of 16 bytes or less:
+  getters/setters on `ecx`, bare `ret`/`ret n`, `this+4` adjustor thunks (`add ecx,4; jmp X`), vtable forwarders
+  (`mov ecx,[ecx+0x10]; mov eax,[ecx]; jmp [eax+N]`), constant returns (FOURCC tags 0x000a48xx, zone class names
+  0x0028be30..90), destructor-style vtable stores (cd* material classes, 0x00047d70..). A function shorter than a
+  jump still takes one: the INT3 padding to the next function is free (compare's all_c "returns within 5 bytes"
+  rule is too strict there - check the next function's start instead).
 - **Next:** C for those spots in batches (smallest first), each a Replaced/Compare row so own_calls points our C at
   it; check per batch = both replays, dumps equal, spot count down. Ghidra functions for them wait for the user's OK
   (names file-only until then). Then the host exe proper (map data sections + level sections + kept data, jumps at
