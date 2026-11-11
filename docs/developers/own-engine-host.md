@@ -396,7 +396,15 @@ Left, in order:
    EmptyVFunc_Ret8, SndSys_EmptyStub, BroScr_Nop, BroScr_EmptyFunc_3/_36, Actor_Noncombat_Suspend,
    Actor_DefaultPain/Finish/Slot5; the 6 MANUAL static initializers; the UIX feature ctors from
    StaticInit_FxParticleBounds (drop with Live); LoadScreen_SetProgress (0x0033ac80, filed under mslib).
-5. **Own start** (replaces the XAPI start-up, nothing of it ported): our start function maps nothing new yet (the
+5. **Done 11-11 (title_start.cpp):** `--own-main` jumps the XBE entry to `title_start` (sets the TLS size/index,
+   starts `title_main_thread` through our CreateThread); the thread makes the heap handle, the CRT state below as
+   plain C (_mtinit with our CRT notify routine, _ioinit, _fpmath, onexit, inittime, _initstdio, _setmbcp(-3) =
+   SBCS), then run_static_initializers and Sys_Main. Not run any more: entry, mainXapiStartup, XapiInitProcess,
+   _rtinit, _cinit, kernel patches, auto power-down, updates, parental check, partitions, Live init 0x00396f5f,
+   the unhandled-exception filter. **Interim until 5c:** map_drive_letters() still makes D: (kernel link), T:/U:
+   (the title's XapiSetupPerTitleDriveLetters) and Z: (loader) - without them the game hangs after frame 3 (no
+   data). Traps m4 44 -> 16, m2 49 -> 21; dumps equal to the previous batch. Original plan text:
+   **Own start** (replaces the XAPI start-up, nothing of it ported): our start function maps nothing new yet (the
    loader still maps the dump while replays need it) but runs our own sequence: platform init -> the CRT state the
    game reads, as plain C -> title_cinit -> Sys_Main. The CRT state (from the 11-11 reading of the originals):
    per-thread data (calloc 0x88; tid, handle -1, NO mbcinfo/seed - the original's _initptd stores were folded onto
