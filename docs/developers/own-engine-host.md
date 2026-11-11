@@ -309,3 +309,38 @@ and XGIsSwizzledFormat, the XONLINE static initializer); the frame-2600 state di
 pool pointers only. Left in the group: the TrueType rasterizer filed under mslib (XGRAPHICS::itrp_*, PackBitmap,
 CurveTransitions, ...), reached only through 0x0002c442, the UIX layout font Sys_Main creates for Live_Init: it
 goes with Live/UIX.
+
+### CRT and C++ exception handling in C (2026-11-10, branch `h_crt`)
+
+**CRT (title_crt.h).** At the title CRT's addresses as Compare rows (`--own-main` installs them): strncmp,
+strnicmp, stricmp (the `__ascii_` versions: `__locale_changed` stays 0), strtok, strcspn, strchr, strstr,
+strlwr/strupr, strtol (strtoxl), isalpha/isdigit/isspace/isalnum (through the title's `_pctype`: callers pass
+sign-extended chars), qsort (VC's median of three, insertion sort below 9, equal runs skipped: the order of equal
+keys is VC's), bsearch, _vsnprintf/_snprintf (the int counter: 0x80000000 wraps and takes everything), clock,
+atexit (our own list; the game never exits through it), _control87/_controlfp (abstract <-> hardware bits),
+_allmul/_alldiv/_aulldiv, and asm entries for _allshr, _ftol (VC7.1's: rounds in the thread's mode, then
+corrects by the sign of the difference) and _chkstk; the earlier sprintf/vsprintf/atol/strncpy/tolower/atof/
+sscanf/memset/vector iterators are registered too. `--check-crt` covers each one whose result the game can see
+(rand sequences, string and ctype tables, strtok, strtol with errno and end, vsnprintf counts, qsort order of
+equal keys, bsearch, the 64-bit helpers, _allshr, _ftol, control87/controlfp from 7 start words): 0 differences.
+
+**Per-thread data.** `_getptd` (rand seed, errno, strtok position, the EH words) is ours under `--own-main`, but
+looked up the title's way: a thread whose KTHREAD has TLS data keeps it in its TLS block, every other thread shares
+the one slot at 0x0098f9e0 - so those threads share one rand seed. (A thread_local version split it, and m4
+diverged from frame 147.) Our C reaches `_getptd` and `_atexit` through their original addresses on purpose
+(`tools/own_calls.py` KEEP_ADDRESS): in loader runs that is the title's own, so the title's CRT and our C keep one
+state. own_calls.py also skips title_crt.cpp / title_eh.cpp (KEEP_FILES): --check-crt calls the originals.
+
+**C++ EH (title_eh.cpp).** ___CxxFrameHandler (asm entry: FuncInfo in EAX), _CxxThrowException and __EH_prolog:
+VC7.1's model - unwind map walk (throw-in-progress count), try ranges by catch depth, type match, catch object
+copy, RtlUnwind of nested frames, the catch block run at the frame's EBP under our catch guard and our
+CallCatchBlock node (rethrow and unwind-past clean-up), frame info list, the last catch destroys the object, then
+the jump to the continuation at the frame's saved ESP. After the catch FS:[0] is the catching frame's node
+(the title's code relinked the unwound head and popped it again: same end state). Not ported: SE translators (the
+title sets none), FuncInfo versions after 0x19930520 (none), the catch guard's cookie check.
+
+**Check.** m4_smoke `--own-main` replay: reaches the end, 2018 of 2620 frames differ from frame 603 on, the same
+as the own_host baseline; `--replay-dump 2600` against the baseline: 0 differences. Left in the group (trap log):
+the x87 intrinsics `__CIsqrt`, `__CIsin`, `__CIcos`, `__CIfmod`, `__CIpow` (and their `__math_exit` /
+`_87except` / `__cintrindisp2` closure), the CRT start-up before Sys_Main (mtinit, setmbcp, cfltcvt_init, heap),
+and the stdio file functions (XAPI group).
