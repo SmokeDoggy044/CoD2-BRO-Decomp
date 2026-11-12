@@ -113,8 +113,10 @@ pointers +0x2ab0, 0x460 bytes each). `--replay FILE` feeds the values back frame
 record; it exits at the end of the file (0 = all frames matched, 3 = some differed) and logs the first differing
 frame. Each frame also records one hash per entity (format 3), so a differing frame logs which entity indices
 differ; the file is flushed every frame, so a crash keeps every frame before it (~110 KB per second of play).
-`--replay-dump N DIR` writes frame N's raw state in either mode; `tools/replay_diff.py A B N` lists the
-differing words. Code: `src/runtime/xbox/replay.cpp`; the hooks sit at the boundary the host has to provide
+`--replay-dump N DIR` writes frame N's raw state in either mode (`N-M` every frame of a range, `N-M:S` every S-th);
+`tools/replay_diff.py A B N` lists the differing words. `--replay-no-draw` sends no draws or clears to the GPU
+(resources, state and our renderer C still run; the window stays black): the same state at half the time (m1 frame
+24420: 71 s vs 143 s). Use it for every state check; drop it only for pictures (`--replay-shots`). Code: `src/runtime/xbox/replay.cpp`; the hooks sit at the boundary the host has to provide
 anyway (clock, XPP, SDL mouse/pointer), so the same mode works in the host.
 
 Replay is per frame, not per read: the main thread sometimes reads the clock once more or less than in the
@@ -253,6 +255,19 @@ the originals, so the thread switch saves a stack of another size and the pool h
 the dumps (`--replay-dump`, all-C vs Compare-rows-original) differ in 32 words, all pool pointers (entity +0x234
 callback blocks, +0x264/+0x284/+0x3dc/+0x428 script objects); positions, health, level and client state are equal.
 So the host's check is "every non-pointer word equal", not frame-exact hashes.
+
+**Finding a drift (2026-11-11, m0/m1 recordings).** A replay on our C that later waits 10 s per sound packet ("the
+recording finished packet ... the mixer did not") has drifted for real. Steps: `tools/np_scan.sh MISSION N-M:S TAG` (FILTER=lc) dumps of
+a frame range (`--replay-dump N-M:S`, plain vs `--own-main`) and replay_diff with pool pointers (0x80-0x83xxxxxx,
+pool ids in the high 16 bits, entity addresses) filtered out give the first frame with a real difference. Count only
+level, client and entity origin words: the 0x460-byte entity dump reads past small heap objects (type 0xe), whose
+neighbours differ (m1 frame 9110 was such noise). Then `tools/bisect_own.py REC OUT --speed 8 --dump FRAME
+--reference PLAIN_DUMP_DIR --keep REGEX --fail 'Segmentation fault|crash  ' -- --replay-no-draw` (a step stops once
+its dump is written). Keeping the first 710 Compare rows original crashes into the disc-error screen (original D3D
+reached), so `--always-c` keeps those as C when they are clean. Found: BroScr_ShuffleForwardAnim (m0 frame 8447,
+condition 0x36b1a5 || 0x77 read as "0x77 unless 0x36b1a5"), BroScr_ActorRunToEntIgnoringAll_2 (m1 frame 24420,
+the twin difference is the third AI flag, not the node lookup flag). After both: m0 and m1 run to the end with no
+waits and no non-pointer differences.
 
 **Live dropped, static initializers in C (2026-11-10, 5a9fcf96).** Our Sys_Main (only reached with `--own-main`)
 builds the Live manager's fields in C (LiveMgr_Construct/LiveMgrBase_Construct/LiveRecord_Construct: plain field
