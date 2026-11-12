@@ -575,29 +575,27 @@ operand byte such as `[ebp-0x34]`), so one run lists everything. `tools/text_cle
   baselines; the only spots left are the 36 EH unwind funclets and 0x002227f0 (Live) - build/gap/m35b.
   The 5 UIText localize rows with the same host TLS byte (LocalizeWords, SetWrappedString, SetLocalizedWrappedText,
   SetLocalizedText, UITextBase_SetLocalizedText) accepted too (user 11-12).
-  **OPEN: m3 own-main drift (11-12, narrowed the same day).** First real difference (np_scan every frame): frame
-  47618, entity 449 = an AI soldier in cover (actor slot 11, actor 0x813c5d40, at 6111 9754 24; the user stood in
-  front of an MG gunner there). Its yaw turns 1.5985 deg that frame in plain, 0.6152 in own-main (actor +0x148/+0x14c,
-  written by Actor_RotateOrient <- Actor_MoveByAnimMode <- Actor_Cover_Think; gdb watchpoint). The yaw comes from
-  DObj_GetRootAnimDelta: the NAL root record (state->data + clip+0xd8) at level.time 581787 has the same position
-  in both but rotation quat z = 0xbc0d50d0 in plain and exactly 0 (identity) in own-main; 581771 equal in both.
-  So the root ROTATION channel of that clip evaluates to nothing under own-main on that frame.
-  Ruled out: every Compare row incl. the 710 always-C ones except the 248 platform/CRT/zlib/time rows (ctl0:
-  all those original still drifts; bisect_m3c/d/e "culprits" are fake - they fail at every step); our heap's
-  uninitialised memory (filling new blocks 0x00 vs 0xff: identical); clock read counts (equal per frame); main
-  thread rand seed (equal at 2000..47000); NAL block-cache eviction (budget 0x008bb128 raised to 16 MB: plain
-  unchanged, own still differs). The checkpoint reload (user died; level.time restarts at frame 12802) replays
-  fine - own equals plain until 47617. Path records in actors carry stale high halves (u16 node at +0x18 of each
-  0x1c record) in both runs - harmless noise, filter it.
-  Next: (1) XB_DUMP_IMAGE=1 with --replay-dump N writes frame_N_image.bin (0x007b0000..image end): plain vs own at
-  frame 3000 differ in ~287 runs, mostly host pointers (OpenAL 0xdb../0xdd.., our C function pointers); look at the
-  anim globals 0x00902874..0x00902ff8 (counters/floats/flags differ: 0x00902f58 0/1, 0x00902f74 0/ff000000,
-  0x00902ff0 9/2) and 0x0090a8a4 (4/3) - static-initializer or NAL registration differences are the lead
-  (own-main runs gen_static_init C instead of _cinit, and NAL_InitRegisteredTypes). (2) gdb on the NAL quaternion
-  channel evaluate for that clip at level.time 581787 (break *DObj_GetRootAnimDelta after `break main; run`,
-  condition on 0x0098540c; owner 0x81b7f0b0) to see which step zeroes it. Dumps now include actors
-  (frame_N_actors.bin, replay_diff.py prints them). After the fix: a VISIBLE replay for the user (no
-  --replay-no-draw, normal speed) - AI that shoots the player differently would change the recording's outcome.
+  **RESOLVED 11-12: m3 own-main drift = an original-game read of uninitialised heap memory, not a C bug.** Frame
+  47618, entity 449 (AI soldier in cover, actor 0x813c5d40, DObj 0x81b6eee0, owner 0x81b7f0b0): its yaw turns 1.5985
+  deg in plain, 0.6152 in own-main. Chain: DObj_GetRootAnimDelta reads the clip state's root record (clip+0xd8),
+  copied (NAL_PosOri_CopyState) from the pose AnimTree_CalcPose_r built. Per-node logging at level.time 581787
+  (gdb, see below) shows the first differing output at tree node 281: a blend node whose only child (293) has
+  weight 0 that frame, so it evaluates nothing and returns its dst buffer untouched. That dst is node 2's blend
+  temp from NAL_AnimState_Init -> Mem_AlignedAlloc (the scratch arena range 0x009098f0..f4 is empty), never
+  initialised by channel slot 12 for the root record. Plain gets a different freed heap block (0x82277cd0, left
+  over rotation z=0xbcd282d3, ~3 deg); our own heap (title_heap.cpp, own bins) returns the block of the frame before
+  (near identity). Inputs were identical: anim infos 0x00965d00 (times/weights), DObj, every track's last_time and
+  cached root, x87 CW 0xc7f / MXCSR 0x7fbf. The earlier 0x00/0xff fill test only filled fresh blocks, not reused
+  ones, so it could not see this. Effect is transient: at frame 69000 plain vs own-main non-pointer state is equal
+  (only the known stale path-record high halves), both replays reach the recording's end (69529).
+  Also seen: the PLAIN replay itself differs from the recording's hashes from frame 52398 (entities 322+) - same
+  class likely (heap reuse depends on allocation order across threads at record time); not chased.
+  Options if frame-exact matters later: give title_heap.cpp the Rtl heap's reuse order, or (enhancement, switchable)
+  initialise the dst when a node has no active children. Per replay-success-bar: mission completes = pass.
+  gdb method (fast): gate expensive breakpoints behind `xbox::replay::frame()` with
+  `*(unsigned*)&'xbox::replay::(anonymous namespace)::g_frame' >= N`, C++ symbols need the mangled-signature form
+  (break *'game::DObj_UpdateSkeletons(game::DObj*)'); a gated run is a normal replay's time (~3 min for m3 at 8x).
+  After this: a VISIBLE replay for the user (no --replay-no-draw, normal speed).
   Merged tree builds on Linux and MinGW (11-12). Then the host exe proper (map data sections + level sections + kept data, jumps at the remaining
   entry points, no .text). Left on purpose: EH unwind funclets (entered by our SEH dispatch).
 
