@@ -569,7 +569,7 @@ operand byte such as `[ebp-0x34]`), so one run lists everything. `tools/text_cle
   - 0x0007b980 (strncpy 0x100 into 0x00903e80 inside FUN_0007b970): no references, looks dead - unhooked.
   - MemHook_AlignedAlloc: the original INT3s on a failed allocation, ours returns null.
   - Ghidra: Vehicle_CountActive still wrongly spans 0x002fd680 (G_InitEntScriptObject, never reached in replays).
-  - compare_batch not run for gap_b's 82 Compare rows (names in wt/gap_b/build/gap_b_names.txt); gap_c's 8
+  - compare_batch not run for gap_b's 82 Compare rows (names: tools/data/gap_names_gap_b.csv); gap_c's 8
     unreached (Key_GetKey, LoadScreen_SetProgress, MissionSuccessFailMenu_RestoreSelection, 5 SetWidescreen).
   **Result 11-12:** spots 354 -> 25 (build/gap/final; dumps identical throughout): the 21 EH unwind funclets
   (0x0033b272..0x0034e008), 0x002227f0 (Live), 0x0032b830 (UIText_SetText, above), 0x00379080 (level range).
