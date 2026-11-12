@@ -556,9 +556,24 @@ operand byte such as `[ebp-0x34]`), so one run lists everything. `tools/text_cle
   initializers call (gap_methods). **Spot counts understate:** the clear logs only the first hit per page, so a
   spot that goes away can reveal a neighbour in the same page (0x000d5e3c appeared after 0x000d440b got C) - look
   for raw `call_regs(0x...)` / `title_function(0x...)` left in our C as well.
-  Agents (11-12, worktrees wt/gap_a 17-48 bytes, wt/gap_b 49-256, wt/gap_c 27 of 263-1759; brief
-  cod_bro/wt/gap_brief.md) - merge their branches, then names: tools/data/gap_names_*.csv -> Ghidra after the
-  user's OK. Then the host exe proper (map data sections + level sections + kept data, jumps at the remaining
+  Agents 11-12 (brief cod_bro/wt/gap_brief.md) DONE and merged (164b0390; gap_a missed 0x003159a0, added after): gap_a 87 rows (17-48 bytes), gap_b 86
+  (49-256), gap_c 26 (263-1759); every list address has C except the ones below. 329 names wait in
+  tools/data/gap_names_*.csv for Ghidra (user's OK first). **Left from the gap work:**
+  - UIText_SetText 0x0032b830: C in fe.cpp (runs its +0x134 call at the original ESP) but NO row - compare still
+    differs in one host TLS byte (f3962a48: 0x0b vs 0x01, looks like the stack-guard depth family). Decide: accept,
+    or fix the harness. Its spot stays until then.
+  - 0x002227f0 (LiveMgr vtable, tail jump to LiveMgr_SetInput): Live, being dropped - not done.
+  - 0x00379080 (static initializer in the level range: "" to 0x00920d48, clears 0x00920d40/44): not done.
+  - FxOp vtable slot-2 entries inside Ghidra functions, not on any list and not seen by the clear (page rule):
+    0x0009e650 (has C now, gap_a), 0x0009e7c0, 0x0009e900, 0x0009ee90 - need Ghidra functions + C.
+  - 0x0007b980 (strncpy 0x100 into 0x00903e80 inside FUN_0007b970): no references, looks dead - unhooked.
+  - MemHook_AlignedAlloc: the original INT3s on a failed allocation, ours returns null.
+  - Ghidra: Vehicle_CountActive still wrongly spans 0x002fd680 (G_InitEntScriptObject, never reached in replays).
+  - compare_batch not run for gap_b's 82 Compare rows (names in wt/gap_b/build/gap_b_names.txt); gap_c's 8
+    unreached (Key_GetKey, LoadScreen_SetProgress, MissionSuccessFailMenu_RestoreSelection, 5 SetWidescreen).
+  **Result 11-12:** spots 354 -> 25 (build/gap/final; dumps identical throughout): the 21 EH unwind funclets
+  (0x0033b272..0x0034e008), 0x002227f0 (Live), 0x0032b830 (UIText_SetText, above), 0x00379080 (level range).
+  Merged tree builds on Linux and MinGW (11-12). Then the host exe proper (map data sections + level sections + kept data, jumps at the remaining
   entry points, no .text). Left on purpose: EH unwind funclets (entered by our SEH dispatch).
 
 6. Recordings of other missions through the trap (ask the user to record). Done for mission 2 (tank,
