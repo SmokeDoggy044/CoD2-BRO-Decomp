@@ -573,6 +573,17 @@ operand byte such as `[ebp-0x34]`), so one run lists everything. `tools/text_cle
   (the original INT3s on a failed allocation, ours returns null).
   **Result 11-12:** six recordings (m0-m5) reach their end under `--own-main --text-clear`, dumps identical to the
   baselines; the only spots left are the 36 EH unwind funclets and 0x002227f0 (Live) - build/gap/m35b.
+  The 5 UIText localize rows with the same host TLS byte (LocalizeWords, SetWrappedString, SetLocalizedWrappedText,
+  SetLocalizedText, UITextBase_SetLocalizedText) accepted too (user 11-12).
+  **OPEN: m3 own-main drift (11-12).** `np_scan.sh 3`: m5 clean through 40000; m3 first non-pointer difference at
+  frame 47750 (47500 clean): entity 83 (likely a convoy jeep, kasserine) origin +0x20..+0x28 and angles +0x44..
+  (yaw 357.8 vs 8.65), plain dumps build/trap/np_m3b_plain. Already there before the m3/m5 gap C (the m35 baseline
+  matches). `bisect_own.py ... --dump 47750 --keep '^  entity 83 \+0x(20|24|28):' --fail 'Segmentation fault|crash  '
+  --always-c build/bisect_m0_ac710.txt` fails at every step down to 1 suspect (build/bisect_m3): the cause is NOT in
+  the other 2,480 Compare rows - it is in the 710 always-C rows or in the own-main platform layer (own heap
+  addresses: anything ordered by pointer, e.g. physics contacts). Next: split bisect inside the 710 (halves that
+  boot), and a heap test (plain loader vs own-main with the original's heap layout, if possible). The user's m3
+  F12 mark "jeep wheels jitter" (frame 69019, plain build) may be related or original behaviour.
   Merged tree builds on Linux and MinGW (11-12). Then the host exe proper (map data sections + level sections + kept data, jumps at the remaining
   entry points, no .text). Left on purpose: EH unwind funclets (entered by our SEH dispatch).
 
