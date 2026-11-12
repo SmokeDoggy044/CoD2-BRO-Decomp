@@ -539,6 +539,11 @@ operand byte such as `[ebp-0x34]`), so one run lists everything. `tools/text_cle
   0x0028be30..90), destructor-style vtable stores (cd* material classes, 0x00047d70..). A function shorter than a
   jump still takes one: the INT3 padding to the next function is free (compare's all_c "returns within 5 bytes"
   rule is too strict there - check the next function's start instead).
+- **m0/m1 recordings (11-11):** `--text-clear` replays of both (build/trap/clear_m0.txt, clear_m1.txt; 340 spots) add
+  36 spots m4/m2 never reached: `tools/data/host_gap_functions_m01.txt` (15 of them up to 16 bytes). Not yet created
+  in Ghidra (CreateFunctionsAt.java over that file, same as the 297). Left out: EH unwind funclets 0x0033f509,
+  0x0033fc8b and 0x0033b272/0x0033b4c0 (also entered by the loader's SEH dispatch). The entry trap (`--text-trap`)
+  adds FUN_0001ce00 and FUN_001a4540 (both in that file); all four recordings reach 19 trapped functions.
 - **Next:** C for those spots in batches (smallest first), each a Replaced/Compare row so own_calls points our C at
   it; check per batch = both replays, dumps equal, spot count down. Ghidra functions for them wait for the user's OK
   (names file-only until then). Then the host exe proper (map data sections + level sections + kept data, jumps at
