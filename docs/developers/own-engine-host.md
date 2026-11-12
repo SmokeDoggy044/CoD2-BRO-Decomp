@@ -540,8 +540,9 @@ operand byte such as `[ebp-0x34]`), so one run lists everything. `tools/text_cle
   jump still takes one: the INT3 padding to the next function is free (compare's all_c "returns within 5 bytes"
   rule is too strict there - check the next function's start instead).
 - **m0/m1 recordings (11-11):** `--text-clear` replays of both (build/trap/clear_m0.txt, clear_m1.txt; 340 spots) add
-  36 spots m4/m2 never reached: `tools/data/host_gap_functions_m01.txt` (15 of them up to 16 bytes). Not yet created
-  in Ghidra (CreateFunctionsAt.java over that file, same as the 297). Left out: EH unwind funclets 0x0033f509,
+  35 spots m4/m2 never reached: `tools/data/host_gap_functions_m01.txt` (15 of them up to 16 bytes). Created in
+  Ghidra 11-11 (user OK): 29 new (FUN_00025850 cut back at 0x0008e270), 6 existed; symbols refreshed. Backup before:
+  cod_bro/ghidra_backups/20261111-before-m01-gap-functions. Left out: EH unwind funclets 0x0033f509,
   0x0033fc8b and 0x0033b272/0x0033b4c0 (also entered by the loader's SEH dispatch). The entry trap (`--text-trap`)
   adds FUN_0001ce00 and FUN_001a4540 (both in that file); all four recordings reach 19 trapped functions.
 - **Next:** C for those spots in batches (smallest first), each a Replaced/Compare row so own_calls points our C at
