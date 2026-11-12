@@ -545,10 +545,21 @@ operand byte such as `[ebp-0x34]`), so one run lists everything. `tools/text_cle
   cod_bro/ghidra_backups/20261111-before-m01-gap-functions. Left out: EH unwind funclets 0x0033f509,
   0x0033fc8b and 0x0033b272/0x0033b4c0 (also entered by the loader's SEH dispatch). The entry trap (`--text-trap`)
   adds FUN_0001ce00 and FUN_001a4540 (both in that file); all four recordings reach 19 trapped functions.
-- **Next:** C for those spots in batches (smallest first), each a Replaced/Compare row so own_calls points our C at
-  it; check per batch = both replays, dumps equal, spot count down. Ghidra functions for them wait for the user's OK
-  (names file-only until then). Then the host exe proper (map data sections + level sections + kept data, jumps at
-  the remaining entry points, no .text).
+- **Gap batches (11-12):** check = `tools/gap_check.sh LOADER OUT [BASELINE]` (m4/m2/m0/m1 replays with
+  `--own-main --text-clear`, speed 8, no drawing; state dumps byte-identical to the baseline's; spots = original
+  code still run; serialized on cod_bro/wt/compare.lock; ~6 min alone). Baseline before the batches: build/gap/base
+  (354 spots incl. level sections). `tools/gap_context.py RTTI_TSV ADDR...` = vtable/slot/class + callers per
+  address (RTTI table from the skill's msvc_rtti_vtables.py, copy in cod_bro/wt/rtti_vtables.tsv).
+  Batch 1 DONE 3836dd8b: the 124 of 16 bytes or less in C (src/engine/shared/gap_methods.cpp), and Compare rows
+  that return within 5 bytes are now hooked when INT3 padding follows (5 stub rows had still run): 354 -> 225 spots.
+  Then RaiseException (title_xapi.cpp, Replaced), the 2 XPP _cinit arrays and the 6 UIX constructors the static
+  initializers call (gap_methods). **Spot counts understate:** the clear logs only the first hit per page, so a
+  spot that goes away can reveal a neighbour in the same page (0x000d5e3c appeared after 0x000d440b got C) - look
+  for raw `call_regs(0x...)` / `title_function(0x...)` left in our C as well.
+  Agents (11-12, worktrees wt/gap_a 17-48 bytes, wt/gap_b 49-256, wt/gap_c 27 of 263-1759; brief
+  cod_bro/wt/gap_brief.md) - merge their branches, then names: tools/data/gap_names_*.csv -> Ghidra after the
+  user's OK. Then the host exe proper (map data sections + level sections + kept data, jumps at the remaining
+  entry points, no .text). Left on purpose: EH unwind funclets (entered by our SEH dispatch).
 
 6. Recordings of other missions through the trap (ask the user to record). Done for mission 2 (tank,
    recordings/m2/m2_playtest.rep, 7.2 min, 2026-11-10): two C bugs our Compare rows hid, fixed (the thread starts or
