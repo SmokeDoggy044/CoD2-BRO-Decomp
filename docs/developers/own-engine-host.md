@@ -599,6 +599,41 @@ operand byte such as `[ebp-0x34]`), so one run lists everything. `tools/text_cle
   Merged tree builds on Linux and MinGW (11-12). Then the host exe proper (map data sections + level sections + kept data, jumps at the remaining
   entry points, no .text). Left on purpose: EH unwind funclets (entered by our SEH dispatch).
 
+**Host exe proper, step H1 (11-13): no kernel, level EH code kept.**
+- What `--own-main` still takes from the kernel table: `XB_KERNEL_COUNT=FILE` (developer env) puts a counting stub
+  in front of every function import (FILE: `name calls last_caller`, rewritten every 2 s). m4_smoke and m2_playtest:
+  only RtlRaiseException/RtlUnwind (C++ throws from our title_eh.cpp). Now our C: `src/engine/shared/title_seh.cpp`
+  (the loader's seh.cpp moved; the chain end and the fatal report come from `TitleHost::seh_chain_end` / `fatal`),
+  and the loader's kernel exports point at it, so plain runs use the same code. Under `--own-main` nothing calls the
+  kernel table any more.
+- The 36 "EH funclet" spots are **level code the linker put in .text**: level functions push handler stubs
+  (`mov eax, FuncInfo; jmp ___CxxFrameHandler`) that live in 0x0033b011..0x00372dc0 (no Ghidra functions there),
+  and their FuncInfo unwind actions / catch blocks are funclets next to them (`lea ecx,[ebp-N]; jmp Dtor`,
+  conditional "destroy if constructed" forms). `tools/level_eh_code.py default.xbe tools/data/level_eh_code.txt`
+  finds them statically (any 32-bit value in a level section pointing at a stub, then FuncInfo -> unwind map + try
+  map handlers, every path decoded to its jmp/ret, plus the `.text` thunks `jmp LEVEL_FUNCTION` that funclets jump
+  to): 3,679 stubs, 18,077 funclets, 332 ranges, 190 KB. `--text-clear` keeps them like code_section_data.txt (the
+  host maps them like a level section). The 7 engine functions they jump to all have C
+  (tools/data/level_eh_code_targets.txt; new: StdString_Tidy 0x00014750).
+- 0x002227f0 = LiveMgr_PadInput (LiveMgr vtable slot 6, called by IN_PadUpdate): C, returns 0 while the Live UI is
+  down (+8 = 0, always in the own host).
+- Result: `gap_check.sh` m0-m5 reach their end, **0 spots** of original code run, state dumps equal to the
+  previous batch (build/gap/h1). The actors dumps differ in a few words whose high halves are host stack addresses
+  (0xf4xx..../0xf7xx....: the known stale path-record high halves; they moved with the old trap signal frames).
+
+**Step H2 (11-13): `--host`.** `--own-main` plus: right after the XBE is mapped, every byte of the non-level code
+sections is INT3 except the two keep lists (`src/runtime/loader/host_image.cpp`), before any hook is written; the
+kernel thunk table holds only fatal stubs (functions) and zero blocks (data); original code that runs = INT3 = the
+crash handler's backtrace. So no setup step may read original engine code. Found: CL_Frame read its SCR_UpdateScreen
+call target from the original call's bytes (that is how the loader's --level/--exec/--force thunk reached it);
+now `ClientPcHooks::screen_update_call` (the loader sets it when CL_Frame is C, else patches the call as before).
+The hook placement needs no code bytes either: under all-C no row is kept original by `ends_within_jump`. The
+loader's patches into original engine code log "not ..." warnings under --host (they patch code that no longer
+runs). Check: `HOST=1 tools/gap_check.sh LOADER OUT BASELINE`.
+Next (H3): our own executable - the --host path without the XBE kernel/loader parts: map data + level sections +
+keep lists from the dump, the hook table, TitleHost, render/audio/input/replay setup shared with the loader
+(split main.cpp's option parsing and device setup into a library both use).
+
 6. Recordings of other missions through the trap (ask the user to record). Done for mission 2 (tank,
    recordings/m2/m2_playtest.rep, 7.2 min, 2026-11-10): two C bugs our Compare rows hid, fixed (the thread starts or
    the variable write happen after the harness compares): Bro_aim__keep_aiming passed BroScr_TurnToEnemy_2 its
