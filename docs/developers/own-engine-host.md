@@ -557,22 +557,22 @@ operand byte such as `[ebp-0x34]`), so one run lists everything. `tools/text_cle
   spot that goes away can reveal a neighbour in the same page (0x000d5e3c appeared after 0x000d440b got C) - look
   for raw `call_regs(0x...)` / `title_function(0x...)` left in our C as well.
   Agents 11-12 (brief cod_bro/wt/gap_brief.md) DONE and merged (164b0390; gap_a missed 0x003159a0, added after): gap_a 87 rows (17-48 bytes), gap_b 86
-  (49-256), gap_c 26 (263-1759); every list address has C except the ones below. 329 names wait in
-  tools/data/gap_names_*.csv for Ghidra (user's OK first). **Left from the gap work:**
-  - UIText_SetText 0x0032b830: C in fe.cpp (runs its +0x134 call at the original ESP) but NO row - compare still
-    differs in one host TLS byte (f3962a48: 0x0b vs 0x01, looks like the stack-guard depth family). Decide: accept,
-    or fix the harness. Its spot stays until then.
-  - 0x002227f0 (LiveMgr vtable, tail jump to LiveMgr_SetInput): Live, being dropped - not done.
-  - 0x00379080 (static initializer in the level range: "" to 0x00920d48, clears 0x00920d40/44): not done.
-  - FxOp vtable slot-2 entries inside Ghidra functions, not on any list and not seen by the clear (page rule):
-    0x0009e650 (has C now, gap_a), 0x0009e7c0, 0x0009e900, 0x0009ee90 - need Ghidra functions + C.
-  - 0x0007b980 (strncpy 0x100 into 0x00903e80 inside FUN_0007b970): no references, looks dead - unhooked.
-  - MemHook_AlignedAlloc: the original INT3s on a failed allocation, ours returns null.
-  - Ghidra: Vehicle_CountActive still wrongly spans 0x002fd680 (G_InitEntScriptObject, never reached in replays).
-  - compare_batch not run for gap_b's 82 Compare rows (names: tools/data/gap_names_gap_b.csv); gap_c's 8
-    unreached (Key_GetKey, LoadScreen_SetProgress, MissionSuccessFailMenu_RestoreSelection, 5 SetWidescreen).
-  **Result 11-12:** spots 354 -> 25 (build/gap/final; dumps identical throughout): the 21 EH unwind funclets
-  (0x0033b272..0x0034e008), 0x002227f0 (Live), 0x0032b830 (UIText_SetText, above), 0x00379080 (level range).
+  (49-256), gap_c 26 (263-1759); every list address has C except the ones below.
+  **Finished 11-12 (user OKs):** the 329 gap names + 14 C names Ghidra still showed as FUN_ applied in Ghidra
+  (backup cod_bro/ghidra_backups/20261112-before-gap-names-fxop; 13 kept an older Ghidra name, 0x007abedd has no
+  Ghidra function); UIText_SetText has its row, its host TLS byte (0b vs 01) in accepted.csv (user: accept);
+  0x00379080 translated by gen_static_init.py (it now follows a short jmp over alignment filler, translates cmp, and
+  runs the own_calls passes on its output); the FxOp slot-2 getters 0x0009e7c0/0x0009e900/0x0009ee90 (+0x0009e650)
+  created in Ghidra (they were free, no splits) and given C. Vehicle_CountActive's boundary is right (ends 0x002fd67f).
+  **m3/m5 recordings (11-12):** `gap_check.sh` replays them too (dumps at 69500 / 42400). Their 13 new spots
+  (tools/data/host_gap_functions_m35.txt, 9 created in Ghidra + 4 existing) have C: HudCompMeter (the Liberator
+  meter: Draw, Update, DrawTargetRow/Grid with ESI/ECX/EDI arguments), HudCompBomberMap_Setup, UIPicture_SetQuadScale
+  (+Uniform), FxParticleComponent_Prewarm, cdPrelitVertexIter_Ctor, apsTypeTag_MFxV, SV_MapRestartCheck_f,
+  ScrCall_GScr_ZoneSetField34AndWait (Replaced: thread switch), BroScr_MapSlot_h4fcdc42e. 14 more EH funclets.
+  Left: 0x002227f0 (Live, being dropped); 0x0007b980 (no references, looks dead, unhooked); MemHook_AlignedAlloc
+  (the original INT3s on a failed allocation, ours returns null).
+  **Result 11-12:** six recordings (m0-m5) reach their end under `--own-main --text-clear`, dumps identical to the
+  baselines; the only spots left are the 36 EH unwind funclets and 0x002227f0 (Live) - build/gap/m35b.
   Merged tree builds on Linux and MinGW (11-12). Then the host exe proper (map data sections + level sections + kept data, jumps at the remaining
   entry points, no .text). Left on purpose: EH unwind funclets (entered by our SEH dispatch).
 
