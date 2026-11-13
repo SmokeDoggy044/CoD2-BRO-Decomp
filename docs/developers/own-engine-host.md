@@ -65,6 +65,23 @@ launcher "Renderer"; default d3d9 until V5; Vulkan falls back to D3D9 without a 
   pillarboxed frames the same as D3D9's. Windows build under Wine: Vulkan device on the same GPU, movie frames saved.
 - Next: V2 (title shaders to SPIR-V with a fixed binding layout).
 
+**V2 done (2026-11-13): title and post shaders as SPIR-V with one fixed layout.**
+- Build: every title / post HLSL -> d3dbc (as before) -> SPIR-V with `vkd3d-compiler -x d3dbc -b spirv-binary`;
+  both embedded (TitleShader / NamedShader `spirv`, GfxDevice ShaderCode `spirv`).
+- vkd3d numbers bindings in order of use and locations by register number (a VS's COLOR0 is o1, the PS reads it as
+  v0), so src/render/vk/spirv_layout.cpp rewrites the decorations at shader creation, reading the semantics from the
+  d3dbc's `dcl` tokens: set 0 binding 0 = VS constants (195 float4), 1 = PS constants (28), 2-9 images t0-t7,
+  10-17 samplers s0-s7; VS inputs location n = TEXCOORDn; VS outputs = PS inputs COLOR0 0, COLOR1 1, TEXCOORDn 2+n,
+  FOG 10; PS colour outputs unchanged. The Vulkan GfxDevice makes shader modules from it (draws still V3).
+- Checks: `vk_shader_layout_test` (all 74 VS + 92 PS + 3 post: layout applied, bindings in range, every title PS
+  input written by every title VS with enough components, post pair likewise) and `vk_shader_layout_spirv_val`
+  (spirv-val --target-env vulkan1.3 on all 169: valid). Mission 4 on Vulkan with validation: 0 messages.
+- Moved to V3: the picture check (`title_shader_test` on Vulkan vs D3D9) needs draws. Its and gfx_device_test's
+  hand-assembled helper shaders have no SPIR-V: give them SPIR-V at build time (convert the tokens with
+  vkd3d-compiler in the test build) when V3 runs those tests on Vulkan. Screen-to-clip c192-c193 per back end
+  (Vulkan: Y down, no half-pixel offset) also lands with V3's draw path.
+- Next: V3 (GfxDevice on Vulkan: textures, targets as textures, buffers, pipelines, draws).
+
 ## 0.4 progress (2026-11-13)
 
 - **Mounted-gun drift fix** (`--mounted-gun-fix on|off`, default on, off with `--pc-patches off`):
