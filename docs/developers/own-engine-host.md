@@ -649,8 +649,20 @@ build/gap/host`): m0-m5 reach their end, 0 spots, dumps identical except m0 acto
 stale path-record words); `cod_bro.exe` under Wine: m4 dump identical to the Linux baseline.
 m6/m7 (first time under our C, loader --host too): stop at load on gap functions - `--own-main --text-clear` lists 15
 spots (build/h3/clear_m6, clear_m7: 0x000508a0, 0x00335b80, 0x0004f240/60/80/90, 0x0001d0e0, 0x00011ef0/f00/f50/f60,
-0x0030f000/f010, 0x0030ec40, 0x00314aa0). NEXT: those gap functions (first hit per page only - recheck after), then
-the kernel library out of cod_bro's link (memory/replay/launch page/objects into a host-services library).
+0x0030f000/f010, 0x0030ec40, 0x00314aa0). Done 11-12: all 15 + the unreached sibling 0x0004f250 in C (gap_methods.cpp:
+UIMenu slots 20-23 forwarders to 44-47 and the two empty slots, UIMenu_ClearHeldDirection, UIScreenMgr_ActiveScreenSlot33,
+ZeroWord_Ctor, cdOcean_StateSlot2/4/StateEntry/ConstSlot5/6, cdOceanVertexIter_Ctor; fe_menus.cpp LoadSicilyMenu_OnContinue);
+m6 + m7 --text-clear: 0 spots, both reach their end.
+
+**Unreached functions without C (11-12): `tools/host_unreached.py [--out FILE]`.** Replays only find what their missions
+reach; this lists statically every function start in .text (Ghidra function, or 16-aligned after INT3/ret padding = gap)
+with no row in functions.cpp, referenced by an aligned word in a non-code section or an immediate/branch in level code.
+First run: 1,234 (733 from .rdata words, 432 .data, 34 level words, 29 .XTLID - noise, 5 level call/jmp). Many are Live UI /
+voice classes (UIX::, XVOICE::, LiveMgr: unreachable with Live off). Real examples: KASSRINE calls Scr_BeginThreadEndOnFunctor1
+0x0011a960 (C exists, no row), PROLOGUE jumps to a second BroScr_ReturnFalse 0x00124bc0, MONS1/BUCHHOLZ call FUN_0011d040 /
+FUN_0011d2d0; menu vtables 0x00828e04.. point at never-reached UI gap functions (0x000112c0 ...).
+NEXT: classify the list (Live/unreachable vs real), add rows for C that exists, decompile the rest in batches; then the
+kernel library out of cod_bro's link (memory/replay/launch page/objects into a host-services library).
 
 6. Recordings of other missions through the trap (ask the user to record). Done for mission 2 (tank,
    recordings/m2/m2_playtest.rep, 7.2 min, 2026-11-10): two C bugs our Compare rows hid, fixed (the thread starts or
