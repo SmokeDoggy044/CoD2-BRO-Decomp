@@ -120,11 +120,14 @@ launcher "Renderer"; default d3d9 until V5; Vulkan falls back to D3D9 without a 
     Tests: gfx_device_test runs on both back ends (its shaders are now tests/shaders/*.hlsl, D3D9 + SPIR-V) and
     gained an alpha-test case (8 functions x 3 references). m4_smoke replay D3D9 vs Vulkan: all 2,620 frames
     equal; loading screen identical; in-game shots differ only by the constant-alpha blends below.
-    **OPEN (user decision):** ngl blend modes 5-7 use CONSTANT_ALPHA with blend colour alpha<<24 (rgb 0). NV2A
-    and Vulkan read the alpha; the D3D9 back end maps it to D3DBLEND_BLENDFACTOR = rgb = 0, so on D3D9 (all
-    releases so far) those layers add nothing. Vulkan shows a strong sun haze/glare in m4's opening. With
-    D3D9's mapping forced on Vulkan the shots match (<=0.01%). Fix D3D9 (BLENDFACTOR = alpha replicated) to the
-    Xbox's look, or keep?
+    **Glow pass (decided 2026-11-13, user: default off).** ngl blend modes 5-7 use CONSTANT_ALPHA with blend colour
+    alpha<<24; D3D9 has no constant-alpha factor (D3DBLEND_BLENDFACTOR = rgb = 0), so on D3D9 every release dropped
+    R_DrawFogPass's result: a "fog" pass that some levels enable (m4: 256x256 copy of the picture, 6 blur passes,
+    added at ~0.8 over the screen) - a strong haze on Vulkan. Its blur carries a dark band (~20 texels) at the left
+    and top: the copy quad's edge lies on the first column/row's pixel centres, they stay black (also at render
+    scale 1) and the blur spreads it. `--glow on|off` (default off; RendererPcHooks::skip_glow_pass, set under
+    pc_features: compare runs keep the original). Checks: m4_smoke all frames equal; D3D9 identical to before;
+    Vulkan vs D3D9 <= 0.01%; --glow on shows it again.
   - V3c tests: gfx_device_test + title_shader_test on Vulkan too (their hand-assembled shaders need SPIR-V: write
     the tokens out and convert them with vkd3d-compiler at test build time, or ship them as small .hlsl);
     COD_BRO_VK_DEVICE=llvmpipe for headless runs; then mission 4 on Vulkan with validation (pictures vs D3D9 by eye
