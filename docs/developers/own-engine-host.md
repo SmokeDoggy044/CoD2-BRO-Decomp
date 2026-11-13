@@ -698,8 +698,13 @@ main.cpp sets (cod_bro sets the native ones in title_setup.cpp under own_main, o
 xbox::set_event_signal (sound packet + input completion events), xbox::set_irql_calls (vertical-blank callback at
 DISPATCH_LEVEL), audio::set_title_file_lookup (XFileCreateMediaObjectAsync), loader::set_kernel_links (patches:
 XMountUtilityDrive replacement, compare's recorded kernel calls). Unit tests set the kernel versions (test_support.h,
-audio_test). Linux cod_bro 3.39 -> 3.17 MB. Left: kernel_memory.cpp still holds the Mm* export wrappers (linked, never
-called); Windows: one core DLL holds both mains, so its cod_bro.exe still carries the kernel until the DLL is split.
+audio_test). Linux cod_bro 3.39 -> 3.17 MB.
+**Done 2026-11-13:** the memory exports' stdcall entries and their table moved to kernel_memory_exports.cpp (`xbox`
+library); kernel_memory.cpp keeps the implementations as `xbox::memory_impl::*` (kernel_memory_impl.h) for the title_*
+functions. Windows: the runtime is a static library (cod_bro_runtime) as on Linux, linked into two DLLs -
+cod_bro_loader_core.dll (main.cpp + the kernel, entry cod_bro_loader_main) and cod_bro_core.dll (host_main.cpp,
+xbox_host only, entry cod_bro_host_main); the stub takes the DLL name from COD_BRO_LOADER_CORE_DLL
+(entry_loader_win32.cpp / entry_host_win32.cpp, loader::os::run_main). Releases still ship only the loader.
 
 6. Recordings of other missions through the trap (ask the user to record). Done for mission 2 (tank,
    recordings/m2/m2_playtest.rep, 7.2 min, 2026-11-10): two C bugs our Compare rows hid, fixed (the thread starts or
