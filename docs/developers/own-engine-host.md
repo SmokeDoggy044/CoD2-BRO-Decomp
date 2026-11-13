@@ -27,8 +27,10 @@ New: an edge-anchored HUD on pictures wider than 16:9 (each HUD component in a c
 its own edge) and the tank health bar's fill fixed (the original's own 16:9 bug). Details:
 [rendering.md](rendering.md) "Widescreen". 16:9 runs keep the original paths: HOST=1 gap_check m0-m7
 equal to the dllsplit baseline (m0/m3/m6 actor dumps: host-stack words only, as before).
-Left for 0.3b: CG_Draw2D's left-side texts on wide pictures, scopes/binoculars and death screens at 21:9+,
-32:9 in play, a user playtest.
+Then (user playtest, Omaha 21:9): binoculars keep their 16:9 shape with black sides, letterbox bars/fades reach
+the picture's top/left edge (a half-pixel gap at render scale, also in 0.2.2), CG_Draw2D's side texts anchored
+(9ea38ff4, 9409375c). Left for 0.3b: death/mission-failed screens at 21:9+, 32:9 in play. After 0.3b (user
+11-13): a procedural widescreen binocular mask under Enhanced.
 
 ## 0.1 inventory: what our C still takes from the loader
 
