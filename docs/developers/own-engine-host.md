@@ -80,7 +80,25 @@ launcher "Renderer"; default d3d9 until V5; Vulkan falls back to D3D9 without a 
   hand-assembled helper shaders have no SPIR-V: give them SPIR-V at build time (convert the tokens with
   vkd3d-compiler in the test build) when V3 runs those tests on Vulkan. Screen-to-clip c192-c193 per back end
   (Vulkan: Y down, no half-pixel offset) also lands with V3's draw path.
-- Next: V3 (GfxDevice on Vulkan: textures, targets as textures, buffers, pipelines, draws).
+- Next: V3 (GfxDevice on Vulkan), in three commits. Reference behaviour = src/render/gfx_d3d9.cpp (read it per
+  part, not whole), interface = gfx_device.h.
+  - V3a resources: textures (Format -> VkFormat: BGRA8/BGRX8 B8G8R8A8, 565/1555/4444 as the PACK16 formats or
+    converted to BGRA8 where optional, L8/A8/A8L8 as R8/R8G8 + component swizzle in the view, DXT1/3/5 = BC1/2/3;
+    2D/cube/volume, mip levels, update_texture through the staging ring), target_texture (target image + view,
+    texel_coordinates -> c18-c25 scale), replacement_texture, static buffers (VMA, staged) + a per-frame ring for
+    Dynamic maps (Discard = new ring range, NoOverwrite = same range) and draw_user (keep the content-hash cache).
+  - V3b draws: one pipeline layout (set 0 = spirv_layout.h bindings; push descriptors or per-draw sets from
+    Context::descriptor_set), pipelines keyed by (shaders, layout, strides, primitive class, blend, depth/stencil,
+    raster, target formats) in a hash map + VkPipelineCache on disk; dynamic state for viewport, scissor, stencil
+    ref, blend constant, depth bias. Quads and fans -> index lists (as D3D9 does for quads); alpha test in the
+    pixel shader? (D3D9 has the fixed test: check how gfx_d3d9 does it, Vulkan has none -> spec constant or a
+    PS c-register + discard needs the HLSL; decide then). Constants: VS c0-c194 / PS c0-c27 per draw into the ring
+    as two UBO ranges. Screen-to-clip c192-c193 for Vulkan (Y down, no half-pixel offset; viewport transform as
+    D3D9's at the render scale).
+  - V3c tests: gfx_device_test + title_shader_test on Vulkan too (their hand-assembled shaders need SPIR-V: write
+    the tokens out and convert them with vkd3d-compiler at test build time, or ship them as small .hlsl);
+    COD_BRO_VK_DEVICE=llvmpipe for headless runs; then mission 4 on Vulkan with validation (pictures vs D3D9 by eye
+    before V5's shot_compare gate).
 
 ## 0.4 progress (2026-11-13)
 
