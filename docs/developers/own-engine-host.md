@@ -676,8 +676,30 @@ rows), table 9 (EH copy constructors/catch blocks at 0x00895axx, ...), sdk_class
 Live check (11-12): the only Live code our C still calls is LiveMgr slot 7 (0x00223ae0, voice port pause around
 Live_Frame) in Com_Frame's controller-reconnect resume - skipped under native_platform() now. The other Live reads in
 our C are fields, or branches for Live state 2 (signed in), which never happens.
-NEXT: alias rows for thunk_c, then level (21) and thunk (19), then the virtual slots by class (UI menus first), then
-codec slots; then the kernel library out of cod_bro's link.
+**Done 2026-11-12 night (3 agents, branches unr_a/b/c merged):** 480 rows - UI slots 172 (ui/fe_* files, ui_menu.h
+tail-jump macros UI_MENU_TAIL_*), engine slots 184 (new shared/vslot_methods.cpp: cd*/ngl materials, zone/ngl/anim
+managers, Fx/aps, allocators, CM shapes; the 6 "sdk_class" rows were AdvancedOptionsMenu slots - level data held the
+vtable address), level/thunks/codecs 124 (shared/unr_methods.cpp, renderer/ngl_file_load.cpp = ngl managers' Load/
+Release slots, nal_codec.cpp = all NAL codec slots), + std_exception_Dtor and two Sys_DebugBreak thunks. None is
+reached by a replay or the compare harness: checked by reading against the disassembly only. The 20 checked list
+entries that need no C are in tools/data/unreached_reviewed.csv (class `reviewed`). Rerun: 778 unreached, all in
+need-nothing classes. User OK 11-12: Ghidra function 0x0030fe50 (Movie_DrawFrameQuiet, MainMenu_Draw tail-jumps to
+it) created, names of tools/data/gap_names_unr_{a,b,c}.csv applied (backup cod_bro/ghidra_backups/
+20261112-before-unr-names); 0x003367a0 renamed FrontEndMenu_Update (FrontEndMenu slot 4), 0x00339240 = MainMenu_Update.
+
+**Kernel out of cod_bro's link (2026-11-12 night).** src/runtime/xbox is two libraries now: `xbox_host` (kernel_memory =
+the title's memory + LaunchDataPage word, replay, title_calls, kernel_shared = clock start/RDTSC/--trace flag,
+kernel_exports = the ordinal name table for the fatal stubs) and `xbox` (the kernel: dispatcher, objects, sync,
+filesystem, settings, crypto, kernel_basic; links xbox_host). Everything but cod_bro_loader and the unit tests links
+`xbox_host` only, so a kernel reference from shared code is a link error for cod_bro. What moved: title threads +
+in-process restart -> loader/title_threads.cpp (no ThreadObject; kernel threads take ids from it), fatal stubs ->
+loader/kernel_stubs.cpp (cod_bro: install_fatal_kernel_thunks), image page counts -> host_image.cpp. Hooks the loader's
+main.cpp sets (cod_bro sets the native ones in title_setup.cpp under own_main, or leaves them unset): foreign objects,
+xbox::set_event_signal (sound packet + input completion events), xbox::set_irql_calls (vertical-blank callback at
+DISPATCH_LEVEL), audio::set_title_file_lookup (XFileCreateMediaObjectAsync), loader::set_kernel_links (patches:
+XMountUtilityDrive replacement, compare's recorded kernel calls). Unit tests set the kernel versions (test_support.h,
+audio_test). Linux cod_bro 3.39 -> 3.17 MB. Left: kernel_memory.cpp still holds the Mm* export wrappers (linked, never
+called); Windows: one core DLL holds both mains, so its cod_bro.exe still carries the kernel until the DLL is split.
 
 6. Recordings of other missions through the trap (ask the user to record). Done for mission 2 (tank,
    recordings/m2/m2_playtest.rep, 7.2 min, 2026-11-10): two C bugs our Compare rows hid, fixed (the thread starts or
