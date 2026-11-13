@@ -87,6 +87,14 @@ launcher "Renderer"; default d3d9 until V5; Vulkan falls back to D3D9 without a 
     2D/cube/volume, mip levels, update_texture through the staging ring), target_texture (target image + view,
     texel_coordinates -> c18-c25 scale), replacement_texture, static buffers (VMA, staged) + a per-frame ring for
     Dynamic maps (Discard = new ring range, NoOverwrite = same range) and draw_user (keep the content-hash cache).
+  - **V3a done 2026-11-13:** textures (2D/cube/volume, mip chains, formats above; A4R4G4B4 = B4G4R4A4 with
+    moved channels), replacements (BGRA8 + box-filtered chain, rebuilt on a version change), static buffers
+    (device memory, staged copies in command order with barriers both sides) and dynamic buffers (host-visible
+    versions: Discard / Write-while-queued renames, NoOverwrite in place; `VkBuf::used` must be set by V3b's
+    draws). Context: create_texture_image, upload_level, upload_buffer; the staging ring is also vertex/index/
+    uniform usable (draw_user and constants can read it directly); textureCompressionBC enabled. m4 on Vulkan
+    with validation: ~120-157 textures with images, 4 replacements, 0 messages; the game itself makes no
+    GfxDevice buffers (all draw_user) - buffers get their check in V3c's gfx_device_test.
   - V3b draws: one pipeline layout (set 0 = spirv_layout.h bindings; push descriptors or per-draw sets from
     Context::descriptor_set), pipelines keyed by (shaders, layout, strides, primitive class, blend, depth/stencil,
     raster, target formats) in a hash map + VkPipelineCache on disk; dynamic state for viewport, scissor, stencil
