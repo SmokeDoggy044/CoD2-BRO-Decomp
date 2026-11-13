@@ -144,6 +144,16 @@ D3D9 enhanced vs Vulkan enhanced <= 0.01% of pixels (the same as with the passes
 title pipelines (since V3, harmless): VS writes FOG (location 10) the PS does not read; vertex attributes 5-7 the
 VS does not consume. Next: V5 gate.
 
+**V5 gate, replays (2026-11-13):** m0-m7 on D3D9 and Vulkan (`--graphics enhanced`, SPEED=8, a shot every 3,000
+frames, build/v5.txt): every mission's frames equal between the back ends (m3 and m4 differ from their recordings
+from frames 52398 / 38347 on both alike = the known plain-replay drift, not the renderer); pictures <= 0.01-0.04%.
+Three shots off by 8-59% were the **shell-shock blur** (CG_ShellShockScreenParams; ngl blend modes 5-7 =
+constant alpha): D3D9's BLENDFACTOR is the whole colour, the title sets only alpha, so D3D9 never showed it (all
+releases). gfx_d3d9 now copies the alpha into rgb when a constant-alpha factor is used; the three shots now
+<= 0.01%. (The glow pass uses the same modes: still off by default, `--glow on` now shows it on D3D9 too.)
+Also found by the user while watching: the soldier health bar in 16:9 (8a61e0d4, XMM0 lost across
+UIPicture_ScaleXForAspect). Left for V5: frame time vs DXVK, user playtest on Vulkan; then Vulkan as default.
+
 ## 0.4 progress (2026-11-13)
 
 - **Mounted-gun drift fix** (`--mounted-gun-fix on|off`, default on, off with `--pc-patches off`):
