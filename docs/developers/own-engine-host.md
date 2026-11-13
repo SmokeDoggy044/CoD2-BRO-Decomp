@@ -43,6 +43,28 @@ Risks: pixel-centre / clip conventions (V2's test), 32-bit address space with a 
 NVIDIA vs Mesa differences (test both). Validation layers needed for development
 (`vulkan-validation-layers` + `.i686`).
 
+### 0.5 progress
+
+**V1 done (2026-11-13): window, device and present on Vulkan.** `--renderer d3d9|vulkan` (settings.ini `renderer`,
+launcher "Renderer"; default d3d9 until V5; Vulkan falls back to D3D9 without a Vulkan 1.3 device),
+`--vk-validation` / `COD_BRO_VK_VALIDATION=1` (Khronos layer messages in the log as `vulkan` warnings/errors).
+- Shared by both back ends: src/render/game_window.h (SDL window, events, F11/F12, Alt+Enter, prompt, PC-menu keys and
+  Dear ImGui context, picture placement + window_to_screen, gamma ramp with brightness, overlay text pixels,
+  write_bmp). The D3D9 back end was moved onto it (mission 4 run and gfx_device_test unchanged).
+- src/render/vk/: vk_context (volk, VMA, Vulkan 1.3 dynamic rendering + synchronization2, 2 frames in flight, per-frame
+  command buffer, 16 MB staging ring, descriptor pool, deferred destruction, image layout tracking; COD_BRO_VK_DEVICE
+  picks a device by name, e.g. llvmpipe), backend_vulkan (swap chain sized to the window, FIFO when the display paces /
+  mailbox / immediate as the D3D9 path; present pass = back buffer through the gamma table between black bars,
+  overlay, notice, PC menu with ImGui's Vulkan renderer; screenshots, movie frames), gfx_vulkan (V1 GfxDevice:
+  targets at the render scale, clears, read_target, flat-frame tracking for pillarboxing; textures, buffers, shaders
+  and draws are bookkeeping only, draws counted as unsupported).
+- Our own Vulkan shaders: GLSL in src/render/vk/shaders, glslang at build time (cmake/embed_spirv.cmake). The vkd3d
+  command line cannot take a binding layout (it crashed on SM5 resources), and Fedora ships no vkd3d headers.
+- Checks: boot on Vulkan with validation: intro movies and logos shown, 0 validation messages (one fixed: views on
+  copy-only images); user watched the opening videos play. Mission 4 on Vulkan: black as expected (no draws yet),
+  pillarboxed frames the same as D3D9's. Windows build under Wine: Vulkan device on the same GPU, movie frames saved.
+- Next: V2 (title shaders to SPIR-V with a fixed binding layout).
+
 ## 0.4 progress (2026-11-13)
 
 - **Mounted-gun drift fix** (`--mounted-gun-fix on|off`, default on, off with `--pc-patches off`):
