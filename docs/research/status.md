@@ -1149,7 +1149,7 @@ adding both sides' counts; functions.cpp conflicts: keep both, address order).
 - Loader patch to update before Replaced: 0x0031fc10 (UIScreenMgr_HandleInput entry, src/runtime/loader/patches.cpp).
 - More proposed names (applied 2026-10-26: CL_ResumeFromPause -> CL_UpdatePauseOverlay, FE_DrawLoadingQuote -> ChapterMenu_Draw (ChapterMenu slot 10), 0x003307a0 = MissionSuccessFailMenu_ReloadCheckpoint (both callers are that menu), 0x0031a390 SpecialConceptMenu_NextItem): 0x0030ea00 UI_StickDirectionHeld; 0x0032de50 CL_PauseIntoFrontEnd;
   CL_ResumeFromPause/0x0032df90 = pause overlay update; FE_BonusStopMovie (0x00333060) = SpecialMaterialsMenu_PlayMovie;
-  FE_BonusMovieFileName (0x003330f0) = SpecialMaterialsMenu_HandleSelect; FE_MainMenu_UpdateSignIn = MainMenu_Update;
+  FE_BonusMovieFileName (0x003330f0) = SpecialMaterialsMenu_HandleSelect; FE_MainMenu_UpdateSignIn = FrontEndMenu_Update;
   FE_DrawLoadingQuote = loading-screen Draw; 0x00313610/0x00313360/0x00313120 Loading/LoadAfrica/LoadSicilyMenu_
   ShowMissions; 0x0030cfb0 MissionSuccessFailMenu_ClearTexts; 0x0030e390/0x0030e4c0 Gameplay/AdvancedOptionsMenu_
   UpdateLabelColors; 0x0031ee10 AdvancedOptionsMenu_SetSliderBar; 0x0031e9d0/0x0031e810 ControllerConfigMenu_
