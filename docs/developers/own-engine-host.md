@@ -661,8 +661,23 @@ First run: 1,234 (733 from .rdata words, 432 .data, 34 level words, 29 .XTLID - 
 voice classes (UIX::, XVOICE::, LiveMgr: unreachable with Live off). Real examples: KASSRINE calls Scr_BeginThreadEndOnFunctor1
 0x0011a960 (C exists, no row), PROLOGUE jumps to a second BroScr_ReturnFalse 0x00124bc0, MONS1/BUCHHOLZ call FUN_0011d040 /
 FUN_0011d2d0; menu vtables 0x00828e04.. point at never-reached UI gap functions (0x000112c0 ...).
-NEXT: classify the list (Live/unreachable vs real), add rows for C that exists, decompile the rest in batches; then the
-kernel library out of cod_bro's link (memory/replay/launch page/objects into a host-services library).
+**Classified 2026-11-12: `tools/host_unreached_classify.py`** (writes build/unreached/classes.txt; class rules in its
+docstring). Of the 1,234: **758 need nothing** - static_init 361 (only in .CRT$XC: static_init_generated.cpp), live 112
+(Live/UIX/XVOICE/XONLINE and vtables only Live code installs: Live is not part of the own engine, user 11-12; multiplayer
+= system link only, later), mslib 96 (XFONT TrueType rasteriser - no C row and m0-m7 never trap it, so unused - and
+XAPI/LIBCMT tables our platform layer and CRT replace), eh_dead 76 (unwind/catch funclets of functions that run as our C,
+or of FuncInfos no handler stub loads), eh_sdk 45 (the same for XGRPH), noise 38 (.XTLID/DOLBY/XON_RD words), set_aside
+13, command 17 (cheat/debug console commands: nglstats, wireframe, memreport, ... - debug/dev only, as 10-27; open:
+cameraInterrupt). **476 are work**: virtual 345 (slots of vtables our C installs - mostly UI menu/text/dialog classes,
+NGL managers, Fx domains/ops, CM shapes), codec_slot 60 (NAL anim codec class methods, run only if an anim uses that
+codec; missions m8-m13 have no recordings), level 21 (words/calls in level sections: FUN_0011d040 MONS1,
+FUN_0011d2d0 BUCHHOLZ, 0x0011da70/90 in every level ...), thunk 19 + thunk_c 10 (jmp thunks; thunk_c only need alias
+rows), table 9 (EH copy constructors/catch blocks at 0x00895axx, ...), sdk_class 6 + vt_noc 4 + data_table 1 + eh 1.
+Live check (11-12): the only Live code our C still calls is LiveMgr slot 7 (0x00223ae0, voice port pause around
+Live_Frame) in Com_Frame's controller-reconnect resume - skipped under native_platform() now. The other Live reads in
+our C are fields, or branches for Live state 2 (signed in), which never happens.
+NEXT: alias rows for thunk_c, then level (21) and thunk (19), then the virtual slots by class (UI menus first), then
+codec slots; then the kernel library out of cod_bro's link.
 
 6. Recordings of other missions through the trap (ask the user to record). Done for mission 2 (tank,
    recordings/m2/m2_playtest.rep, 7.2 min, 2026-11-10): two C bugs our Compare rows hid, fixed (the thread starts or
