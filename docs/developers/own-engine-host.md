@@ -32,6 +32,14 @@ Developer modes for automated checks (suggested 2026-11-08, build each when its 
   gentities) and skeletons come from the server's animation state, so drawing between two ticks would need a
   render-side save/lerp/restore layer for every entity and skeleton. Possibly revisited with the own renderer.
   The user's displays are 60 Hz: the gain is steady frame times and input latency.
+- **Native frame pacing** (`--fps display|30|N`, default display; launcher "Frame rate"): with the renderer as C
+  the title's vertical-blank wait is off (frame interval 0) and the host paces right before the present
+  (patches.cpp "Native frame pacing", render::pace_frame/set_frame_limit): `display` = present waits for the
+  display (D3DPRESENT_INTERVAL_ONE, DXVK d3d9.maxFrameLatency = 2), N = our own clock (mailbox), 30 = the Xbox
+  path unchanged; movies limited to 30. Replays never wait for the display (own clock x replay speed).
+  maxFrameLatency 1 dropped mission 4's opening cutscene to 35-50 fps with sound (user saw a squad mate jitter);
+  2 holds 60 there (user watched, no marks). Silent m4 80 s: display 17 hitches vs own clock 32.
+  Checks: m4_smoke release/debug/Wine all frames match; HOST=1 gap_check m4/m2/m1 dumps identical to ws_host2.
 
 ## 0.3b widescreen progress (2026-11-13)
 
