@@ -17,6 +17,22 @@ Developer modes for automated checks (suggested 2026-11-08, build each when its 
 (0.3), live function test (call by name, original vs C from the same state), fixed capture points per mission
 (quality gate), state dump; later an object viewer for the lighting work.
 
+## 0.4 progress (2026-11-13)
+
+- **Mounted-gun drift fix** (`--mounted-gun-fix on|off`, default on, off with `--pc-patches off`):
+  CL_FinishMove rounds the view angles to the command's 16-bit units (floor(x + 0.5)) instead of truncating
+  (`ClientPcHooks::round_view_angles`). Check (m1 truck MG, COD_LOOK_TRACE=1): idle on the gun the original turns
+  13.6 deg pitch / 13.7 deg yaw over 2,533 commands, with the fix -0.07 / +0.01 (vehicle motion).
+- **Game options in recordings:** options that change the game's state are written as `#game NAME=0|1` lines
+  after a recording's command line (title_session.cpp `apply_game_options`); a replay uses the recorded value,
+  a recording without the line gets the original behaviour (all recordings before 0.4 replay unchanged: m1 all
+  57,333 frames match). Naming the option on the replay's command line overrides it (A/B runs).
+- **Pacing decision (user 11-13): variable step at the display's rate**, not a fixed tick with interpolation.
+  Reason: the single-player client draws the server's own entities (one table, 0x0097a968; cgame "cents" are the
+  gentities) and skeletons come from the server's animation state, so drawing between two ticks would need a
+  render-side save/lerp/restore layer for every entity and skeleton. Possibly revisited with the own renderer.
+  The user's displays are 60 Hz: the gain is steady frame times and input latency.
+
 ## 0.3b widescreen progress (2026-11-13)
 
 The cgame switch (11-07) had left `--aspect` wider than 16:9, `--fov` and the objectives panel's 4:3
