@@ -46,6 +46,10 @@ Developer modes for automated checks (suggested 2026-11-08, build each when its 
   stepping once per displayed frame, input reaches the usercmd of the very next frame. The mouse also turns tank
   turrets and mounted guns (m2 playtest trace: turret mode, mouse turns). Keys still go through the pad's sticks
   (forward 126 instead of the key path's 127, 0.8% slower; not changed).
+- **0.4 closed (user 11-13).** Keys and mouse buttons still reach the game as an emulated pad on port 0 (merged with
+  the first gamepad, remapped per controller style). Native keys (SDL key events into the engine's own Q3 key system:
+  CL_KeyEvent, binding table, +forward/+attack; the pad kept for gamepads and menus) move to 0.6 with the settings
+  schema and in-game rebinding.
 
 ## 0.3b widescreen progress (2026-11-13)
 
