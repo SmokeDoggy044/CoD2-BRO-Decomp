@@ -40,6 +40,12 @@ Developer modes for automated checks (suggested 2026-11-08, build each when its 
   maxFrameLatency 1 dropped mission 4's opening cutscene to 35-50 fps with sound (user saw a squad mate jitter);
   2 holds 60 there (user watched, no marks). Silent m4 80 s: display 17 hitches vs own clock 32.
   Checks: m4_smoke release/debug/Wine all frames match; HOST=1 gap_check m4/m2/m1 dumps identical to ws_host2.
+- **Keyboard/mouse per frame: already so** (checked 11-13). Window events are read right after each present
+  (device.cpp present_frame -> pump_events), and the next frame's CL_CreateCmd takes the mouse motion straight into
+  cl.viewangles (ClientPcHooks::mouse_look) and the keys from the pad state read in the same frame - with the game
+  stepping once per displayed frame, input reaches the usercmd of the very next frame. The mouse also turns tank
+  turrets and mounted guns (m2 playtest trace: turret mode, mouse turns). Keys still go through the pad's sticks
+  (forward 126 instead of the key path's 127, 0.8% slower; not changed).
 
 ## 0.3b widescreen progress (2026-11-13)
 
