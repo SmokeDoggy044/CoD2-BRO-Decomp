@@ -103,6 +103,28 @@ launcher "Renderer"; default d3d9 until V5; Vulkan falls back to D3D9 without a 
     PS c-register + discard needs the HLSL; decide then). Constants: VS c0-c194 / PS c0-c27 per draw into the ring
     as two UBO ranges. Screen-to-clip c192-c193 for Vulkan (Y down, no half-pixel offset; viewport transform as
     D3D9's at the render scale).
+  - **V3b + V3c done 2026-11-13** (draws; tests). Pipeline layout = one push-descriptor set (VK_KHR_push_descriptor
+    now required), pipelines keyed by shaders/layout/topology class/blend/fill/formats, everything else dynamic
+    (1.3 extended dynamic state incl. vertex stride); constants per draw in the upload space (one piece for both
+    blocks); draw_user streams through the upload space or the kept-vertex cache, retried once if staging flushed;
+    quads through a shared index buffer; unbound textures read opaque black, missing vertex inputs (0,0,0,1);
+    sampling the target drawn into goes through a copy; X-format targets sample alpha 1 and DestAlpha -> One.
+    Shared with D3D9: draw_placement.h (viewport/scissor/screen-to-clip incl. widescreen edges and UI narrowing;
+    Vulkan = y flipped + half-pixel centre) - D3D9 refactor checked pixel-identical (m4_smoke 4 shots).
+    Fixed alpha test moved into the title pixel shaders (nv_alpha_test, c28 = func/ref; D3D9 passes Always and
+    keeps its fixed test - checked pixel-identical also with the shader test forced on D3D9).
+    Findings: (1) the renderer's target for the back buffer's memory must BE the back buffer (D3D9Draw keys
+    targets by memory; Vulkan now shares a target per memory with a user count); (2) vkd3d's SPIR-V `texkill r.x`
+    tests the register's other components too (stale values discarded whole draws): every clip() in our HLSL now
+    takes a replicated float4 (`.xxxx`; D3D9 unchanged).
+    Tests: gfx_device_test runs on both back ends (its shaders are now tests/shaders/*.hlsl, D3D9 + SPIR-V) and
+    gained an alpha-test case (8 functions x 3 references). m4_smoke replay D3D9 vs Vulkan: all 2,620 frames
+    equal; loading screen identical; in-game shots differ only by the constant-alpha blends below.
+    **OPEN (user decision):** ngl blend modes 5-7 use CONSTANT_ALPHA with blend colour alpha<<24 (rgb 0). NV2A
+    and Vulkan read the alpha; the D3D9 back end maps it to D3DBLEND_BLENDFACTOR = rgb = 0, so on D3D9 (all
+    releases so far) those layers add nothing. Vulkan shows a strong sun haze/glare in m4's opening. With
+    D3D9's mapping forced on Vulkan the shots match (<=0.01%). Fix D3D9 (BLENDFACTOR = alpha replicated) to the
+    Xbox's look, or keep?
   - V3c tests: gfx_device_test + title_shader_test on Vulkan too (their hand-assembled shaders need SPIR-V: write
     the tokens out and convert them with vkd3d-compiler at test build time, or ship them as small .hlsl);
     COD_BRO_VK_DEVICE=llvmpipe for headless runs; then mission 4 on Vulkan with validation (pictures vs D3D9 by eye
