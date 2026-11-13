@@ -17,6 +17,32 @@ Developer modes for automated checks (suggested 2026-11-08, build each when its 
 (0.3), live function test (call by name, original vs C from the same state), fixed capture points per mission
 (quality gate), state dump; later an object viewer for the lighting work.
 
+## 0.5 plan: Vulkan back end (2026-11-13)
+
+Starting point: every renderer draw goes through `render::GfxDevice` (R4b/R5, [own-renderer.md](own-renderer.md));
+D3D9 is the only back end (DXVK on Linux). Vulkan becomes a second `GfxDevice` + `Backend` beside it, written
+from scratch. 32-bit Vulkan is available (NVIDIA and Mesa i686 drivers, loader, headers; llvmpipe for headless tests).
+
+User decisions 2026-11-13: once the gate passes, **Vulkan is the default, D3D9 the fallback** (launcher choice);
+**render graph + HDR are part of 0.5** (as 0.5b); third-party **volk + VMA** (MIT, FetchContent) are fine.
+
+Shader spike 2026-11-13: vkd3d's HLSL front end cannot take our SM3 HLSL straight to SPIR-V, but the d3dbc we
+already build converts: `vkd3d-compiler -x d3dbc -b spirv-binary` on all 166 title shaders, no errors (not yet
+validated with spirv-val, no bindings chosen yet).
+
+| Step | What | Check |
+|---|---|---|
+| V1 device + window + present | SDL3 Vulkan surface; Vulkan 1.3 minimum (dynamic rendering, sync2; D3D9 covers older GPUs); 2 frames in flight; FIFO present = `--fps display`; diag overlay, gamma ramp, screenshots / `read_target`, movie frames (`write_back_buffer`); `--renderer d3d9\|vulkan` + launcher choice (the launcher itself never touches Vulkan) | menus and logos show; pacing as D3D9 |
+| V2 shaders | build time: our HLSL -> d3dbc (as now) -> SPIR-V with vkd3d; one fixed binding layout (VS c0-c195, PS c0-c27, samplers); screen-to-clip constants c192-c193 per back end (Y flip, pixel centres) | `title_shader_test` Vulkan vs D3D9: all identical |
+| V3 GfxDevice on Vulkan | textures (staging uploads, our decoded formats), render targets + `target_texture`, static buffers + ring buffer for dynamic / `draw_user` (keep the content-hash cache), pipelines keyed by our state blocks + pipeline cache on disk, depth bias, clears | `gfx_device_test` on both back ends |
+| V4 post passes | FXAA, sharpen, vibrance, brightness (same HLSL); Enhanced switches unchanged | A/B screenshots |
+| V5 gate | `--replay-shots` m0-m7, D3D9 vs Vulkan through `shot_compare.py` (bar: about the Wine level, <= 0.01% of pixels); frame time vs DXVK; Windows build under Wine; user playtest | default switches to Vulkan |
+| V6 (0.5b) render graph + HDR | frame as passes (scene -> HUD -> post -> present), RGBA16F linear scene target, Original mode still matching, FXAA before the HUD | foundation for the lighting work |
+
+Risks: pixel-centre / clip conventions (V2's test), 32-bit address space with a Vulkan driver loaded (watch in V3),
+NVIDIA vs Mesa differences (test both). Validation layers needed for development
+(`vulkan-validation-layers` + `.i686`).
+
 ## 0.4 progress (2026-11-13)
 
 - **Mounted-gun drift fix** (`--mounted-gun-fix on|off`, default on, off with `--pc-patches off`):
