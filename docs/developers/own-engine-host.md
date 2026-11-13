@@ -133,6 +133,17 @@ launcher "Renderer"; default d3d9 until V5; Vulkan falls back to D3D9 without a 
     COD_BRO_VK_DEVICE=llvmpipe for headless runs; then mission 4 on Vulkan with validation (pictures vs D3D9 by eye
     before V5's shot_compare gate).
 
+**V4 done (2026-11-13): enhanced graphics' post passes on Vulkan.** src/render/vk/vk_post.cpp (`vk::Post`): FXAA,
+then sharpen + vibrance, the same HLSL as D3D9 (post_vs/fxaa/sharpen SPIR-V through spirv_fixed_layout; own
+push-descriptor layout with only bindings 0, 1, t0, s0); picture <-> scratch image, copied back if it ends in the
+scratch; only on frames with a 3D scene (as D3D9). Vulkan differences: vertex c0 = 0 (no half-pixel offset), quad
+y flipped. Brightness (gamma table in the present pass, V1), anisotropy and texture detail (sampler, V3) were
+already there. Checks (m4_smoke, `--graphics enhanced` given explicitly: the recording's settings say original):
+D3D9 enhanced vs Vulkan enhanced <= 0.01% of pixels (the same as with the passes off), enhanced vs original ~4%
+(the passes run); all frames match; validation: no messages from the post passes. Known validation WARNINGS from
+title pipelines (since V3, harmless): VS writes FOG (location 10) the PS does not read; vertex attributes 5-7 the
+VS does not consume. Next: V5 gate.
+
 ## 0.4 progress (2026-11-13)
 
 - **Mounted-gun drift fix** (`--mounted-gun-fix on|off`, default on, off with `--pc-patches off`):
