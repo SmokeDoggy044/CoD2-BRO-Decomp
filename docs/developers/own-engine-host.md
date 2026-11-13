@@ -634,6 +634,24 @@ Next (H3): our own executable - the --host path without the XBE kernel/loader pa
 keep lists from the dump, the hook table, TitleHost, render/audio/input/replay setup shared with the loader
 (split main.cpp's option parsing and device setup into a library both use).
 
+**Step H3 (11-12): our own executable `cod_bro`** (`src/runtime/loader/host_main.cpp`). Linux: the loader's code is a
+static library (`cod_bro_runtime`) linked into `cod_bro_loader` (main.cpp) and `cod_bro` (host_main.cpp); Windows: the
+core DLL exports `cod_bro_loader_main` and `cod_bro_host_main`, and `cod_bro.exe` is the same stub as
+`cod_bro_loader.exe` with the other entry (`COD_BRO_LOADER_CORE_ENTRY`). Shared by both mains: `options.h/.cpp`
+(Options, parse_args), `title_session.h/.cpp` (settings.ini + command line, log/--diag/fatal hooks, assets, run_title
+with the in-process restart loop), `title_setup.h/.cpp` (sound/graphics/input/TitleHost set-up). `cod_bro` = --host
+without the kernel set-up (only `xbox::memory_init` + the launch data page), without release maps (another release:
+"start cod_bro_loader"), compare harness (hooks only), --text-trap/--text-clear and exec reboots; campaign only.
+Found: the D3D vertical-blank/swap callbacks and the sound engine's packet callbacks called title code through
+`xbox::kernel_config().call_guest`, which only the kernel set-up filled - now `xbox::TitleCalls`
+(`src/runtime/xbox/title_calls.h`), set by both mains. Check (`HOST=1 tools/gap_check.sh .../bin/cod_bro OUT
+build/gap/host`): m0-m5 reach their end, 0 spots, dumps identical except m0 actors (3 host-stack high halves, the known
+stale path-record words); `cod_bro.exe` under Wine: m4 dump identical to the Linux baseline.
+m6/m7 (first time under our C, loader --host too): stop at load on gap functions - `--own-main --text-clear` lists 15
+spots (build/h3/clear_m6, clear_m7: 0x000508a0, 0x00335b80, 0x0004f240/60/80/90, 0x0001d0e0, 0x00011ef0/f00/f50/f60,
+0x0030f000/f010, 0x0030ec40, 0x00314aa0). NEXT: those gap functions (first hit per page only - recheck after), then
+the kernel library out of cod_bro's link (memory/replay/launch page/objects into a host-services library).
+
 6. Recordings of other missions through the trap (ask the user to record). Done for mission 2 (tank,
    recordings/m2/m2_playtest.rep, 7.2 min, 2026-11-10): two C bugs our Compare rows hid, fixed (the thread starts or
    the variable write happen after the harness compares): Bro_aim__keep_aiming passed BroScr_TurnToEnemy_2 its
