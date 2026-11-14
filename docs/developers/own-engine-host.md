@@ -174,7 +174,12 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   at replay frames 10384-10502, 12462-12580, 18199-18317, 26382-26507, 26696-26934 - NOT at 16424 (that shot is
   smoke + distance). Shot 12468 (inside a fade) covers the whole 16:9 width. UI narrowing (draw_placement.h
   ui_narrowing) skips quads not starting at x<=1, but a span-based test changed 0 pixels at 16:9 and 21:9: the fade
-  quad is not narrowed - change reverted. Waiting for the user's steered --diag run to show what they saw.
+  quad is not narrowed - change reverted.
+  CAUSE (user's steered run build/diag/blur_1114b, marks 3+4 at frames 12839/16283: "doesn't stretch all the way
+  left, or up"): the fade quad's (4,4) offset leaves a left and top strip uncovered - hidden by TV overscan on the
+  Xbox, visible on a PC (wider at render scale). Same family as the glow pass's left/top dark band. Fix later as a
+  PC option (quad to the picture edges, e.g. x0/y0 0 with the UV shifted), not a patch. PARKED (user, 11-14).
+  Same run, mark 1 (frame 8959, mods_all pack): "bodies are wonky", gone by mark 2 (frame 9900) - not looked at.
 - Next: 1e curation on the prologue pilot (curation.csv + the 1.0c sheet; user judges in game with F12/F6).
 
 ### 1.0d done (2026-11-14): object viewer in game and in the lab
