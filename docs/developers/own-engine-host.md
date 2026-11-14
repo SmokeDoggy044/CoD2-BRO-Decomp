@@ -172,11 +172,13 @@ pipelines as before. Checks: m4_smoke 19 links in ~1 ms (whole: 627 ms cold); pi
 D3D9 <= 0.01%; validation clean (only the old FOG-output warning); Wine OK; gfx_device_test passes; m4 playtest at
 --replay-speed 50: 228 s vs 222 s whole (noise ~10%) - no optimized relink needed for now.
 
-**Next (2026-11-13 end):** user skipped the Vulkan playtest for now. Next session: Vulkan becomes the default
-renderer (D3D9 stays as the launcher / `--renderer d3d9` choice and the automatic fallback), then V6 (0.5b render
-graph + HDR). Side items: Omaha (m9) plain replay drifts from frame 59014; user's mark "boards popped in" at
-~frame 36800 (same on D3D9; object not named yet); the second timing pass (Vulkan 204 s vs DXVK 280 s on the m4
-playtest at --replay-speed 50) was not repeated.
+**V5 closed (2026-11-13): Vulkan is the default renderer.** `--renderer vulkan|d3d9` (default vulkan),
+settings.ini `renderer=d3d9` / launcher "Renderer" (Vulkan first) choose Direct3D 9; without a Vulkan 1.3 device the
+game still falls back to D3D9 by itself. Recordings without a `renderer` line now replay on Vulkan (the game state
+does not depend on the back end). Checks: m4_smoke default (Vulkan) vs `--renderer d3d9` all 2,620 frames equal,
+shots <= 0.01%; Windows build under Wine picks Vulkan, frames and shot equal to Linux. The user's Vulkan playtest
+was skipped (user, 11-13). Side items left open: Omaha (m9) plain replay drifts from frame 59014; user's mark
+"boards popped in" at ~frame 36800 (same on D3D9; object not named yet); second timing pass not repeated.
 
 ## 0.4 progress (2026-11-13)
 
