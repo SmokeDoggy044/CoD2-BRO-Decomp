@@ -144,6 +144,12 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   localStorage, "Export curation.csv" for build.py --curation. Pilot: 351 textures, 27 MB of WebP previews.
 - Campaign build started 11-14 (`--source '^sp/'`, WORK pack_work/campaign): 2,911 textures, 1,866 upscaled
   (97.5 Mpx), 1,018 lightmaps + 3 fonts + 24 small skipped. MP packs left out (MP draws on the original D3D path).
+- Campaign pack 0.1 DONE 11-14 (pack_work/campaign/mod): 1,660 world textures, 1,197 MB, ~55 min GPU. User judged
+  the pilot sheet: world textures all pass; menus/HUD/UI do not -> builder class `world`/`ui` (shell/, hud/,
+  textures/global button prompts = 206 ui textures, `--classes`), ui left original until its own workflow.
+- UI workflow (user chose an AI model for clean art, 11-14): candidates 4x-AnimeSharp (CC BY-NC-SA), 4x-
+  IllustrationJaNai V1 DAT2, 4x-Nomos2 otf ESRGAN (CC BY 4.0); bake-off on the 206 ui textures, model column in the
+  sheet. Waiting for the user's OK on the downloads.
 - Next: 1e curation on the prologue pilot (curation.csv + the 1.0c sheet; user judges in game with F12/F6).
 
 ### 1.0d done (2026-11-14): object viewer in game and in the lab
