@@ -150,6 +150,15 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
 - UI workflow (user chose an AI model for clean art, 11-14): candidates 4x-AnimeSharp (CC BY-NC-SA), 4x-
   IllustrationJaNai V1 DAT2, 4x-Nomos2 otf ESRGAN (CC BY 4.0); bake-off on the 206 ui textures, model column in the
   sheet. Waiting for the user's OK on the downloads.
+- Lab `build/lab/campaign` (m1-m7, mods off vs campaign pack, Vulkan): pack loads everywhere (1,660 textures, no
+  warnings), 56/56 pictures per variant; per mission at most 2.7-10.9% of pixels change, brightness -1.01..+0.13,
+  median sharpness 1.03-1.34x. m3/m4 exit 3 in BOTH variants = the known plain-replay drift (frames 52398/38347).
+- UI bake-off: 5 models in Tools/UI_models (SOURCES.txt: AnimeSharp, Nomos2, IllustrationJaNai V1 DAT2, V3 detail
+  DAT2, V3 denoise DAT2; V3 FDAT does not load in chaiNNer's spandrel 0.4.1; upscale.py loads weights as fp32 since
+  V3 ships bf16). Each `build.py pack_work/ui_<model> --classes ui --model M` (~3 min ESRGAN, ~8 min DAT2).
+  `tools/texture_pack/compare_sheet.py sheet OUT --variant NAME=WORK ... --serve PORT`: original + every model per
+  texture, the user picks one (or keeps the original), "Export picks.csv"; `compare_sheet.py merge OUT picks.csv
+  --variant ...` assembles the UI mod. Waiting for the user's picks.
 - Next: 1e curation on the prologue pilot (curation.csv + the 1.0c sheet; user judges in game with F12/F6).
 
 ### 1.0d done (2026-11-14): object viewer in game and in the lab
