@@ -89,6 +89,18 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
 - **0.6d rebinding:** Controls page (action list, press a key, conflicts shown, reset to defaults, saved at once);
   prompts show the bound key's name (Key_GetKeyNameForCommand). Close with one user play run.
 
+### 1.0a + 1a done (2026-11-14)
+
+- Lab (b6ea534c): `tools/lab.py run OUT --mission m0` - two variants of the prologue in ~3 min, 8/8 pictures each.
+  The automatic points include a loading screen (600) and the end screen; give m0 real capture points in
+  `tools/data/capture_points.csv` before the 1e pilot.
+- Hash bridge: `COD_BRO_TEXTURE_LOG=FILE` (ngl_gfx `log_texture`: each texture content once, with its layout) and
+  `tools/texture_bridge.py UNPACKED MANIFEST LOG... --out bridge.csv`. Prologue: 250 of 258 drawn textures match a
+  dump DDS by `hash_bytes` over the DDS data as is (DXT1 180/180, DXT3 41/41, DXT5 28/32, A8R8G8B8 1/4 swizzled);
+  the 8 others are made at run time (key-prompt icons 64x64 DXT5, a 640x480 linear frame, font/target pages, a 1x1)
+  - none belongs in a pack. Collector's Edition: its oran packs differ as files, but all 440 of their texture
+  entries have retail contents, so a pack keyed by content covers both editions.
+
 ### 0.6a done (2026-11-13)
 
 - `src/platform/settings_schema.{h,cpp}`: every setting once (key, --help placeholder, type Flag/Switch/Int/Float/
