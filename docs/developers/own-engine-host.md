@@ -40,6 +40,31 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
 - **0.6d rebinding:** Controls page (action list, press a key, conflicts shown, reset to defaults, saved at once);
   prompts show the bound key's name (Key_GetKeyNameForCommand). Close with one user play run.
 
+### 0.6a done (2026-11-13)
+
+- `src/platform/settings_schema.{h,cpp}`: every setting once (key, --help placeholder, type Flag/Switch/Int/Float/
+  Choice/Text/Path/Custom, group, flags live/command-line/launcher/hidden, range or choices, default, help, the
+  combined setting it is a part of). `check_setting` gives the normal form or what the setting needs;
+  `settings_help` is --help; `upgrade_settings` turns the older combined lines (graphics-features, volume, reverb,
+  enhanced) into one line per part (defaults left out); `combined_setting` / `set_combined_setting` read and write
+  the parts as the "k=v ..." text the structs (GraphicsFeatures, CategoryVolumes, ReverbTuning, EnhancedFeatures)
+  parse. New part names: fxaa, anisotropic, sharpen, sharpness, vibrance, vibrance-amount, texture-detail,
+  lod-bias; volume-effects/-ambience/-dialogue/-music, close-gunfire, own-gunfire, close-bullets; resampler,
+  more-voices, room-reverb, occlusion, close-boost; reverb-amount/-decay/-brightness/-reflections/-clutter.
+- options.cpp: parse_args looks every option up in the table, checks it there (errors "--scale needs a whole
+  number (1-8)") and `apply_setting` puts the value into Options; only the Custom ones (diag, screenshots,
+  replay-reference/-shots/-dump, force, text-trap, launch-data, session-start) keep their own code. Combined
+  settings and their parts merge in order (settings.ini, then the command line; a later value wins) - before,
+  `--graphics-features X` replaced the whole settings.ini line, the A/B pitfall of 0.5b.
+- settings.ini: load_settings upgrades on read, so the next save (launcher, PC menu) writes one line per setting;
+  launcher-only keys (check-updates) are not passed to the game. Recordings keep their settings text as recorded
+  (combined lines still parse). `keys` stays one line until 0.6c (bindings change there anyway).
+- Checks: settings_test (schema checks, defaults pass their own checks, no key twice, upgrade, combined round
+  trip, as_args) on Linux and under Wine; m4_smoke replay all 2620 frames (recorded combined lines applied as
+  before), m1_playtest all 57333 frames, m4 again with parts on the command line (merged as expected: "fxaa=0 sharpness=0.5
+  vibrance_amount=0.01", volumes music=40 close_gunfire=2 ...), the player's settings.ini (copy, XDG_DATA_HOME)
+  read as before; Windows MinGW build clean.
+
 ## 0.5 plan: Vulkan back end (2026-11-13)
 
 Starting point: every renderer draw goes through `render::GfxDevice` (R4b/R5, [own-renderer.md](own-renderer.md));
