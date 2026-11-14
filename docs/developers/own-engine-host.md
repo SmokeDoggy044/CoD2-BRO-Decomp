@@ -67,6 +67,8 @@ mips, swizzled non-palette textures only). The dump has 9,652 texture entries, 3
   sent to the API). Normal/roughness maps are generated but ship later as a separate PBR mod, once lighting uses them.
 - **1e curation, prologue pilot:** `curation.csv` (skip / upscale / conservative + region masks, e.g. the "1"
   shoulder patch); the user judges in game with F12 marks, then the rest of the campaign.
+  1e CLOSED 11-14 (user): no dedicated curation runs; texture problems are handled when noticed in normal play
+  (F6 picker + F12 -> curation.csv row -> rebuild of those hashes). Packs as built: campaign world 0.1 + UI 0.1.
 - **1f Data Files page:** the launcher front-page button opens the mod list (checkbox, load order); one
   `mod-<name>=on|off` line per mod in settings.ini. Later perhaps a live toggle in the PC menu (the replacement
   hook already supports swapping while running).
