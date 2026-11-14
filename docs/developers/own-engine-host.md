@@ -109,6 +109,27 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   - none belongs in a pack. Collector's Edition: its oran packs differ as files, but all 440 of their texture
   entries have retail contents, so a pack keyed by content covers both editions.
 
+### 1d done (2026-11-14): pack builder
+
+- `tools/texture_pack/build.py WORK [--source REGEX] [--bridge CSV] [--curation CSV] [--zip] [--pbr]`: stages
+  select -> upscale -> encode -> pack, each resumable in WORK (cod_bro/textures/pack_work/, outside the repos).
+  `upscale.py` runs under chaiNNer's portable Python (Tools/chaiNNer/python: torch 2.7 cu128 + spandrel; default
+  `--torch-python`) with Tools/PBRify_Remix 4x-PBRify-UpscalerV4 (DAT2, fp32 only: bf16 fails in its attention).
+  The model never opens a picture in the assistant.
+- Per texture: runtime key as texture_bridge.py (swizzled for uncompressed), alpha none/cutout/blend (DXT1 alpha and
+  0/255-only alpha = cutout: thresholded again after the model, then DXT5), wrap per axis (edge step <= 2x the inner
+  neighbour step -> padded with the other edge, else mirrored: no seams on repeating textures). Alpha goes through
+  the model as grey (chaiNNer's split/merge). Skipped: sides < 16 texels, curation `skip`. Mips: each level Lanczos
+  from the top one; Pillow's DXT encoder (system Python, Pillow 12).
+- Speed on the RTX 2080 SUPER: 128-px tiles + 16 margin, ~1.5 s per 256x256 (x2 with alpha). Prologue pilot
+  (`--source '^sp/prologue/|^sp/global\.cod|^sp/frontend\.cod'`): 380 textures (16.7 Mpx), 9.5 min, 246 MB.
+  Whole dump (179.6 Mpx): ~1.5-2 h, ~3 GB (most textures 128-256 px -> 512-1024).
+- Check: shrunk back to the original size, pack textures match the originals at 36-40 dB, colour shift < 1 level.
+  Lab `build/lab/pilot_m0` (Vulkan, mods off vs the pilot): pack loads (380 textures, no warnings), replay ends
+  normally, 8/8 pictures; in-level points change 2-17% of pixels, sharpness 1.07-1.78x, brightness +0.25-0.72
+  levels; loading screen and end screen unchanged.
+- Next: 1e curation on the prologue pilot (curation.csv + the 1.0c sheet; user judges in game with F12/F6).
+
 ### 1.0d done (2026-11-14): object viewer in game and in the lab
 
 - `--viewer M1,M2` or `--viewer @FILE` (implies --dev; src/engine/game/g_viewer.*, src/runtime/loader/viewer.*): F8
@@ -161,7 +182,7 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   (0.00% differ), all 28,352 frames match. Real-time m0 replay with --diag: hitches 34 (on) vs 35 (off), worst
   spots the same level loads. Not yet exercised: freeing across a level change (needs a multi-mission run).
 - Left for phase 1 around it: 1.0b `--dev` overlay + live mod toggle, 1.0d viewer, 1f `mod-<name>` lines + Data
-  Files page. 1.0b done (section above); NEXT 1.0d viewer, then the 1d builder.
+  Files page. 1.0b, 1.0d and 1d done (sections above); NEXT 1e curation.
 
 ### 1b design (2026-11-14)
 
