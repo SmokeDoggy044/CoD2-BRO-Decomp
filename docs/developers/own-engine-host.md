@@ -32,6 +32,18 @@ and asks `GfxDevice::replacement_texture` (used today for sharp fonts and key pr
 mips, swizzled non-palette textures only). The dump has 9,652 texture entries, 3,920 unique, ~274 MB
 (`cod_bro/textures/original/manifest.csv`, `tools/extract_textures.py`). The host is a 32-bit process.
 
+- **1.0 developer mode ("the lab", user 2026-11-14: a mode for the assistant to test and compare in):**
+  - 1.0a `tools/lab.py`: fixed capture points per mission (`tools/data/capture_points.csv`, 8 spread frames when a
+    mission has none) on the reference recordings, replayed once per variant (NAME="loader options": back end,
+    graphics, mods, single switches) with `--replay-no-draw --replay-shots` - only the 120 frames before each picture
+    are drawn (`render::g_skip_keeps_uploads`), so a mission takes minutes. Per point vs the baseline: changed
+    pixels, PSNR, sharpness ratio, brightness change; `report.html` (side by side + difference) for the user,
+    `metrics.csv` + a short table for the assistant, `crop` for looking at a detail (pictures judged by numbers
+    first: opening one sends it to the API).
+  - 1.0b in-game `--dev` (with 1b): overlay (frame time, texture memory, replacements loaded / pending / missing),
+    live keys flipping each Enhanced feature and each mod for A/B in place, a texture picker (texture under the
+    crosshair: runtime hash, asset path, which mod) written into F12 marks, pause.
+  - 1.0c curation sheet (with 1e): original vs upscaled per texture hash as an HTML page for the user.
 - **1a hash bridge:** `--texture-log` lists each runtime texture key (content hash, format, size, levels); a script
   computes the same hash from the dump and maps it to manifest rows. Check: every prologue texture matches; the
   Collector's Edition dump compared too (the pack has to fit every copy).
