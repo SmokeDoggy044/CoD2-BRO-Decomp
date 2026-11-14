@@ -139,7 +139,7 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
 - Second playtest (user, 11-14, pilot 0.2): no shimmer, brightness fine; paused A/B (marks 3/4): brightness -0.29,
   distance 0.8x as sharp as the Enhanced originals (lod_bias -2) - user: fine, distant textures need not be super
   sharp. Decision: no Enhanced mipmap bias on pack pictures stays.
-- 1.0c sheet: `tools/texture_pack/sheet.py WORK` -> WORK/sheet/index.html (local file, never published: game
+- 1.0c sheet: `tools/texture_pack/sheet.py WORK` -> WORK/sheet/index.html, opened via `--serve PORT` (Flatpak Firefox sees no img/ over file://; never published: game
   textures): original (nearest) vs pack per texture, 1:1 zoom, PSNR sort, upscale/conservative/skip + masks kept in
   localStorage, "Export curation.csv" for build.py --curation. Pilot: 351 textures, 27 MB of WebP previews.
 - Campaign build started 11-14 (`--source '^sp/'`, WORK pack_work/campaign): 2,911 textures, 1,866 upscaled
