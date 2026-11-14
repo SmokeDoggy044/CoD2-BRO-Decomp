@@ -17,6 +17,43 @@ Developer modes for automated checks (suggested 2026-11-08, build each when its 
 (0.3), live function test (call by name, original vs C from the same state), fixed capture points per mission
 (quality gate), state dump; later an object viewer for the lighting work.
 
+## Phase 1 plan: graphics assets (2026-11-14, agreed with the user)
+
+Phase 0 closed 2026-11-14 (launcher/PC menu look + keyboard play run done). Phase 1 brings in better assets:
+upscaled textures through a general mods system, then model smoothing.
+
+User decisions: the texture pack works on D3D9 as well as Vulkan (it can be switched off); standard PBRify 4x;
+the pack is distributed apart from the code repos (e.g. ModDB); pilot on the prologue (`--level 0`); model
+smoothing stays in phase 1. Mods sit **outside** the Enhanced master switch: players may want our enhancements
+without AI-upscaled textures, or the original look with them. `--compare` runs never load mods.
+
+Starting point: `ngl_gfx.cpp` already hashes each title texture's memory (`render::hash_bytes`, texture_hash.h)
+and asks `GfxDevice::replacement_texture` (used today for sharp fonts and key prompts; BGRA8 only, box-filtered
+mips, swizzled non-palette textures only). The dump has 9,652 texture entries, 3,920 unique, ~274 MB
+(`cod_bro/textures/original/manifest.csv`, `tools/extract_textures.py`). The host is a 32-bit process.
+
+- **1a hash bridge:** `--texture-log` lists each runtime texture key (content hash, format, size, levels); a script
+  computes the same hash from the dump and maps it to manifest rows. Check: every prologue texture matches; the
+  Collector's Edition dump compared too (the pack has to fit every copy).
+- **1b mods + pack loader:** `<data dir>/mods/<name>/` with `mod.ini` (name, version, author, kind, source dump),
+  an index runtime hash -> DDS; pictures load on a worker thread (original shown until ready), VRAM budget with
+  eviction of textures not drawn lately, a log of textures no mod covers. Load order: higher mod wins per hash.
+  Data only - no code/DLL mods. Check: prologue replay without hitches or memory growth.
+- **1c one pack for both back ends:** DXT1/DXT5 at 4x (DXT3 originals -> DXT5) with full mip chains; D3D9 keeps
+  them in video memory only (no managed-pool copy). Check: A/B pictures on D3D9 and Vulkan, address space stays
+  inside 32-bit limits.
+- **1d pack builder** (`tools/texture_pack/`): extract -> headless spandrel with standard PBRify 4x -> masks ->
+  DXT + mips -> `mod.ini` + index -> zip for distribution. Runs without opening images in the assistant (nothing
+  sent to the API). Normal/roughness maps are generated but ship later as a separate PBR mod, once lighting uses them.
+- **1e curation, prologue pilot:** `curation.csv` (skip / upscale / conservative + region masks, e.g. the "1"
+  shoulder patch); the user judges in game with F12 marks, then the rest of the campaign.
+- **1f Data Files page:** the launcher front-page button opens the mod list (checkbox, load order); one
+  `mod-<name>=on|off` line per mod in settings.ini. Later perhaps a live toggle in the PC menu (the replacement
+  hook already supports swapping while running).
+- **1g model smoothing:** PN-AEN on the CPU when a mesh loads, cached by content hash (creases from normal splits,
+  UV seams, angle threshold; UVs, colours, bone weights carried over), model draws only, own switch under Enhanced.
+  CPU-side so D3D9 gets it too (no tessellation shaders there). Check: A/B captures, user playtest.
+
 ## 0.6 plan: one settings schema + native keys (2026-11-13, agreed with the user)
 
 Today: ~30 user options written three times (options.cpp parser/help, launcher main.cpp, pc_menu.cpp), several
