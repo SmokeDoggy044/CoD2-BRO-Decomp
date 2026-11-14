@@ -95,15 +95,16 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   No state of ours: a restart or Key_ClearStates simply lets a still-held key press again.
 - The commands come from `native_key_command` (cl.cpp), not the binding table: the default layout's commands
   (+forward ... +attack, +speed, +activate, +reload, +moveup, lowerstance, +sprint, +melee, +grenadeattack,
-  weapnext, +leanleft/rightswitchnext, toggle cl_run) plus +lookup/+lookdown/+left/+right; "+speed" becomes "toggle
+  weapnext, toggle cl_run) but plain +leanleft/+leanright for Q/E (the default layout's +lean*switchnext switch
+  weapons unless aiming - the user wants Q/E to lean); "+speed" becomes "toggle
   cl_run" while the toggled-aim flag 0x008dce70 is set (as Key_Bind_f does). Why not bind letters in keys[]:
   Key_GetKey / Key_GetKeyNameForCommand scan keys 0-255 and would find "F" before the pad's JOY6, so the game's own
   button prompts would change; the table also needs Z_Malloc'd strings (heap layout). The controller style now
   only affects gamepads.
 - Input side (src/input): `set_native_actions(true)` stops the action keys giving pad buttons outside menus;
   `held_actions()` is 0 in menus, while our PC menu blocks input and until the keys that closed it are let go. In
-  menus the action keys still steer as pad buttons (WASD, F); the menu keys, Escape and Tab stay pad buttons. Look
-  keys are now Q3's +left/+right/+lookup/+lookdown (CL_AdjustAngles speeds) instead of the right stick.
+  menus the action keys still steer as pad buttons (WASD, F); the menu keys, Escape and Tab stay pad buttons. The
+  look keys (IJKL) are gone (user: the mouse looks); old `keys` lines with look-* are skipped.
 - Replay format 5: one 'Y' value (the mask) per IN_Frame. Format 4 recordings still replay (their keyboard is in
   the pad state; the hook returns 0 for them). `--press` takes action tokens too (`move-forward@76+4,fire@81`).
 - IN_Frame is Replaced now (was Compare: its harness tests are inconclusive, it reaches host input; own-main replays
