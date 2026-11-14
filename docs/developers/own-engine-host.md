@@ -121,7 +121,9 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   (0.00% differ), all 28,352 frames match. Real-time m0 replay with --diag: hitches 34 (on) vs 35 (off), worst
   spots the same level loads. Not yet exercised: freeing across a level change (needs a multi-mission run).
 - Left for phase 1 around it: 1.0b `--dev` overlay + live mod toggle, 1.0d viewer, 1f `mod-<name>` lines + Data
-  Files page. Next: 1.0b/1.0d (the user's comparison tools) or 1d builder - ask the user.
+  Files page. NEXT (user 2026-11-14: option A): 1.0b `--dev` overlay (frame time, texture memory, pack
+  loaded/pending/missing, live mods toggle key, texture picker under the crosshair into F12 marks, pause), then
+  1.0d viewer; 1d builder after.
 
 ### 1b design (2026-11-14)
 
