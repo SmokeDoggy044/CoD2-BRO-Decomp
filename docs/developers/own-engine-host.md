@@ -179,7 +179,9 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   left, or up"): the fade quad's (4,4) offset leaves a left and top strip uncovered - hidden by TV overscan on the
   Xbox, visible on a PC (wider at render scale). Same family as the glow pass's left/top dark band. Fix later as a
   PC option (quad to the picture edges, e.g. x0/y0 0 with the UV shifted), not a patch. PARKED (user, 11-14).
-  Same run, mark 1 (frame 8959, mods_all pack): "bodies are wonky", gone by mark 2 (frame 9900) - not looked at.
+- OPEN BUG (user, 11-14, m0 live run build/diag/blur_1114b mark 1, frame 8959): one soldier's mesh torn - legs and
+  lower body stretched to the ground in long polygons; gone 16 s later (mark 2). Geometry/skinning, not the texture
+  pack. Not chased (no Vulkan draw dump); possibly the uninitialised blend-node read seen in m3 (unverified).
 - Next: 1e curation on the prologue pilot (curation.csv + the 1.0c sheet; user judges in game with F12/F6).
 
 ### 1.0d done (2026-11-14): object viewer in game and in the lab
