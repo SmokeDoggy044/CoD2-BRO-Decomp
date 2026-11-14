@@ -70,7 +70,13 @@ mips, swizzled non-palette textures only). The dump has 9,652 texture entries, 3
   1e CLOSED 11-14 (user): no dedicated curation runs; texture problems are handled when noticed in normal play
   (F6 picker + F12 -> curation.csv row -> rebuild of those hashes). Packs as built: campaign world 0.1 + UI 0.1.
 - **1f Data Files page:** the launcher front-page button opens the mod list (checkbox, load order); one
-  `mod-<name>=on|off` line per mod in settings.ini. Later perhaps a live toggle in the PC menu (the replacement
+  `mod-<name>=on|off` line per mod in settings.ini.
+  1f DONE 11-14: one `mod-list = ui, campaign, -oldpack` setting instead of per-mod lines (the settings schema is a
+  fixed table): load order, first wins; '-' = off; unnamed mods follow, on, in folder-name order; nothing written
+  while all are on in name order. src/platform/mod_list.* (scan_mods, shared by texture_pack::open and the
+  launcher), launcher Page::DataFiles (checkbox, mod.ini name/version/author, texture count, up/down, "source"
+  as tooltip, Open mods folder, Refresh; `COD_BRO_LAUNCHER_PAGE=mods`), --mod-list on the command line too.
+  Checks: settings_test (Linux + Wine), game log honours the order/off, launcher shots. Later perhaps a live toggle in the PC menu (the replacement
   hook already supports swapping while running).
 - **1g model smoothing:** PN-AEN on the CPU when a mesh loads, cached by content hash (creases from normal splits,
   UV seams, angle threshold; UVs, colours, bone weights carried over), model draws only, own switch under Enhanced.
