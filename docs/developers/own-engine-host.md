@@ -17,6 +17,29 @@ Developer modes for automated checks (suggested 2026-11-08, build each when its 
 (0.3), live function test (call by name, original vs C from the same state), fixed capture points per mission
 (quality gate), state dump; later an object viewer for the lighting work.
 
+## 0.6 plan: one settings schema + native keys (2026-11-13, agreed with the user)
+
+Today: ~30 user options written three times (options.cpp parser/help, launcher main.cpp, pc_menu.cpp), several
+settings.ini lines that pack many values (`graphics-features`, `volume`, `enhanced`, `keys`), and keys/mouse buttons
+reaching the game as an emulated pad that follows the controller style. The engine's Q3 key system is decompiled
+(keys[256] at 0x0093425c, CL_KeyEvent, key name tables, +forward/+back/+moveleft/+moveright/+attack kbuttons).
+
+User decisions: keyboard/mouse get their own PC bindings straight to game commands (controller style only affects
+gamepads; the old `keys` setting converts); settings.ini becomes one line per setting (old combined lines still read
+and rewritten in the new form); in-game rebinding lives on a Controls page of the PC menu.
+
+- **0.6a schema:** one table of every setting (key, type, default, range/choices, label, help, group, live or
+  restart, player or developer). CLI parsing, --help, settings.ini read/write and the old-format conversion come from
+  it; developer switches stay CLI-only and hidden. Check: settings_test round trips, launcher-written ini read back
+  equal by the game, --compare still ignores settings.ini.
+- **0.6b launcher + PC menu from the schema:** both draw their widgets from the table; the PC menu gets every live
+  setting. The game's own console options (subtitles, invert, vibration, controller style) stay in its menus.
+- **0.6c native keys:** SDL key/mouse-button events -> Q3 key numbers -> the event queue -> CL_KeyEvent and the
+  bindings; the pad path stays for gamepads and menus. Replay records key events (new format version; old
+  recordings keep replaying). Check: m4/m1 replays frame-exact, a short recording made with keys replays.
+- **0.6d rebinding:** Controls page (action list, press a key, conflicts shown, reset to defaults, saved at once);
+  prompts show the bound key's name (Key_GetKeyNameForCommand). Close with one user play run.
+
 ## 0.5 plan: Vulkan back end (2026-11-13)
 
 Starting point: every renderer draw goes through `render::GfxDevice` (R4b/R5, [own-renderer.md](own-renderer.md));
