@@ -81,6 +81,13 @@ mips, swizzled non-palette textures only). The dump has 9,652 texture entries, 3
 - **1g model smoothing:** PN-AEN on the CPU when a mesh loads, cached by content hash (creases from normal splits,
   UV seams, angle threshold; UVs, colours, bone weights carried over), model draws only, own switch under Enhanced.
   CPU-side so D3D9 gets it too (no tessellation shaders there). Check: A/B captures, user playtest.
+  Survey 11-14 (temporary probe in nglDrawMeshSection, lab m0+m4, 6,671 sections): NO push-buffer sections - all
+  draw a vertex buffer + index list, so nglDrawMeshSection (vertex buffer, stride, primitive, indices) is the one
+  swap point. Primitives 5 list, 6 strip, 8 quad list. Formats (Xbox attribute format at 0x00903c0c, 16 inputs x
+  {stream, offset, format, tess}): skinned sections (bone_count > 0) all stride 32 = pos FLOAT3, normal NORMPACKED3
+  (0x16), uv FLOAT2, 2 x PBYTE4 (0x44: weights, indices). Static: stride 24 (pos, packed normal, uv | pos, uv,
+  colour), 36/40/52 (1-3 uv sets, colour 0x40, packed tangent frame 0x16 x3). Plan: characters (skinned) first,
+  then static models; world (cell meshes) never.
 
 ## 0.6 plan: one settings schema + native keys (2026-11-13, agreed with the user)
 
