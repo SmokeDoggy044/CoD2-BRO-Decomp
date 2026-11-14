@@ -109,21 +109,29 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   - none belongs in a pack. Collector's Edition: its oran packs differ as files, but all 440 of their texture
   entries have retail contents, so a pack keyed by content covers both editions.
 
-### 1.0d first part (2026-11-14): object viewer in game
+### 1.0d done (2026-11-14): object viewer in game and in the lab
 
-- `--viewer M1,M2` (implies --dev; src/engine/game/g_viewer.*, src/runtime/loader/viewer.*): F8 shows the next model
-  in front of the camera as a level script would (`GScr_Spawn("script_model")` + `G_SetModel`, G_DObjUpdate,
-  SV_LinkEntity), hides the gun (`cg_drawgun 0`) and pauses 30 frames later - paused at once, the client never takes
-  the new entity up. Paused, it turns (F9 on/off): `G_SetAngle`/`G_SetOrigin` each frame do show while paused.
-  Freezing scripts and AI = the pause (cl_paused); no level-specific work.
+- `--viewer M1,M2` or `--viewer @FILE` (implies --dev; src/engine/game/g_viewer.*, src/runtime/loader/viewer.*): F8
+  shows the next model in front of the camera as a level script would (`GScr_Spawn("script_model")` + `G_SetModel`,
+  G_DObjUpdate, SV_LinkEntity), hides the gun (`cg_drawgun 0`) and pauses 30 frames later - paused at once, the
+  client never takes the new entity up. Paused, it turns (F9 on/off): `G_SetAngle`/`G_SetOrigin` each frame show
+  while paused. Freezing scripts and AI = the pause; no level-specific work. Overlay: shown model, next k/N.
+- Placement: the middle of the model's box on the camera's level line (in the air for small models - framing over
+  ground contact), distance from `DObj_GetBounds` (half diagonal in an 18 degree half-height view, >= 48 units),
+  turned about the box middle. The spot is the camera's at the first F8 (press it where it is open).
 - Names: the .xbmesh entry name without extension (`tools/model_index.py UNPACKED` -> tools/data/model_index.csv,
-  2,255 models; `--level N` prints one mission's list). Models sit in different zone sets (prologue: characters 6,
-  props 7, vehicles 12, scenery 13; weapons in the level's): the viewer tries the level's set, then 0-31.
-- Distance from `DObj_GetBounds` (half diagonal, 65 degree view, at least 48 units), turned about its box middle,
-  stood on the ground under it (G_Trace down, mask 1). The spot (camera line) is the one of the first F8.
-- Known: vehicles float (the GMC truck's box bottom -54 does not match its wheels); the spot can be inside walls -
-  press F8 where it is open. Left for 1.0d: lab turntable (`lab.py viewer`: fixed angles per variant from a
-  recording), model list in the overlay from the index.
+  2,255 models; `--level N` prints one mission's list for @FILE). Models sit in different zone sets (prologue:
+  characters 6, props 7, vehicles 12, scenery 13; weapons in the level's): the viewer tries the level's set, then
+  0-31. Only zones loaded at that moment are found: at m0 frame 6000, 83 of the prologue's 155 (the rest: later
+  zones' sbmodel* scenery, the intro cutscene's LOD models).
+- Lab turntable: `tools/lab.py viewer OUT --model M.. [--at 6000] [--steps 8] --variant a="--mods off" --variant
+  b="--mods-dir DIR"`: the recording cut after --at (tools/lab.py cut_recording; the 'F' records) and replayed with
+  --replay-continue - from there live and WITHOUT input: under a full replay the recorded usercmds still move the
+  player while cl_paused (msec 0 stops only the server frame). `COD_BRO_VIEWER_TURNTABLE=STEPS,FRAMES` holds fixed
+  angles and exits when done; metrics only inside the model's box (what moves between the baseline's angles).
+  2 models x 2 variants: 1 min 45 s, 32/32 pictures.
+- Pausing the audio stalls a replay (voice queue waits of 10 s): the viewer's pause under a full replay is no use;
+  the cut recording avoids it.
 
 ### 1.0b done (2026-11-14): `--dev` overlay, live switches, texture picker
 
