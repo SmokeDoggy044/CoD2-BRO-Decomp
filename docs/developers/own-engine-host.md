@@ -159,6 +159,16 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   `tools/texture_pack/compare_sheet.py sheet OUT --variant NAME=WORK ... --serve PORT`: original + every model per
   texture, the user picks one (or keeps the original), "Export picks.csv"; `compare_sheet.py merge OUT picks.csv
   --variant ...` assembles the UI mod. Waiting for the user's picks.
+- UI pack 0.1 DONE 11-14 (pack_work/ui/mod, 205 textures, 142 MB; user's picks in ui/picks.csv: AnimeSharp 101,
+  JaNai V3 detail 76, V3 denoise 26, V1 2). Both packs together: pack_work/mods_all (symlinks pbrify_world + ui);
+  lab `build/lab/ui_m0` (world vs world+ui): both mods load, <= 1.1% of pixels change (HUD), brightness +0.05.
+- OPEN BUG (user, 11-14, lab m0 pictures; also with mods off = not the pack): the shell-shock blur does not cover
+  the whole widescreen picture. m0 shot 16424 (pilot2_m0/off and ui_m0/world alike) is blurred in the middle and
+  sharp at the sides (Laplacian per 1/32 column: left ~370 px sharp; boundary not a clean 4:3 split - check the
+  picture with the user). Traced so far: CG_DrawShellShockBlur's import slot 0x1a (0x00928550) is RE_EmptyStub26
+  (draws nothing); CG_ShellShockScreenParams writes 0x00973a58, which CG_DrawActive's caller folds into the refdef
+  word 0x00961774; ngl blend modes 5-7 (constant alpha) = the blur's blend. Next: find the draw that uses
+  0x00961774 / blend mode 5 (front-buffer feedback quad?) and its rectangle under the wide 2D mapping.
 - Next: 1e curation on the prologue pilot (curation.csv + the 1.0c sheet; user judges in game with F12/F6).
 
 ### 1.0d done (2026-11-14): object viewer in game and in the lab
