@@ -172,6 +172,12 @@ pipelines as before. Checks: m4_smoke 19 links in ~1 ms (whole: 627 ms cold); pi
 D3D9 <= 0.01%; validation clean (only the old FOG-output warning); Wine OK; gfx_device_test passes; m4 playtest at
 --replay-speed 50: 228 s vs 222 s whole (noise ~10%) - no optimized relink needed for now.
 
+**Next (2026-11-13 end):** user skipped the Vulkan playtest for now. Next session: Vulkan becomes the default
+renderer (D3D9 stays as the launcher / `--renderer d3d9` choice and the automatic fallback), then V6 (0.5b render
+graph + HDR). Side items: Omaha (m9) plain replay drifts from frame 59014; user's mark "boards popped in" at
+~frame 36800 (same on D3D9; object not named yet); the second timing pass (Vulkan 204 s vs DXVK 280 s on the m4
+playtest at --replay-speed 50) was not repeated.
+
 ## 0.4 progress (2026-11-13)
 
 - **Mounted-gun drift fix** (`--mounted-gun-fix on|off`, default on, off with `--pc-patches off`):
