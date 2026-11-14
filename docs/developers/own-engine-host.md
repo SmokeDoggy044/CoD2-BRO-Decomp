@@ -180,6 +180,34 @@ shots <= 0.01%; Windows build under Wine picks Vulkan, frames and shot equal to 
 was skipped (user, 11-13). Side items left open: Omaha (m9) plain replay drifts from frame 59014; user's mark
 "boards popped in" at ~frame 36800 (same on D3D9; object not named yet); second timing pass not repeated.
 
+**V6 / 0.5b done (2026-11-13): render graph + HDR scene (Vulkan).**
+- Frame shape: world (the title's 3D view and gun) -> scene passes (HDR resolve, FXAA, sharpen/vibrance) -> HUD (the
+  title's draws after the world) -> present (gamma, overlay, PC menu). FXAA and sharpening no longer touch the HUD,
+  subtitles and letterbox bars (they did on both back ends before; D3D9 keeps the old order).
+- The split: nglRenderSceneTree numbers its scenes (children first) and nglBeginSceneRender calls
+  `GfxDevice::begin_scene(world)`; the world is every scene up to the last one that is on the screen (render target
+  flag 0x4000), writes depth and has opaque nodes (m4: the 3D view with ~700 nodes, then the gun's own scene with a
+  depth clear; the HUD scenes after it have only translucent nodes or no depth). Only with
+  `RendererPcHooks::mark_scenes` (set with the PC features; --compare runs keep the original calls). D3D9 ignores it.
+- src/render/vk/render_graph.{h,cpp}: passes over named images (imported or transient = owned, kept by name across
+  frames), each image moved into the layout its use needs before the pass, passes whose results nothing reads culled.
+  It does not reorder (the title's draws are immediate); lighting passes go between the world and the resolve later.
+- HDR scene (`--graphics-features hdr=0|1`, Enhanced switch "High-precision picture (HDR)", default on, Vulkan only):
+  at the frame's first world scene the device swaps the back buffer target's image for an RGBA16F one (what the frame
+  drew so far blitted over; the sampling copy swaps too), so the world's draws and blends keep 16-bit floats and
+  are not clamped between passes; at the split `scene_resolve.frag` writes it into the 8-bit picture (clamped, = what
+  an 8-bit target holds) and the HUD is drawn in 8 bits as before. The values stay in the title's gamma space (its
+  shaders and blending are written for it; true linear blending would change the look): linear light for later
+  passes = pow(value, 2.2), the resolve is where a tone map goes.
+- Checks: original graphics m4_smoke Vulkan vs D3D9 identical / <= 0.01% (no split work without enhanced features);
+  enhanced HDR on vs off <= 0.01% (m4 shots, m1 4 shots 0.00%), all frames equal (m4 2,620, m1 57,333); enhanced
+  Vulkan vs D3D9 differs only where the HUD is no longer anti-aliased (m4 "Objectives updated.", m1 compass, health
+  bar, prompts: 0.04-0.6%); validation clean with HDR on (only the old FOG-output warning); Wine identical to Linux;
+  gfx_device_test / shader tests pass. Pitfall met on the way: `--graphics-features "hdr=0"` replaces the recording's
+  whole feature string (its sharpness=0.3 was lost) - give the recorded amounts with it for A/B runs.
+- 0.5 is complete. Next: 0.6 (one settings schema for launcher, settings.ini and menus; native keys with in-game
+  rebinding). Not done in 0.5b: GPU timings per pass (quality gate's budget), D3D9 FXAA before the HUD.
+
 ## 0.4 progress (2026-11-13)
 
 - **Mounted-gun drift fix** (`--mounted-gun-fix on|off`, default on, off with `--pc-patches off`):
