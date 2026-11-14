@@ -65,6 +65,27 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   vibrance_amount=0.01", volumes music=40 close_gunfire=2 ...), the player's settings.ini (copy, XDG_DATA_HOME)
   read as before; Windows MinGW build clean.
 
+### 0.6b done (2026-11-13; waits for the user's look at the launcher and the PC menu)
+
+- settings_schema gained the UI table (`SettingUi`: section, label, tooltip, choice labels, slider format, parent
+  condition "sharpen" / "graphics=enhanced", checkbox for two-way choices, logarithmic) in drawing order.
+- New `src/ui/settings_widgets.{h,cpp}` (library settings_ui): `draw_settings(groups, Settings&, {require_flags,
+  custom})` draws the table's rows with their sections, indents and disables children by their parents, and edits
+  settings.ini text (defaults removed). A custom callback draws the few rows the standard widgets do not fit.
+- Launcher: the `Choices` struct, read_choices/write_choices and the per-setting widget code are gone; the tabs edit
+  `settings_` directly (Graphics = Display + Graphics groups, Sound, Controls + the keys table, Multiplayer =
+  Network). Custom rows: aspect (screen shape), window size (resolution), render scale, texture filtering, frame
+  rate, audio device, net port, d3d9 (Windows only). New in the launcher: field of view. The tab bar stays put and
+  each tab scrolls above the buttons. "Reset to defaults" clears every table row (assets and hand-written lines
+  stay).
+- PC menu: `live_values()` reads what runs now (graphics + parts, audio + parts, volumes, reverb, fov, mouse
+  sensitivity) into settings text, the tabs draw the kLive rows from it, `apply_live` pushes what changed, and
+  closing saves the changed keys (one line each). New live: mouse sensitivity (patches set_mouse_sensitivity).
+  Six hand-written save blocks and the slider helpers are gone.
+- Checks: settings_test (UI rows name one setting each, parents exist, choice labels match, put_setting /
+  setting_enabled) Linux + Wine; m4_smoke replay all 2620 frames; Windows build clean. Visual check of both UIs:
+  the user (desktop capture on the user's Wayland session gives stale frames; ask before driving desktop apps).
+
 ## 0.5 plan: Vulkan back end (2026-11-13)
 
 Starting point: every renderer draw goes through `render::GfxDevice` (R4b/R5, [own-renderer.md](own-renderer.md));
