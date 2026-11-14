@@ -44,6 +44,14 @@ mips, swizzled non-palette textures only). The dump has 9,652 texture entries, 3
     live keys flipping each Enhanced feature and each mod for A/B in place, a texture picker (texture under the
     crosshair: runtime hash, asset path, which mod) written into F12 marks, pause.
   - 1.0c curation sheet (with 1e): original vs upscaled per texture hash as an HTML page for the user.
+  - 1.0d object viewer (user 2026-11-14; with 1b, before 1e): `--viewer MODEL` loads a mission whose packs hold the
+    model (index model -> missions from a dump scan), freezes its level scripts and AI, spawns the model at a quiet
+    spot (our C `G_Spawn` + `G_SetModel`; level lighting), orbit camera (mouse, scroll) and a model list in the
+    `--dev` overlay. Compare by flipping (key: mods on/off, later smoothing and single switches) at the same view;
+    side by side (a per-entity "no mods" mark through to the renderer) only if flipping is not enough.
+    `lab.py viewer OUT --model M --variant ...`: 8 fixed turntable angles per variant -> numbers + report (also the
+    main check for 1g smoothing). Unknowns to test on the prologue first: freezing a level's scripts cleanly after
+    load; how dump model names map to what `G_SetModel` takes.
 - **1a hash bridge:** `--texture-log` lists each runtime texture key (content hash, format, size, levels); a script
   computes the same hash from the dump and maps it to manifest rows. Check: every prologue texture matches; the
   Collector's Edition dump compared too (the pack has to fit every copy).
