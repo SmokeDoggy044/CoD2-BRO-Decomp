@@ -109,7 +109,21 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   - none belongs in a pack. Collector's Edition: its oran packs differ as files, but all 440 of their texture
   entries have retail contents, so a pack keyed by content covers both editions.
 
-### 1b design (2026-11-14, resume here)
+### 1b done (2026-11-14): texture packs load and show on both back ends
+
+- `src/render/texture_pack.*`: scan `<data>/mods` (or `--mods-dir DIR`; `--mods off`; none with --compare),
+  `textures/<hash>.dds` index, one loading thread, generation counter as `replacement_version` (the device asks
+  again once a picture is ready; handed-out copies dropped). `TextureReplacement` carries DXT1/DXT5 levels; Vulkan
+  BC1/BC3 images, D3D9 DEFAULT pool via a SYSTEMMEM copy + UpdateTexture. Replacements not bound for
+  `kReplacementIdleFrames` (1800) are freed on both back ends (made again when asked).
+- Test pack: `tools/test_mod.py UNPACKED MANIFEST bridge.csv OUT` (tinted 2x, full mip chains; 250 prologue
+  textures, 34 MB). Lab `build/lab/packs`: mods on changes 27-99% of pixels at the 8 points, Vulkan = D3D9 pictures
+  (0.00% differ), all 28,352 frames match. Real-time m0 replay with --diag: hitches 34 (on) vs 35 (off), worst
+  spots the same level loads. Not yet exercised: freeing across a level change (needs a multi-mission run).
+- Left for phase 1 around it: 1.0b `--dev` overlay + live mod toggle, 1.0d viewer, 1f `mod-<name>` lines + Data
+  Files page. Next: 1.0b/1.0d (the user's comparison tools) or 1d builder - ask the user.
+
+### 1b design (2026-11-14)
 
 - **Mod layout:** `<data dir>/mods/<name>/mod.ini` (`name=`, `version=`, `author=`, `kind=textures`, `source=` dump
   it was built from) + `textures/<16 hex runtime hash>.dds` (DXT1/DXT5 with mip chain; the file name is the index).
