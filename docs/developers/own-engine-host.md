@@ -169,6 +169,12 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   (draws nothing); CG_ShellShockScreenParams writes 0x00973a58, which CG_DrawActive's caller folds into the refdef
   word 0x00961774; ngl blend modes 5-7 (constant alpha) = the blur's blend. Next: find the draw that uses
   0x00961774 / blend mode 5 (front-buffer feedback quad?) and its rectangle under the wide 2D mapping.
+  11-14 later: the earlier trace was wrong - 0x00961774/78/7c are view/turn limits (cl.cpp), not blur values. The
+  shell-shock blur is CG_DrawFrontBufferFade (last frame as a quad at (4,4)..(640+4,480+4), mode 5); in m0 it runs
+  at replay frames 10384-10502, 12462-12580, 18199-18317, 26382-26507, 26696-26934 - NOT at 16424 (that shot is
+  smoke + distance). Shot 12468 (inside a fade) covers the whole 16:9 width. UI narrowing (draw_placement.h
+  ui_narrowing) skips quads not starting at x<=1, but a span-based test changed 0 pixels at 16:9 and 21:9: the fade
+  quad is not narrowed - change reverted. Waiting for the user's steered --diag run to show what they saw.
 - Next: 1e curation on the prologue pilot (curation.csv + the 1.0c sheet; user judges in game with F12/F6).
 
 ### 1.0d done (2026-11-14): object viewer in game and in the lab
