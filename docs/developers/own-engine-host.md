@@ -138,6 +138,21 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   keyboard recording 5,374 frames, release/debug/Windows all matched. tools/replay_check.sh reads Wine logs as text
   (grep -a; Wine's log made it report "no replay result").
 
+### Launcher front page (2026-11-14, closes phase 0)
+
+- Bethesda-style front page: the picture over the whole window (16:10 now, 700x440 x UI scale), the game's logo
+  top right, a button column Play / Multiplayer (with the MP XBE) / Options (the existing tabs, Back saves) / Tech
+  Support (the former Help tab + updates) / Exit; missing game files, the update notice and the version bottom left.
+- Picture (src/launcher/front_picture.*, from the player's own files): a random unlocked concept art image -
+  bonus\concept<1 for chapters 1-7, else 2>\cp<n>_<i>f.dds, chapter n unlocked when a profile slot's chapters
+  reached (profile +0x14; the Profiles/Profiles1-3 records hold the profile from +0x1c after the "9-21-05" header)
+  is above n, all with +0x24 (as FE_BonusConceptSetText's unlocked_level_word) - else the main menu's
+  Single_Front_bkrnd.dds (sp/frontend.cod). Both are shown at 4:3 with their letterbox bars cut. Own DXT1/3/5
+  decoder; KapfPack for the pack.
+- Developer: `COD_BRO_LAUNCHER_SHOT=FILE` (+ `COD_BRO_LAUNCHER_PAGE=options|tech`) saves the window after five
+  frames and exits - look checks without the desktop. Checked Linux and Wine; concept art with a test save copy
+  (chapter 9 reached: 16 images of chapters 1-8).
+
 ## 0.5 plan: Vulkan back end (2026-11-13)
 
 Starting point: every renderer draw goes through `render::GfxDevice` (R4b/R5, [own-renderer.md](own-renderer.md));
