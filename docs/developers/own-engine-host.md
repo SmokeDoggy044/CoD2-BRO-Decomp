@@ -109,6 +109,22 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   - none belongs in a pack. Collector's Edition: its oran packs differ as files, but all 440 of their texture
   entries have retail contents, so a pack keyed by content covers both editions.
 
+### 1.0b done (2026-11-14): `--dev` overlay, live switches, texture picker
+
+- `--dev` (src/render/dev_mode.*, drawn with the --diag overlay; never with --compare): frame time (avg/worst per
+  second), GPU memory (Vulkan: VMA budgets of the device-local heaps; D3D9: GetAvailableTextureMem), replacement
+  pictures held, pack counts (loaded / pending / failed / title textures asked for that no mod covers).
+- Keys: F1 overlay, F2 mods on/off (`texture_pack::set_enabled`: version() moves, devices ask again and fall back to
+  the title's picture), F3 Enhanced, F4/F5 one feature, F6 picker, F7 pause (`cl_paused` + audio pause: the world
+  stops, frames are still drawn - A/B while paused). With --diag an F12 note gets `[dev: mods.., graphics.., pick..]`.
+- Picker (Vulkan only; GfxDevice::pick/take_pick/label_texture): one frame draws only the centre title pixel, each
+  draw into the full picture inside an occlusion query; results a frame later. Overlay: depth-tested hits top first;
+  the log lists every hit with all four texture slots. `COD_BRO_TEXTURE_NAMES=bridge.csv` adds the dump's names.
+- Unattended: `COD_BRO_DEV_KEYS="6@1800,2@2000"` presses Fn at presented frame N. Checked on m0 (test pack): F2 off/on
+  on both back ends (tint gone/back), F7 frames pixel-equal while paused, picks name the wall/lightmap/smoke under the
+  crosshair, no Vulkan validation messages.
+- Next (user's order 2026-11-14): 1.0d object viewer, then 1d pack builder.
+
 ### 1b done (2026-11-14): texture packs load and show on both back ends
 
 - `src/render/texture_pack.*`: scan `<data>/mods` (or `--mods-dir DIR`; `--mods off`; none with --compare),
@@ -121,9 +137,7 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   (0.00% differ), all 28,352 frames match. Real-time m0 replay with --diag: hitches 34 (on) vs 35 (off), worst
   spots the same level loads. Not yet exercised: freeing across a level change (needs a multi-mission run).
 - Left for phase 1 around it: 1.0b `--dev` overlay + live mod toggle, 1.0d viewer, 1f `mod-<name>` lines + Data
-  Files page. NEXT (user 2026-11-14: option A): 1.0b `--dev` overlay (frame time, texture memory, pack
-  loaded/pending/missing, live mods toggle key, texture picker under the crosshair into F12 marks, pause), then
-  1.0d viewer; 1d builder after.
+  Files page. 1.0b done (section above); NEXT 1.0d viewer, then the 1d builder.
 
 ### 1b design (2026-11-14)
 
