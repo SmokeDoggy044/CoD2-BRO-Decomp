@@ -109,6 +109,22 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   - none belongs in a pack. Collector's Edition: its oran packs differ as files, but all 440 of their texture
   entries have retail contents, so a pack keyed by content covers both editions.
 
+### 1.0d first part (2026-11-14): object viewer in game
+
+- `--viewer M1,M2` (implies --dev; src/engine/game/g_viewer.*, src/runtime/loader/viewer.*): F8 shows the next model
+  in front of the camera as a level script would (`GScr_Spawn("script_model")` + `G_SetModel`, G_DObjUpdate,
+  SV_LinkEntity), hides the gun (`cg_drawgun 0`) and pauses 30 frames later - paused at once, the client never takes
+  the new entity up. Paused, it turns (F9 on/off): `G_SetAngle`/`G_SetOrigin` each frame do show while paused.
+  Freezing scripts and AI = the pause (cl_paused); no level-specific work.
+- Names: the .xbmesh entry name without extension (`tools/model_index.py UNPACKED` -> tools/data/model_index.csv,
+  2,255 models; `--level N` prints one mission's list). Models sit in different zone sets (prologue: characters 6,
+  props 7, vehicles 12, scenery 13; weapons in the level's): the viewer tries the level's set, then 0-31.
+- Distance from `DObj_GetBounds` (half diagonal, 65 degree view, at least 48 units), turned about its box middle,
+  stood on the ground under it (G_Trace down, mask 1). The spot (camera line) is the one of the first F8.
+- Known: vehicles float (the GMC truck's box bottom -54 does not match its wheels); the spot can be inside walls -
+  press F8 where it is open. Left for 1.0d: lab turntable (`lab.py viewer`: fixed angles per variant from a
+  recording), model list in the overlay from the index.
+
 ### 1.0b done (2026-11-14): `--dev` overlay, live switches, texture picker
 
 - `--dev` (src/render/dev_mode.*, drawn with the --diag overlay; never with --compare): frame time (avg/worst per
