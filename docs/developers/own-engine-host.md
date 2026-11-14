@@ -192,7 +192,8 @@ was skipped (user, 11-13). Side items left open: Omaha (m9) plain replay drifts 
 - src/render/vk/render_graph.{h,cpp}: passes over named images (imported or transient = owned, kept by name across
   frames), each image moved into the layout its use needs before the pass, passes whose results nothing reads culled.
   It does not reorder (the title's draws are immediate); lighting passes go between the world and the resolve later.
-- HDR scene (`--graphics-features hdr=0|1`, Enhanced switch "High-precision picture (HDR)", default on, Vulkan only):
+- HDR scene (Vulkan only; on whenever enhanced graphics is on - its own switch `hdr` was dropped 11-13 at the user's
+  request: later lighting features become part of enhanced graphics, and the scene alone looks the same):
   at the frame's first world scene the device swaps the back buffer target's image for an RGBA16F one (what the frame
   drew so far blitted over; the sampling copy swaps too), so the world's draws and blends keep 16-bit floats and
   are not clamped between passes; at the split `scene_resolve.frag` writes it into the 8-bit picture (clamped, = what
