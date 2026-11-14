@@ -154,6 +154,14 @@ releases). gfx_d3d9 now copies the alpha into rgb when a constant-alpha factor i
 Also found by the user while watching: the soldier health bar in 16:9 (8a61e0d4, XMM0 lost across
 UIPicture_ScaleXForAspect). Left for V5: frame time vs DXVK, user playtest on Vulkan; then Vulkan as default.
 
+**Pipeline cache on disk (2026-11-13, after the user's Omaha playtest on Vulkan: hitches up to 678 ms):**
+`<data folder>/cache/vulkan_pipelines.bin` (BackendConfig::pipeline_cache_path), loaded when the header matches the
+GPU/driver (vendor, device, pipelineCacheUUID), saved every 1,800 frames when it grew, on window close and on
+Ctrl+C/kill (render::save_caches from the exit hook; not after a crash). New pipelines >= 50 ms are logged.
+m4_smoke: 20 pipelines 627 ms (slowest 47 ms) fresh, 8 ms from the file. Omaha (m9) recording: plain replay drifts
+from frame 59014 (both back ends alike, not chased yet); D3D9 vs Vulkan pictures equal. User's mark (boards popping
+in, frame ~36800) is the same on both back ends = game side, object not identified yet.
+
 ## 0.4 progress (2026-11-13)
 
 - **Mounted-gun drift fix** (`--mounted-gun-fix on|off`, default on, off with `--pc-patches off`):
