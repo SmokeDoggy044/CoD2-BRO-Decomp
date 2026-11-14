@@ -128,6 +128,14 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   Lab `build/lab/pilot_m0` (Vulkan, mods off vs the pilot): pack loads (380 textures, no warnings), replay ends
   normally, 8/8 pictures; in-level points change 2-17% of pixels, sharpness 1.07-1.78x, brightness +0.25-0.72
   levels; loading screen and end screen unchanged.
+- First playtest (user, 11-14): brighter surfaces (church tower) and shimmer at a distance. Causes and fixes:
+  the model brightens (+0.76 levels average, +3 on walls) -> colour fix in encode (low frequencies matched to the
+  original, alpha-weighted so colour under transparent texels does not leak into edges; Pillow resizes RGBA
+  premultiplied - shrink per channel); lightmaps were upscaled (model shifts them up to 12 levels) -> skipped
+  automatically, fonts too (sharp text covers them); Enhanced lod_bias -2 on 4x pictures shimmered -> both back ends
+  skip the Enhanced mipmap bias for replacement pictures; mips now 2x2 boxes (Lanczos levels were crisper).
+  Pilot 0.2: 351 textures, 232 MB, visible brightness -0.28 average (max 3.8 on HUD cut-outs); lab
+  `build/lab/pilot2_m0`: brightness -0.35..+0.11, sharpness 1.15-1.75x, Vulkan = D3D9.
 - Next: 1e curation on the prologue pilot (curation.csv + the 1.0c sheet; user judges in game with F12/F6).
 
 ### 1.0d done (2026-11-14): object viewer in game and in the lab
