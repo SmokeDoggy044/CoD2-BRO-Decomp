@@ -116,6 +116,28 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   move to one line per action. The two pad-shaped actions (right stick click = toggle cl_run, D-pad down = none)
   want real names there.
 
+### 0.6d done (2026-11-14): rebinding (waits for the user's look and one play run, which closes 0.6)
+
+- PC menu: new **Controls** tab (mouse sensitivity etc. moved there from General) with the keys table; changes
+  apply at once (`input::set_bindings` is thread-safe now, `bindings()` returns a copy) and are saved when the menu
+  closes. The table is shared with the launcher (`ui::KeyTable`, `draw_key_table` / `key_table_event` in
+  settings_widgets): click a cell, press a key/mouse button/wheel, Esc cancels (the game window hands the menu
+  every event first, `BackendConfig::pc_menu_event`, so Esc does not close the menu while a key is wanted),
+  right-click clears; a key taken from another action says so; an action without keys shows in orange. ` is
+  reserved now (it opens the menu).
+- Actions: "D-pad down" removed (no command in the default layout); "Right stick click" is **Aim down sights
+  (toggle)** (`toggle cl_run` flips the walking bit +speed holds - CL_KeyMove; the game's own toggled-aim option
+  binds the same). Older `right-stick-click` / `dpad-down` / `look-*` words are still read.
+- settings.ini: one `key-<action>` line each (`key-melee = v mouse5`), parts of the combined `keys` (command line
+  `--keys` and recordings keep the combined form). A repeated action in an old line keeps both inputs; parts parse
+  onto the bindings so far (a later line for an action replaces it).
+- Prompts: the keyboard labels already come from the bindings each poll (update_button_prompts), so a rebind shows
+  in the game's hints at once.
+- Checks: settings_test (upgrade incl. repeats and the old aim name) + bindings_test, Linux and Wine; the player's
+  settings.ini copy reads `melee=v melee=mouse5`, a bad key name is logged; replays: m4_smoke 2,620 and the 0.6c
+  keyboard recording 5,374 frames, release/debug/Windows all matched. tools/replay_check.sh reads Wine logs as text
+  (grep -a; Wine's log made it report "no replay result").
+
 ## 0.5 plan: Vulkan back end (2026-11-13)
 
 Starting point: every renderer draw goes through `render::GfxDevice` (R4b/R5, [own-renderer.md](own-renderer.md));
