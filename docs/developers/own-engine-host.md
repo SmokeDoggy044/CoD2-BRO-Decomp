@@ -101,6 +101,23 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   - none belongs in a pack. Collector's Edition: its oran packs differ as files, but all 440 of their texture
   entries have retail contents, so a pack keyed by content covers both editions.
 
+### 1b design (2026-11-14, resume here)
+
+- **Mod layout:** `<data dir>/mods/<name>/mod.ini` (`name=`, `version=`, `author=`, `kind=textures`, `source=` dump
+  it was built from) + `textures/<16 hex runtime hash>.dds` (DXT1/DXT5 with mip chain; the file name is the index).
+  Developer `--mods-dir DIR` (lab runs use copied data folders); `--mods off` = none (and always none in --compare).
+  Per-mod `mod-<name>=on|off` lines arrive with 1f; until then every mod found is on, load order = name order.
+- **Picture type:** `render::TextureReplacement` gains a format (BGRA8 / DXT1 / DXT5) and ready mip levels (bytes
+  per level); BGRA8 without levels keeps today's box-filtered chain (sharp text, key prompts). Vulkan:
+  `TextureImageDesc.format` BC1/BC3 + `upload_level` per level; D3D9 `upload_replacement`: D3DFMT_DXT1/DXT5,
+  DEFAULT pool (no managed copy).
+- **Loader (src/platform/mods.*):** scan -> map content -> file; `replace_texture`: loaded -> picture, else queue for
+  the worker thread and answer null (the title's own shows); `replacement_version` moves when it is loaded, so the
+  device asks again. CPU copy dropped once handed out; device side frees replacements not drawn for a while (today
+  they are never freed) under a VRAM budget. Log: mods found, textures each covers, prologue misses.
+- **Check:** test mod from the dump (tools/lab: prologue textures tinted, via Pillow DXT), lab variants `--mods off`
+  vs on, both back ends; no hitches (frame times), memory flat over the m0 replay.
+
 ### 0.6a done (2026-11-13)
 
 - `src/platform/settings_schema.{h,cpp}`: every setting once (key, --help placeholder, type Flag/Switch/Int/Float/
