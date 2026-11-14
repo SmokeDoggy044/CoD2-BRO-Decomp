@@ -136,6 +136,9 @@ and rewritten in the new form); in-game rebinding lives on a Controls page of th
   skip the Enhanced mipmap bias for replacement pictures; mips now 2x2 boxes (Lanczos levels were crisper).
   Pilot 0.2: 351 textures, 232 MB, visible brightness -0.28 average (max 3.8 on HUD cut-outs); lab
   `build/lab/pilot2_m0`: brightness -0.35..+0.11, sharpness 1.15-1.75x, Vulkan = D3D9.
+- Second playtest (user, 11-14, pilot 0.2): no shimmer, brightness fine; paused A/B (marks 3/4): brightness -0.29,
+  distance 0.8x as sharp as the Enhanced originals (lod_bias -2) - user: fine, distant textures need not be super
+  sharp. Decision: no Enhanced mipmap bias on pack pictures stays.
 - Next: 1e curation on the prologue pilot (curation.csv + the 1.0c sheet; user judges in game with F12/F6).
 
 ### 1.0d done (2026-11-14): object viewer in game and in the lab
