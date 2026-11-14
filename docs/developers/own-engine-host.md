@@ -162,6 +162,16 @@ m4_smoke: 20 pipelines 627 ms (slowest 47 ms) fresh, 8 ms from the file. Omaha (
 from frame 59014 (both back ends alike, not chased yet); D3D9 vs Vulkan pictures equal. User's mark (boards popping
 in, frame ~36800) is the same on both back ends = game side, object not identified yet.
 
+**Pipeline libraries (2026-11-13, user: "build a complete shader cache"):** with VK_EXT_graphics_pipeline_library +
+extended_dynamic_state3 (blend enable/equation, write mask, polygon mode) + vertex_input_dynamic_state, every title
+shader (166) is compiled into a library on 8 worker threads when the device is made (~0.35-0.55 s, during the
+logos); a draw's pipeline = fast link of vertex input (per primitive class) + VS + PS + fragment output (per
+formats) libraries, its key only shaders / class / formats; vertex input, blending, write mask and fill set per draw
+(dynamic_draw_state). No mission runs needed. Without the extensions (or COD_BRO_VK_NO_LIBRARIES=1): whole
+pipelines as before. Checks: m4_smoke 19 links in ~1 ms (whole: 627 ms cold); pictures identical to whole pipelines,
+D3D9 <= 0.01%; validation clean (only the old FOG-output warning); Wine OK; gfx_device_test passes; m4 playtest at
+--replay-speed 50: 228 s vs 222 s whole (noise ~10%) - no optimized relink needed for now.
+
 ## 0.4 progress (2026-11-13)
 
 - **Mounted-gun drift fix** (`--mounted-gun-fix on|off`, default on, off with `--pc-patches off`):
